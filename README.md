@@ -1,6 +1,6 @@
 # PixelStellar
 
-by TEAMNAMEHERE
+by Pixel Stellars
 
 ## Team Members
 * Advanced Topic Subteam 1: Physics Simulation
@@ -29,7 +29,7 @@ The base of the game will revolve around a simulated 2d world, where all active 
     
 ### Procedural Generation
 
-Each planet will be procedurally generated with terrain, natural structures (mountains, caves, etc.) and possibly manmade structures (mineshafts, bastions, etc.). There will be a different biome for each planet with biome specific generation. The advanced topic here will involve many algorithms which generate randomness such as perlin noise. These algorithms will be fine tuned and layered for each planet to generate “realistic” looking terrains.
+Each planet will be procedurally generated with terrain, natural structures (mountains, caves, etc.) and possibly manmade structures (mineshafts, bastions, etc.). There will be a different biome for each planet with biome specific generation. The advanced topic here will involve many algorithms which generate randomness such as perlin noise. These algorithms will be fine tuned and layered for each planet to generate “realistic” looking terrains. The end goal is to have infinitely generating terrain in the left and right direction.
 
 ## Midterm Goals
 
@@ -45,7 +45,7 @@ Each planet will be procedurally generated with terrain, natural structures (mou
 * 10%: Basic player movement
 * 10%: Scrollable simulated world
 * 10%: Prototype enemies
-* 20%: (Procedural) Procedural generation of at least 2 different generators
+* 20%: (Procedural) Procedural generation of at least 2 different generators with chunk loading in an infinite direction left and right
 * 20%: (Physics) Working physics elements of water, gas, and solid types.
 * 10%: 7 Worlds of size ( 5 * (1280x720) )
   * Each team member should create a planet and come up with:
