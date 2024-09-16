@@ -1,6 +1,6 @@
 # PixelStellar
 
-by TEAMNAMEHERE
+by planeteers
 
 ## Team Members
 * Advanced Topic Subteam 1: Physics Simulation
