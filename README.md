@@ -58,4 +58,4 @@ Each planet will be procedurally generated with terrain, natural structures (mou
 ## Stretch Goals
 
 * Implementing rain in game. Rain will react naturally to environment (ex. rain will erode dirt)
-* GOAL2HERE
+* Rigid body physics, at least implementing a box which is made of pixel elements, but behaves as one object.
