@@ -35,7 +35,7 @@ The base of the game will revolve around a simulated 2d world, where all active 
     
 ### Procedural Generation
 
-Each planet will be procedurally generated with terrain, natural structures (mountains, caves, etc.). There will be a different biome for each planet with biome-specific generation. The advanced topic here will involve many algorithms that generate randomness, such as Poisson disk sampling. These algorithms will be fine-tuned and layered for each planet to generate "realistic" looking terrains. The end goal is to have infinitely generating terrain in the left and right directions. Additionally, we will integrate two key algorithms to further enhance the complexity and realism of the environment. Cellular automata will be used to aid in real-time particle physics simulation and interactions between different elements, while also generating small environmental variations within the terrain to add dynamic local features. Poisson disk sampling, Perlin noise along with other noise generation algorithms, will be used to create larger, more natural terrain variations, ensuring smoother transitions and realistic landscape formations across the planetary environments.
+Each planet will be procedurally generated with terrain, natural structures (mountains, caves, etc.). There will be a different biome for each planet with biome-specific generation. The advanced topic here will involve many algorithms that generate randomness, such as poisson disk sampling. These algorithms will be fine-tuned and layered for each planet to generate "realistic" looking terrains. The end goal is to have infinitely generating terrain in the left and right directions. Additionally, we will integrate two key algorithms to further enhance the complexity and realism of the environment. Cellular automata will be used to aid in real-time particle physics simulation and interactions between different elements, while also generating small environmental variations within the terrain to add dynamic local features. Poisson disk sampling, Perlin noise along with other noise generation algorithms, will be used to create larger, more natural terrain variations, ensuring smoother transitions and realistic landscape formations across the planetary environments.
 
 ## Midterm Goals
 
@@ -50,7 +50,7 @@ Each planet will be procedurally generated with terrain, natural structures (mou
 * A base implementation of an element that can be used to create further elements/materials (physics implementation, etc.).
 	* Should have at a minimum two traits that can be implemented, such as falls_with_gravity, is_liquid. 
 * Physics: one base element with basic functionality (one liquid (water) that will flow over solid ground and player will sink in liquid)
-* Procedural generation: some type of noise generator that is scalable for different types of environments.
+* Procedural generation: implement perlin noise generator to create different types of environments.
 
 ## Final Goals
 
@@ -63,7 +63,7 @@ Each planet will be procedurally generated with terrain, natural structures (mou
  	* Enemies will each have a unique HP that can be depleted when hit by particles from the player's particle gun
   	* When enemies come into contact with the player they will deplete the player's HP by a unique number
   	* Beyond losing HP, if a particle has a special property, enemies will react to the particle they are hit with (ex. ice particle slows enemy)
-* 20%: (Procedural) Procedural generation of at least 2 different generators with chunk loading in an infinite direction left and right
+* 20%: (Procedural) Procedural generation of at least 2 different generators (perlin noise and cellular automata) with chunk loading in an infinite direction left and right
 * 20%: (Physics) Working physics elements of water, gas, and solid types.
 	* Liquids will flow across solids and player will sink in liquids
  	* Gas will float into the air
