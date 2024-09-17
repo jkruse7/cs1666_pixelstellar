@@ -60,12 +60,12 @@ Each planet will be procedurally generated with terrain, natural structures (mou
   	* Player will have an HP of 100. If HP is fully depleted, player "dies" and must start the level over
 * 15%: Prototype enemies
 	* 7 unique enemies (one for each world)
- 	* Enemies will each have a unique HP that can be depleated when hit by particles from the player's particle gun
+ 	* Enemies will each have a unique HP that can be depleted when hit by particles from the player's particle gun
   	* When enemies come into contact with the player they will deplete the player's HP by a unique number
   	* Beyond losing HP, if a particle has a special property, enemies will react to the particle they are hit with (ex. ice particle slows enemy)
 * 20%: (Procedural) Procedural generation of at least 2 different generators with chunk loading in an infinite direction left and right
 * 20%: (Physics) Working physics elements of water, gas, and solid types.
-	* Water will flow accross solids
+	* Liquids will flow across solids and player will sink in liquids
  	* Gas will float into the air
   	* Player can walk over solids and solids can be destroyed/shot with particle gun
 * 15%: 7 Worlds
