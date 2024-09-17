@@ -39,7 +39,7 @@ Each planet will be procedurally generated with terrain, natural structures (mou
 
 ## Midterm Goals
 
-* A walkable player character, who is able to walk to the left, right, and jump
+* A walkable player character, who is able to walk to the left, right, and jump, and will fall with gravity.
 * Player will have a weapon that can shoot single particles (pixels) of a single element type
 	* This weapon will deal damage to the enemy when particle touches enemy
 * Scrollable world, in L to R dimensions
@@ -47,9 +47,10 @@ Each planet will be procedurally generated with terrain, natural structures (mou
 	* Enemy should deal damage to the player's HP when it touches the player
  	* Enemy should track towards the player when they are on screen
   	* Enemy should lose HP when hit with particle gun pixels
-* CHANGEME A good framework for creating elements/materials (physics implementation, etc.).
+* A base implementation of an element that can be used to create further elements/materials (physics implementation, etc.).
+	* Should have at a minimum two traits that can be implemented, such as falls_with_gravity, is_liquid. 
 * Physics: one base element with basic functionality (one liquid (water) that will flow over solid ground and player will sink in liquid)
-* Procedural generation: some type of noise generator that is scalable for different types of environments as well as a pack spawning algo for enemies.
+* Procedural generation: some type of noise generator that is scalable for different types of environments.
 
 ## Final Goals
 
