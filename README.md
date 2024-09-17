@@ -64,9 +64,9 @@ Each planet will be procedurally generated with terrain, natural structures (mou
   	* When enemies come into contact with the player they will deplete the player's HP by a unique number
   	* Beyond losing HP, if a particle has a special property, enemies will react to the particle they are hit with (ex. ice particle slows enemy)
 * 20%: (Procedural) Procedural generation of at least 2 different generators (perlin noise and cellular automata) with chunk loading in an infinite direction left and right
-	* perlin noise generator will create terrains for different biomes
- 	* perlin noise generator should ensure smooth biome transitions
- 	* cellular automata generator will create cave-like structures
+	* Perlin noise generator will create terrains for different biomes
+ 	* Perlin noise generator should ensure smooth biome transitions
+ 	* Cellular automata generator will create cave-like structures
 * 20%: (Physics) Working physics elements of water, gas, and solid types.
 	* Liquids will flow across solids and player will sink in liquids
  	* Gas will float into the air
