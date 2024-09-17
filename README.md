@@ -20,6 +20,12 @@ by Pixel Stellars
 Pixelstellar will be a sandbox-esque game with a simulated world, similar to the game Noita. There will be multiple elements in the world which can be manipulated and all have different properties. The gameplay will involve exploring procedurally generated worlds with different biomes. The player will act as an astronaut exploring new planets/worlds they encounter in deep space. There will be 7 planets (one per team member) that the player will travel to.
 Each team member will come up with their own planet (artwork, idea, and at least one unique attribute or property of the enemy that spawns there). Progress through each planet will come from killing all the available enemies on that planet. The goal of the player will be to successfully explore/survive the 7 planets (by successfully killing the enemies they encounter).
 
+Concept Art:  
+![image](https://github.com/user-attachments/assets/dae5540b-d718-4aca-8822-08846bba24b8)  
+![image](https://github.com/user-attachments/assets/7390b9b0-ca0a-47c6-906f-c3bd39a07241)![image](https://github.com/user-attachments/assets/0957baec-028a-4c0e-ba9d-f98304f5cf5e)
+
+
+
 
 ## Advanced Topic Description
 
