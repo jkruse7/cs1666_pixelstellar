@@ -1,8 +1,7 @@
 use bevy::{
-    core::FrameCount,
     diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
-    prelude::*,
-    app::{App, Startup},
+    
+    app::{App, Startup,AppExit},
     asset::AssetServer,
     core_pipeline::core_2d::Camera2dBundle,
     ecs::system::{Commands, Res},
@@ -10,7 +9,8 @@ use bevy::{
     utils::default,
 
     DefaultPlugins,
-    window::{CursorGrabMode, PresentMode, WindowLevel, WindowTheme},
+    window::{CursorGrabMode, PresentMode},
+    prelude::*,
 };
 
 fn main() {
@@ -22,125 +22,108 @@ fn main() {
                     name: Some("bevy.app".into()),
                     resolution: (1280., 720.).into(),
                     present_mode: PresentMode::AutoVsync,
-                    // Tells wasm to resize the window according to the available canvas
-                    fit_canvas_to_parent: true,
-                    // Tells wasm not to override default event handling, like F5, Ctrl+R etc.
-                    prevent_default_event_handling: false,
-                    window_theme: Some(WindowTheme::Dark),
-                    enabled_buttons: bevy::window::EnabledButtons {
-                        maximize: false,
-                        ..Default::default()
-                    },
-                    // This will spawn an invisible window
-                    // The window will be made visible in the make_visible() system after 3 frames.
-                    // This is useful when you want to avoid the white window that shows up before the GPU is ready to render the app.
-                    visible: false,
+                    visible: true,
                     ..default()
                 }),
                 ..default()
             }),
+            //ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(1.0 / 60.0)),
             LogDiagnosticsPlugin::default(),
             FrameTimeDiagnosticsPlugin,
         ))
-        
-        .add_systems(Startup, setup)
+        .init_resource::<Counter>()
+        .init_resource::<ImageAssets>()
+        .add_systems(Update, (countdown, switch_image))
+        .add_systems(Startup, (camera2d, preload_assets))
         .add_systems(
             Update,
-            (
-                change_title,
-                toggle_theme,
-                toggle_cursor,
-                toggle_vsync,
-                toggle_window_controls,
-                cycle_cursor_icon,
-                switch_level,
-                make_visible,
-            ),
+            (change_title, toggle_cursor, cycle_cursor_icon),
         )
         .run();
 }
 
-fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn camera2d(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
-
-    commands.spawn(SpriteBundle {
-        texture: asset_server.load("image1.png"),
-        ..default()
-    });
+    
 }
 
-fn make_visible(mut window: Query<&mut Window>, frames: Res<FrameCount>) {
-    // The delay may be different for your app or system.
-    if frames.0 == 3 {
-        // At this point the gpu is ready to show the app so we can make the window visible.
-        // Alternatively, you could toggle the visibility in Startup.
-        // It will work, but it will have one white frame before it starts rendering
-        window.single_mut().visible = true;
-    }
+#[derive(Resource)]
+pub struct Counter {
+    timer: Timer,
+    current_image: usize,
 }
 
-/// This system toggles the vsync mode when pressing the button V.
-/// You'll see fps increase displayed in the console.
-fn toggle_vsync(input: Res<ButtonInput<KeyCode>>, mut windows: Query<&mut Window>) {
-    if input.just_pressed(KeyCode::KeyV) {
-        let mut window = windows.single_mut();
 
-        window.present_mode = if matches!(window.present_mode, PresentMode::AutoVsync) {
-            PresentMode::AutoNoVsync
-        } else {
-            PresentMode::AutoVsync
-        };
-        info!("PRESENT_MODE: {:?}", window.present_mode);
-    }
-}
-
-/// This system switches the window level when pressing the T button
-/// You'll notice it won't be covered by other windows, or will be covered by all the other
-/// windows depending on the level.
-///
-/// This feature only works on some platforms. Please check the
-/// [documentation](https://docs.rs/bevy/latest/bevy/prelude/struct.Window.html#structfield.window_level)
-/// for more details.
-
-fn switch_level(input: Res<ButtonInput<KeyCode>>, mut windows: Query<&mut Window>) {
-    if input.just_pressed(KeyCode::KeyT) {
-        let mut window = windows.single_mut();
-
-        window.window_level = match window.window_level {
-            WindowLevel::AlwaysOnBottom => WindowLevel::Normal,
-            WindowLevel::Normal => WindowLevel::AlwaysOnTop,
-            WindowLevel::AlwaysOnTop => WindowLevel::AlwaysOnBottom,
-        };
-        info!("WINDOW_LEVEL: {:?}", window.window_level);
-    }
-}
-
-/// This system toggles the window controls when pressing buttons 1, 2 and 3
-///
-/// This feature only works on some platforms. Please check the
-/// [documentation](https://docs.rs/bevy/latest/bevy/prelude/struct.Window.html#structfield.enabled_buttons)
-/// for more details.
-fn toggle_window_controls(input: Res<ButtonInput<KeyCode>>, mut windows: Query<&mut Window>) {
-    let toggle_minimize = input.just_pressed(KeyCode::Digit1);
-    let toggle_maximize = input.just_pressed(KeyCode::Digit2);
-    let toggle_close = input.just_pressed(KeyCode::Digit3);
-
-    if toggle_minimize || toggle_maximize || toggle_close {
-        let mut window = windows.single_mut();
-
-        if toggle_minimize {
-            window.enabled_buttons.minimize = !window.enabled_buttons.minimize;
-        }
-        if toggle_maximize {
-            window.enabled_buttons.maximize = !window.enabled_buttons.maximize;
-        }
-        if toggle_close {
-            window.enabled_buttons.close = !window.enabled_buttons.close;
+impl Counter {
+    pub fn new() -> Self {
+        Self {
+            timer: Timer::from_seconds(3.0, TimerMode::Repeating),
+            current_image: 0,
         }
     }
 }
 
-/// This system will then change the title during execution
+
+impl Default for Counter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(Resource)]
+struct ImageAssets {
+    handles: Vec<Handle<Image>>,
+}
+
+impl FromWorld for ImageAssets {
+    fn from_world(_world: &mut World) -> Self {
+        ImageAssets {
+            handles: Vec::new(),
+        }
+    }
+}
+
+
+fn preload_assets(asset_server: Res<AssetServer>, mut images: ResMut<ImageAssets>) {
+    let names = vec![
+        "image1.png",
+        "image2.png",
+        "image3.png",
+        "image4.png",
+        "image5.png",
+        "image6.png",
+        "image7.png",
+    ];
+
+    for name in names {
+        images.handles.push(asset_server.load(name));
+    }
+}
+
+fn countdown(time: Res<Time>, mut counter: ResMut<Counter>) {
+    counter.timer.tick(time.delta());
+}
+
+fn switch_image(
+    mut commands: Commands, 
+    mut counter: ResMut<Counter>, 
+    images: Res<ImageAssets>, 
+    query: Query<Entity, With<Handle<Image>>>, 
+) {
+    if counter.timer.just_finished() {
+        counter.current_image = (counter.current_image + 1) % images.handles.len();
+
+        for entity in query.iter() {
+            commands.entity(entity).despawn();
+        }
+        commands.spawn(SpriteBundle {
+            texture: images.handles[counter.current_image].clone(),
+            ..default()
+        });
+    }
+}
+
+
 fn change_title(mut windows: Query<&mut Window>, time: Res<Time>) {
     let mut window = windows.single_mut();
     window.title = format!(
@@ -161,21 +144,6 @@ fn toggle_cursor(mut windows: Query<&mut Window>, input: Res<ButtonInput<KeyCode
     }
 }
 
-// This system will toggle the color theme used by the window
-fn toggle_theme(mut windows: Query<&mut Window>, input: Res<ButtonInput<KeyCode>>) {
-    if input.just_pressed(KeyCode::KeyF) {
-        let mut window = windows.single_mut();
-
-        if let Some(current_theme) = window.window_theme {
-            window.window_theme = match current_theme {
-                WindowTheme::Light => Some(WindowTheme::Dark),
-                WindowTheme::Dark => Some(WindowTheme::Light),
-            };
-        }
-    }
-}
-
-/// This system cycles the cursor's icon through a small set of icons when clicking
 fn cycle_cursor_icon(
     mut windows: Query<&mut Window>,
     input: Res<ButtonInput<MouseButton>>,
@@ -203,3 +171,4 @@ fn cycle_cursor_icon(
 
     window.cursor.icon = ICONS[*index];
 }
+
