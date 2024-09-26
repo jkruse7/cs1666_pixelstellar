@@ -14,7 +14,7 @@ use bevy::{
 };
 
 
-pub mod core;
+mod core;
 
 
 fn main() {
@@ -32,8 +32,8 @@ fn main() {
                 ..default()
             }),
             //ScheduleRunnerPlugin::run_loop(Duration::from_secs_f64(1.0 / 60.0)),
-            LogDiagnosticsPlugin::default(),
-            FrameTimeDiagnosticsPlugin,
+            //LogDiagnosticsPlugin::default(),
+            //FrameTimeDiagnosticsPlugin,
         ))
         .init_resource::<Counter>()
         .init_resource::<ImageAssets>()
@@ -89,6 +89,7 @@ impl FromWorld for ImageAssets {
 
 
 fn preload_assets(asset_server: Res<AssetServer>, mut images: ResMut<ImageAssets>) {
+    core::gameplay::player::setup();
     let names = vec![
         "image1.png",
         "image2.png",
