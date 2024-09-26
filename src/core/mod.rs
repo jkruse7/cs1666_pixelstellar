@@ -4,10 +4,10 @@ pub mod engine {
 }
 pub mod gameplay {
     pub mod enemy;
-    pub mod input;
     pub mod player;
 }
 pub mod ui {
+    pub mod background;
     pub mod camera;
     pub mod menu;
 }
