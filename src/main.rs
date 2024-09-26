@@ -13,6 +13,10 @@ use bevy::{
     prelude::*,
 };
 
+
+pub mod core;
+
+
 fn main() {
     App::new()
         .add_plugins((
