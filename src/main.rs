@@ -47,13 +47,13 @@ fn main() {
         .add_systems(Startup, core::ui::camera::initialize)
         .add_systems(Startup, core::ui::background::initialize)
         .add_systems(Startup, core::gameplay::player::initialize)
-        .add_systems(Startup,setup_system)
+        //.add_systems(Startup,setup_system)
         // Systems for updating game state
         .add_systems(Update, core::ui::camera::mouse_coordinates)
         .add_systems(Update, core::gameplay::player::move_player)
+        .add_systems(Update, core::gameplay::player::animate_player.after(core::gameplay::player::move_player))
         .add_systems(Update, core::ui::camera::move_camera.after(core::gameplay::player::move_player))
         .add_systems(Update, button_interaction_system)
-        
         // Run game logic only in InGame state
         // .add_systems(Update, core::gameplay::play_game.run_if(in_state(core::engine::update_state::AppState::InGame)))
         // // Handle pause/resume using ESC key, applicable only in InGame or Paused states
