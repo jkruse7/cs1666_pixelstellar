@@ -24,3 +24,19 @@ pub fn move_camera(
     ct.translation.x = pt.translation.x.clamp(-x_bound, x_bound);
     ct.translation.y = pt.translation.y.clamp(-y_bound, y_bound);
 }
+
+
+pub fn mouse_coordinates(
+    window_query: Query<&Window>,
+    camera_query: Query<(&Camera, &GlobalTransform), With<Camera>>,
+) {
+    let window = window_query.single();
+    let (camera, camera_transform) = camera_query.single();
+    if let Some(world_position) = 
+        window.cursor_position()
+            .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+            .map(|ray| ray.origin.truncate())
+    {
+        info!("World coords: {}/{}", world_position.x, world_position.y);
+    }
+}
