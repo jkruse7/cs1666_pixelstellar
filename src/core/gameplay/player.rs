@@ -5,6 +5,8 @@ use crate::LEVEL_W;
 use crate::WIN_W;
 use crate::WIN_H;
 
+use crate::core::engine::gravity::GravityForce;
+
 const TILE_SIZE: u32 = 100;
 
 const PLAYER_SPEED: f32 = 250.;
@@ -85,15 +87,16 @@ pub fn initialize(
         AnimationFrameCount(player_layout_len),
         Velocity::new(),
         Health::new(),
+        GravityForce::new(),
         Player,
     ));
 }
 pub fn move_player(
     time: Res<Time>,
     input: Res<ButtonInput<KeyCode>>,
-    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite), (With<Player>)>,
+    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut GravityForce), (With<Player>)>,
 ) {
-    let (mut pt, mut pv, mut ps) = player.single_mut();
+    let (mut pt, mut pv, mut ps, mut pg) = player.single_mut();
 
     let mut deltav = Vec2::splat(0.);
 
@@ -105,6 +108,12 @@ pub fn move_player(
     if input.pressed(KeyCode::KeyD) {
         deltav.x += 1.;
         ps.flip_x = false;
+    }
+    if input.pressed(keyCode::KeyW) {
+        //deltav.y = *base force here...*
+    }
+    else {
+        deltav.y += pg.current_force;
     }
 
    /* if input.pressed(KeyCode::KeyW) {
@@ -132,7 +141,7 @@ pub fn move_player(
         && new_pos.x <= LEVEL_W- (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
     {
         pt.translation = new_pos;
-        info!("player coords: {}/{}", pt.translation.x, pt.translation.y);
+        //info!("player coords: {}/{}", pt.translation.x, pt.translation.y);
     }
 
     let new_pos = pt.translation + Vec3::new(0., change.y, 0.);
