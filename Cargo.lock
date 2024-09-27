@@ -296,6 +296,7 @@ version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ace50bade8e6234aa140d9a2f552bbee1db4d353f69b8217bc503490fc1a9f26"
 
+
 [[package]]
 name = "base64"
 version = "0.21.7"
@@ -1736,6 +1737,7 @@ name = "flate2"
 version = "1.0.34"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1b589b4dc103969ad3cf85c950899926ec64300a1a46d76c03a6072957036f0"
+
 dependencies = [
  "crc32fast",
  "miniz_oxide 0.8.0",
