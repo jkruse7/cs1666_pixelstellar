@@ -106,7 +106,7 @@ pub fn move_player(
     }
 
     if input.pressed(KeyCode::KeyD) {
-        deltav.x += 1.; 
+        deltav.x += 1.;
         ps.flip_x = false;
     }
     if input.pressed(KeyCode::KeyW) {
@@ -115,22 +115,63 @@ pub fn move_player(
     else {
         pg.update_force();
         deltav.y -= pg.get_force();
+        if pg.get_force() > 0.98{
+            deltav.y = -0.98;
+        }
     }
 
+   /* if input.pressed(KeyCode::KeyW) {
+        deltav.y += 1.;
+    }
+
+    if input.pressed(KeyCode::KeyS) {
+        deltav.y -= 1.;
+    }*/
 
     let deltat = time.delta_seconds();
     let acc = ACCEL_RATE * deltat;
 
-    /*pv.velocity = if deltav.length() > 0. {
+    pv.velocity = if deltav.length() > 0. {
         (pv.velocity + (deltav.normalize_or_zero() * acc)).clamp_length_max(PLAYER_SPEED)
     } else if pv.velocity.length() > acc {
         pv.velocity + (pv.velocity.normalize_or_zero() * -acc)
     } else {
         Vec2::splat(0.)
-    };*/
-    pv.velocity = (pv.velocity + (deltav * deltat));
+    };
     let change = pv.velocity * deltat;
-    info!("Current force: {}, Current y velocity: {}, velocity: {}\n", pg.get_force(), deltav.y, pv.velocity.y);
+
+    let new_pos = pt.translation + Vec3::new(change.x, 0., 0.);
+    if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
+        && new_pos.x <= LEVEL_W - (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
+    {
+        pt.translation = new_pos;
+        //info!("player coords: {}/{}", pt.translation.x, pt.translation.y);
+    }
+
+    let new_pos = pt.translation + Vec3::new(0., change.y, 0.);
+    if new_pos.y >= -(LEVEL_H / 2.) + (TILE_SIZE as f32) / 2.
+        && new_pos.y <= LEVEL_H / 2. - (TILE_SIZE as f32) / 2.
+    {
+        pt.translation = new_pos;
+    }
+}
+    /* PREVIOUS CODE IS HERE
+    let deltat = time.delta_seconds();
+    let acc = ACCEL_RATE * deltat;
+
+    pv.velocity = if deltav.length() > 0. {
+        (pv.velocity + (deltav.normalize_or_zero() * acc)).clamp_length_max(PLAYER_SPEED)
+    } else if pv.velocity.length() > acc {
+        pv.velocity + (pv.velocity.normalize_or_zero() * -acc)
+    } else {
+        Vec2::splat(0.)
+    };
+   // pv.velocity = (pv.velocity + (deltav * deltat));
+    let change = pv.velocity * deltat;
+    if pv.velocity.x > 0. {
+        info!("Current force: {}, Current y velocity: {}, velocity: {}\n", pg.get_force(), deltav.y, pv.velocity.x);
+    }
+    //info!("Current force: {}, Current y velocity: {}, velocity: {}\n", pg.get_force(), deltav.y, pv.velocity.y);
 
 
     // Check if player is within the X bounds
@@ -139,7 +180,7 @@ pub fn move_player(
         && new_pos.x <= -(LEVEL_W / 2.) + (TILE_SIZE as f32) / 2.
     {
         pt.translation = new_pos;
-        //info!("player coords: {}/{}", pt.translation.x, pt.translation.y);
+        info!("player coords: {}/{}", pt.translation.x, pt.translation.y);
     }
 
     // Check if player is within the Y bounds
@@ -149,7 +190,7 @@ pub fn move_player(
     {
         pt.translation = new_pos;
     }
-}
+}*/
 
 pub fn animate_player(
     time: Res<Time>,
@@ -164,7 +205,9 @@ pub fn animate_player(
     >,
 ) {
     let (v, mut texture_atlas, mut timer, frame_count) = player.single_mut();
-    if v.velocity.cmpne(Vec2::ZERO).any() {
+    let x_vel = Vec2::new(v.velocity.x, 0.);
+    info!(x_vel.x);
+    if x_vel.cmpne(Vec2::ZERO).any() {
         timer.tick(time.delta());
 
         if timer.just_finished() {
