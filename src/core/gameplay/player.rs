@@ -106,47 +106,46 @@ pub fn move_player(
     }
 
     if input.pressed(KeyCode::KeyD) {
-        deltav.x += 1.;
+        deltav.x += 1.; 
         ps.flip_x = false;
     }
-    if input.pressed(keyCode::KeyW) {
+    if input.pressed(KeyCode::KeyW) {
         //deltav.y = *base force here...*
     }
     else {
-        deltav.y += pg.current_force;
+        pg.update_force();
+        deltav.y -= pg.get_force();
     }
 
-   /* if input.pressed(KeyCode::KeyW) {
-        deltav.y += 1.;
-    }
-
-    if input.pressed(KeyCode::KeyS) {
-        deltav.y -= 1.;
-    }*/
 
     let deltat = time.delta_seconds();
     let acc = ACCEL_RATE * deltat;
 
-    pv.velocity = if deltav.length() > 0. {
+    /*pv.velocity = if deltav.length() > 0. {
         (pv.velocity + (deltav.normalize_or_zero() * acc)).clamp_length_max(PLAYER_SPEED)
     } else if pv.velocity.length() > acc {
         pv.velocity + (pv.velocity.normalize_or_zero() * -acc)
     } else {
         Vec2::splat(0.)
-    };
+    };*/
+    pv.velocity = (pv.velocity + (deltav * deltat));
     let change = pv.velocity * deltat;
+    info!("Current force: {}, Current y velocity: {}, velocity: {}\n", pg.get_force(), deltav.y, pv.velocity.y);
 
+
+    // Check if player is within the X bounds
     let new_pos = pt.translation + Vec3::new(change.x, 0., 0.);
-    if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
-        && new_pos.x <= LEVEL_W- (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
+    if new_pos.x >= -(LEVEL_W / 2.) + (TILE_SIZE as f32) / 2.
+        && new_pos.x <= -(LEVEL_W / 2.) + (TILE_SIZE as f32) / 2.
     {
         pt.translation = new_pos;
         //info!("player coords: {}/{}", pt.translation.x, pt.translation.y);
     }
 
+    // Check if player is within the Y bounds
     let new_pos = pt.translation + Vec3::new(0., change.y, 0.);
-    if new_pos.y >= -(WIN_H / 2.) + (TILE_SIZE as f32) / 2.
-        && new_pos.y <= WIN_H / 2. - (TILE_SIZE as f32) / 2.
+    if new_pos.y >= -(LEVEL_H / 2.) + (TILE_SIZE as f32) / 2.
+        && new_pos.y <= LEVEL_H / 2. - (TILE_SIZE as f32) / 2.
     {
         pt.translation = new_pos;
     }
