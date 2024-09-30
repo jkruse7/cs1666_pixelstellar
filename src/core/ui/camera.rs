@@ -8,6 +8,10 @@ use crate::WIN_W;
 use crate::core::gameplay::player::Player;
 
 
+const THRESHOLD_X: f32 = 160.;
+const THRESHOLD_Y: f32 = 90.;
+
+
 pub fn initialize(mut commands: Commands){
     commands.spawn(Camera2dBundle::default());
 }
@@ -17,12 +21,17 @@ pub fn move_camera(
     mut camera: Query<&mut Transform, (Without<Player>, With<Camera>)>,
 ) {
     let pt = player.single();
-    let mut ct = camera.single_mut();
 
     let x_bound = LEVEL_W / 2. - WIN_W / 2.;
     let y_bound = LEVEL_H / 2. - WIN_H / 2.;
-    ct.translation.x = pt.translation.x.clamp(-x_bound, x_bound);
-    ct.translation.y = pt.translation.y.clamp(-y_bound, y_bound);
+
+    let mut ct = camera.single_mut();
+    let x_diff = pt.translation - ct.translation;
+    info!("Player: {}, Camera: {}, ({})", pt.translation, ct.translation, x_diff);
+    if x_diff.x > THRESHOLD_X{ ct.translation.x = pt.translation.x.clamp(-x_bound, x_bound) - THRESHOLD_X; }
+    if x_diff.x < -THRESHOLD_X { ct.translation.x = pt.translation.x.clamp(-x_bound, x_bound) + THRESHOLD_X; }
+    if x_diff.y > THRESHOLD_Y{ ct.translation.y = pt.translation.y.clamp(-y_bound, y_bound) - THRESHOLD_Y; }
+    if x_diff.y < -THRESHOLD_Y { ct.translation.y = pt.translation.y.clamp(-y_bound, y_bound) + THRESHOLD_Y; }
 }
 
 

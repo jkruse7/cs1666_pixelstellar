@@ -4,10 +4,12 @@ pub mod engine {
     pub mod particles;
     pub mod physics;
     pub mod gravity;
+    pub mod collision;
 }
 pub mod gameplay {
     pub mod enemy;
     pub mod player;
+    pub mod floor;
 }
 pub mod ui {
     pub mod button;
