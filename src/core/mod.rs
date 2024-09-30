@@ -3,6 +3,7 @@ pub mod engine {
     pub mod update_state;
     pub mod particles;
     pub mod physics;
+    pub mod collision;
 }
 pub mod gameplay {
     pub mod enemy;

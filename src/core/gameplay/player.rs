@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::AABB;
+use crate::core::engine::collision::AABB;
 use crate::LEVEL_H;
 use crate::LEVEL_W;
 use crate::WIN_W;
