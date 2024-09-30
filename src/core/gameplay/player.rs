@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 
+use crate::AABB;
 use crate::LEVEL_H;
 use crate::LEVEL_W;
 use crate::WIN_W;
@@ -85,16 +86,16 @@ pub fn initialize(
         AnimationFrameCount(player_layout_len),
         Velocity::new(),
         Health::new(),
+        AABB::new(Vec2::new(0., -(WIN_H / 2.) + ((TILE_SIZE as f32) * 1.5)), Vec2::new(TILE_SIZE as f32, TILE_SIZE as f32)),
         Player,
     ));
 }
 pub fn move_player(
     time: Res<Time>,
     input: Res<ButtonInput<KeyCode>>,
-    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite), (With<Player>)>,
+    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut AABB), (With<Player>)>,
 ) {
-    let (mut pt, mut pv, mut ps) = player.single_mut();
-
+    let (mut pt, mut pv, mut ps, mut aabb) = player.single_mut();
     let mut deltav = Vec2::splat(0.);
 
     if input.pressed(KeyCode::KeyA) {
@@ -137,10 +138,12 @@ pub fn move_player(
 
     let new_pos = pt.translation + Vec3::new(0., change.y, 0.);
     if new_pos.y >= -(WIN_H / 2.) + (TILE_SIZE as f32) / 2.
-        && new_pos.y <= WIN_H / 2. - (TILE_SIZE as f32) / 2.
+        && new_pos.y <= WIN_H - (TILE_SIZE as f32) / 2.
     {
         pt.translation = new_pos;
     }
+    //assumes the player is a square and pt.translation is the lower-left corner
+    *aabb = AABB::new(Vec2::new(pt.translation.x , pt.translation.y), Vec2::new(pt.translation.x + TILE_SIZE as f32, pt.translation.y + TILE_SIZE as f32));
 }
 
 pub fn animate_player(

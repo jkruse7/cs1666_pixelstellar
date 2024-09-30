@@ -1,3 +1,4 @@
+use bevy::ecs::query;
 use bevy::{prelude::*, window::PresentMode};
 
 mod core;
@@ -55,6 +56,7 @@ fn main() {
         .add_systems(Update, core::gameplay::player::animate_player.after(core::gameplay::player::move_player))
         .add_systems(Update, core::ui::camera::move_camera.after(core::gameplay::player::move_player))
         .add_systems(Update, button_interaction_system)
+        .add_systems(Update, collision_system)
         // Run game logic only in InGame state
         // .add_systems(Update, core::gameplay::play_game.run_if(in_state(core::engine::update_state::AppState::InGame)))
         // // Handle pause/resume using ESC key, applicable only in InGame or Paused states
@@ -80,5 +82,49 @@ fn setup_system(mut commands: Commands, asset_server: Res<AssetServer>) {
         None,              
     );
 }
+
+#[derive(Component)]
+#[derive(Debug)]
+pub struct AABB { //Axis-Aligned Bounding Box
+    min: Vec2,  //The minimum point of the bounding box (lower-left corner)
+    max: Vec2,  //The maximum point of the bounding box (upper-right corner)
+}
+
+impl AABB { //TODO: Figure out what happens when someone goes past the boundaries
+    
+    pub fn new(min: Vec2, max: Vec2) -> Self {
+        Self { min, max }
+    }
+
+    fn collides_with(&self, other: &AABB) -> bool {     //Function to check if two AABBs are colliding
+        //makes sure they aren't the same object
+        if std::ptr::eq(self, other) {
+            return false;
+        }
+        //info!("Collision between types {:?} and {:?}", self.type_id(), other.type_id());
+        
+        self.min.x < other.max.x && self.max.x > other.min.x &&
+        self.min.y < other.max.y && self.max.y > other.min.y
+    }
+
+}
+
+fn collision_system(
+    mut commands: Commands,
+    player_query: Query<(Entity, &AABB, &core::gameplay::player::Player)>,
+    aabb_query: Query<(Entity, &AABB)>,
+) {
+    for (player_entity, player_aabb, _) in player_query.iter() {
+        for (aabb_entity, aabb_entity_aabb) in aabb_query.iter() {
+            if player_aabb.collides_with(aabb_entity_aabb) {
+                //info!("Collision detected between player and floor");
+                info!("Collision detected between player and floor at {:?} and {:?}", player_aabb, aabb_entity_aabb);
+                //commands.entity(player_entity).despawn();
+            }
+        }
+    }
+}
+
+
 
 

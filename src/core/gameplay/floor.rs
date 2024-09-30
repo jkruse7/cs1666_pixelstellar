@@ -3,6 +3,7 @@ use std::convert::From;
 use crate::core::world::planet1;
 
 
+use crate::AABB;
 use crate::LEVEL_H;
 use crate::LEVEL_W;
 use crate::WIN_W;
@@ -29,18 +30,20 @@ pub fn initialize(
 
 
     let mut i = 0;
-    let mut t = Vec3::new(
+    let mut t = Vec2::new(
         -WIN_W / 2. + (FLOOR_TILE_SIZE as f32) / 2.,
         -WIN_H / 2. + (FLOOR_TILE_SIZE as f32) / 2.,
-        0.,
     );
     while i * FLOOR_TILE_SIZE < (LEVEL_LEN as u32) {
         info!("Spawning brick at {:?}", t);
+
+        let floor_aabb = AABB::new(t, t+Vec2::new(FLOOR_TILE_SIZE as f32, FLOOR_TILE_SIZE as f32));
+        //info! ("Floor AABB: {:?}", floor_aabb);
         commands.spawn((
             SpriteBundle {
                 texture: floor_sheet_handle.clone(),
                 transform: Transform {
-                    translation: t,
+                    translation: t.extend(0.0),
                     ..default()
                 },
                 ..default()
@@ -50,10 +53,43 @@ pub fn initialize(
                 index: (i as usize) % floor_layout_len,
             },
             Floor,
+            floor_aabb,
         ));
 
         i += 1;
-        t += Vec3::new((FLOOR_TILE_SIZE) as f32, 0., 0.);
+        t += Vec2::new((FLOOR_TILE_SIZE) as f32, 0.);
     }
+    //ceiling
+    i=0;
+    t = Vec2::new(
+        -WIN_W / 2. + (5.0 * FLOOR_TILE_SIZE as f32) / 2.,
+        WIN_H / 2. + (FLOOR_TILE_SIZE as f32) / 2.,
+    );
+    while (5+i) * FLOOR_TILE_SIZE < (LEVEL_LEN as u32) {
+        info!("Spawning brick at {:?}", t);
+
+        let floor_aabb = AABB::new(t, t+Vec2::new(FLOOR_TILE_SIZE as f32, FLOOR_TILE_SIZE as f32));
+        //info! ("Floor AABB: {:?}", floor_aabb);
+        commands.spawn((
+            SpriteBundle {
+                texture: floor_sheet_handle.clone(),
+                transform: Transform {
+                    translation: t.extend(0.0),
+                    ..default()
+                },
+                ..default()
+            },
+            TextureAtlas {
+                layout: floor_layout_handle.clone(),
+                index: (i as usize) % floor_layout_len,
+            },
+            Floor,
+            floor_aabb,
+        ));
+
+        i += 1;
+        t += Vec2::new((FLOOR_TILE_SIZE) as f32, 0.);
+    }
+
 }
 
