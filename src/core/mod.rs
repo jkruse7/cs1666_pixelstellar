@@ -7,6 +7,7 @@ pub mod engine {
 pub mod gameplay {
     pub mod enemy;
     pub mod player;
+    pub mod floor;
 }
 pub mod ui {
     pub mod button;

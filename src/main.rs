@@ -47,6 +47,7 @@ fn main() {
         .add_systems(Startup, core::ui::camera::initialize)
         .add_systems(Startup, core::ui::background::initialize)
         .add_systems(Startup, core::gameplay::player::initialize)
+        .add_systems(Startup, core::gameplay::floor::initialize)
         //.add_systems(Startup,setup_system)
         // Systems for updating game state
         .add_systems(Update, core::ui::camera::mouse_coordinates)

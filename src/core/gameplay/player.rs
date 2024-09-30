@@ -107,13 +107,13 @@ pub fn move_player(
         ps.flip_x = false;
     }
 
-   /* if input.pressed(KeyCode::KeyW) {
+   if input.pressed(KeyCode::KeyW) {
         deltav.y += 1.;
     }
 
     if input.pressed(KeyCode::KeyS) {
         deltav.y -= 1.;
-    }*/
+    }
 
     let deltat = time.delta_seconds();
     let acc = ACCEL_RATE * deltat;
@@ -132,7 +132,7 @@ pub fn move_player(
         && new_pos.x <= LEVEL_W- (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
     {
         pt.translation = new_pos;
-        info!("player coords: {}/{}", pt.translation.x, pt.translation.y);
+        //info!("player coords: {}/{}", pt.translation.x, pt.translation.y);
     }
 
     let new_pos = pt.translation + Vec3::new(0., change.y, 0.);
