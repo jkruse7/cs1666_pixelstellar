@@ -5,12 +5,13 @@ use crate::LEVEL_W;
 use crate::WIN_W;
 use crate::WIN_H;
 
-use crate::core::engine::gravity::GravityForce;
+use crate::core::engine::gravity::Gravity;
 
 const TILE_SIZE: u32 = 100;
 
 const PLAYER_SPEED: f32 = 250.;
-const ACCEL_RATE: f32 = 5000.;
+const ACCEL_RATE_X: f32 = 5000.;
+const ACCEL_RATE_Y: f32 = 10800.;
 
 const ANIM_TIME: f32 = 0.2;
 
@@ -87,73 +88,52 @@ pub fn initialize(
         AnimationFrameCount(player_layout_len),
         Velocity::new(),
         Health::new(),
-        GravityForce::new(),
+        Gravity::new(),
         Player,
     ));
 }
+
 pub fn move_player(
     time: Res<Time>,
     input: Res<ButtonInput<KeyCode>>,
-    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut GravityForce), (With<Player>)>,
+    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite), (With<Player>)>,
 ) {
-    let (mut pt, mut pv, mut ps, mut pg) = player.single_mut();
+    let (mut pt, mut pv, mut ps) = player.single_mut();
 
-    let mut deltav = Vec2::splat(0.);
+    let mut deltav_x = 0.;
 
     if input.pressed(KeyCode::KeyA) {
-        deltav.x -= 1.;
+        deltav_x -= 1.;
         ps.flip_x = true;
     }
 
     if input.pressed(KeyCode::KeyD) {
-        deltav.x += 1.;
+        deltav_x += 1.;
         ps.flip_x = false;
     }
-    if input.pressed(KeyCode::KeyW) {
-        //deltav.y = *base force here...*
-    }
-    else {
-        pg.update_force();
-        deltav.y -= pg.get_force();
-        if pg.get_force() > 0.98{
-            deltav.y = -0.98;
-        }
-    }
-
-   /* if input.pressed(KeyCode::KeyW) {
-        deltav.y += 1.;
-    }
-
-    if input.pressed(KeyCode::KeyS) {
-        deltav.y -= 1.;
-    }*/
-
+    
     let deltat = time.delta_seconds();
-    let acc = ACCEL_RATE * deltat;
+    let acc_x = ACCEL_RATE_X * deltat;
 
-    pv.velocity = if deltav.length() > 0. {
-        (pv.velocity + (deltav.normalize_or_zero() * acc)).clamp_length_max(PLAYER_SPEED)
-    } else if pv.velocity.length() > acc {
-        pv.velocity + (pv.velocity.normalize_or_zero() * -acc)
+    if deltav_x != 0. {
+        if pv.velocity.y >= 0. {
+            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED, PLAYER_SPEED);
+        }
+        else {
+            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED * 0.3, PLAYER_SPEED * 0.3);
+        }
+    } else if pv.velocity.x.abs() > acc_x {
+        pv.velocity.x -= pv.velocity.x.signum() * acc_x;
     } else {
-        Vec2::splat(0.)
-    };
+        pv.velocity.x = 0.;
+    }
+
     let change = pv.velocity * deltat;
 
-    let new_pos = pt.translation + Vec3::new(change.x, 0., 0.);
-    if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
-        && new_pos.x <= LEVEL_W - (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
-    {
-        pt.translation = new_pos;
-        //info!("player coords: {}/{}", pt.translation.x, pt.translation.y);
-    }
-
-    let new_pos = pt.translation + Vec3::new(0., change.y, 0.);
-    if new_pos.y >= -(LEVEL_H / 2.) + (TILE_SIZE as f32) / 2.
-        && new_pos.y <= LEVEL_H / 2. - (TILE_SIZE as f32) / 2.
-    {
-        pt.translation = new_pos;
-    }
+    pt.translation.x = (pt.translation.x + change.x).clamp(
+        -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.,
+        WIN_W / 2. - (TILE_SIZE as f32) / 2.,
+    );
 }
     /* PREVIOUS CODE IS HERE
     let deltat = time.delta_seconds();
@@ -191,6 +171,42 @@ pub fn move_player(
         pt.translation = new_pos;
     }
 }*/
+
+pub fn flight(
+    time: Res<Time>, 
+    input: Res<ButtonInput<KeyCode>>, 
+    mut player: Query<(&mut Transform, &mut Velocity, &mut Gravity), With<Player>>, 
+) {
+    let (mut pt, mut pv, mut pg) = player.single_mut();
+
+    let mut deltav_y = 0.;
+
+    if input.pressed(KeyCode::KeyW) {
+        deltav_y += 1.;
+    }
+
+    let deltat = time.delta_seconds();
+    let acc_y = ACCEL_RATE_Y * deltat;
+
+    if deltav_y > 0. {
+        pv.velocity.y = (pv.velocity.y + (deltav_y * acc_y)).clamp(-PLAYER_SPEED, PLAYER_SPEED);
+    }
+    // Add gravity
+    pg.update_G();
+    pv.velocity.y = pv.velocity.y - pg.get_G() * deltat;
+
+    let change = pv.velocity * deltat;
+
+    pt.translation.y = (pt.translation.y + change.y).clamp(
+        -(WIN_H / 2.) + (TILE_SIZE as f32) / 2.,
+        WIN_H / 2. - (TILE_SIZE as f32) / 2.,
+    );
+
+    // Velocity is zero when player hits the ground
+    if pt.translation.y == -(WIN_H / 2.) + (TILE_SIZE as f32) / 2. {
+        pv.velocity.y = 0.;
+    }
+}
 
 pub fn animate_player(
     time: Res<Time>,

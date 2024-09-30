@@ -51,6 +51,7 @@ fn main() {
         // Systems for updating game state
         .add_systems(Update, core::ui::camera::mouse_coordinates)
         .add_systems(Update, core::gameplay::player::move_player)
+        .add_systems(Update, core::gameplay::player::flight)
         .add_systems(Update, core::gameplay::player::animate_player.after(core::gameplay::player::move_player))
         .add_systems(Update, core::ui::camera::move_camera.after(core::gameplay::player::move_player))
         .add_systems(Update, button_interaction_system)
