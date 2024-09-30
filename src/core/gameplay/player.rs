@@ -131,8 +131,8 @@ pub fn move_player(
     let change = pv.velocity * deltat;
 
     pt.translation.x = (pt.translation.x + change.x).clamp(
-        -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.,
-        WIN_W / 2. - (TILE_SIZE as f32) / 2.,
+        -(LEVEL_W / 2.) + (TILE_SIZE as f32) / 2.,
+        LEVEL_W / 2. - (TILE_SIZE as f32) / 2.,
     );
 }
     /* PREVIOUS CODE IS HERE
@@ -193,17 +193,17 @@ pub fn flight(
     }
     // Add gravity
     pg.update_G();
-    pv.velocity.y = pv.velocity.y - pg.get_G() * deltat;
+    pv.velocity.y = (pv.velocity.y - pg.get_G() * deltat).clamp(-PLAYER_SPEED * 3., PLAYER_SPEED);
 
     let change = pv.velocity * deltat;
 
     pt.translation.y = (pt.translation.y + change.y).clamp(
-        -(WIN_H / 2.) + (TILE_SIZE as f32) / 2.,
-        WIN_H / 2. - (TILE_SIZE as f32) / 2.,
+        -(LEVEL_H / 2.) + (TILE_SIZE as f32) / 2.,
+        LEVEL_H / 2. - (TILE_SIZE as f32) / 2.,
     );
 
     // Velocity is zero when player hits the ground
-    if pt.translation.y == -(WIN_H / 2.) + (TILE_SIZE as f32) / 2. {
+    if pt.translation.y == -(LEVEL_H / 2.) + (TILE_SIZE as f32) / 2. {
         pv.velocity.y = 0.;
     }
 }
