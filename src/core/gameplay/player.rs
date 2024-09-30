@@ -98,8 +98,9 @@ pub fn initialize(
 pub fn move_player(
     time: Res<Time>,
     input: Res<ButtonInput<KeyCode>>,
-    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut AABB), (With<Player>)>,
+    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Gravity, &mut AABB), (With<Player>)>,
 ) {
+    let (mut pt, mut pv, mut ps, pg, aabb) = player.single_mut();
     let mut deltav_x = 0.;
 
     if input.pressed(KeyCode::KeyA) {
@@ -139,9 +140,9 @@ pub fn move_player(
 pub fn flight(
     time: Res<Time>, 
     input: Res<ButtonInput<KeyCode>>, 
-    mut player: Query<(&mut Transform, &mut Velocity, &mut Gravity), With<Player>>, 
+    mut player: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut AABB), With<Player>>, 
 ) {
-    let (mut pt, mut pv, mut pg) = player.single_mut();
+    let (mut pt, mut pv, mut pg, mut aabb) = player.single_mut();
 
     let mut deltav_y = 0.;
 
