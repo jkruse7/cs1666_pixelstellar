@@ -10,11 +10,14 @@ use crate::core::engine::gravity::Gravity;
 
 const TILE_SIZE: u32 = 100;
 
+const MAX_FLIGHT_SPEED: f32 = 500.;
 const PLAYER_SPEED: f32 = 250.;
 const ACCEL_RATE_X: f32 = 5000.;
 const ACCEL_RATE_Y: f32 = 10800.;
 
 const ANIM_TIME: f32 = 0.2;
+
+
 
 #[derive(Component)]
 pub struct Player;
@@ -131,6 +134,7 @@ pub fn move_player(
 
     let change = pv.velocity * deltat;
 
+    // Bound player to within the level width
     pt.translation.x = (pt.translation.x + change.x).clamp(
         -(LEVEL_W / 2.) + (TILE_SIZE as f32) / 2.,
         LEVEL_W / 2. - (TILE_SIZE as f32) / 2.,
@@ -144,31 +148,27 @@ pub fn flight(
 ) {
     let (mut pt, mut pv, mut pg, mut aabb) = player.single_mut();
 
-    let mut deltav_y = 0.;
-
-    if input.pressed(KeyCode::KeyW) {
-        deltav_y += 1.;
-    }
-
     let deltat = time.delta_seconds();
     let acc_y = ACCEL_RATE_Y * deltat;
 
-    if deltav_y > 0. {
-        pv.velocity.y = (pv.velocity.y + (deltav_y * acc_y)).clamp(-PLAYER_SPEED, PLAYER_SPEED);
+    if input.pressed(KeyCode::Space) {
+        pg.reset_G();
+        pv.velocity.y = f32::min(MAX_FLIGHT_SPEED, pv.velocity.y + (1. * acc_y))
+    }else {
+        pg.update_G(&pv.velocity.y, &deltat);
+        pv.velocity.y = pg.get_G();
     }
-    // Add gravity
-    pg.update_G();
-    pv.velocity.y = (pv.velocity.y - pg.get_G() * deltat).clamp(-PLAYER_SPEED * 3., PLAYER_SPEED);
 
     let change = pv.velocity * deltat;
 
+    //Bound player to within level height
     pt.translation.y = (pt.translation.y + change.y).clamp(
-        -(LEVEL_H / 2.) + (TILE_SIZE as f32) / 2.,
+        -(LEVEL_H / 2.) + (TILE_SIZE as f32)*1.2,
         LEVEL_H / 2. - (TILE_SIZE as f32) / 2.,
     );
 
     // Velocity is zero when player hits the ground
-    if pt.translation.y == -(LEVEL_H / 2.) + (TILE_SIZE as f32) / 2. {
+    if pt.translation.y <= -(LEVEL_H / 2.) + (TILE_SIZE as f32){
         pv.velocity.y = 0.;
     }
     //assumes the player is a square and pt.translation is the lower-left corner
@@ -189,7 +189,7 @@ pub fn animate_player(
 ) {
     let (v, mut texture_atlas, mut timer, frame_count) = player.single_mut();
     let x_vel = Vec2::new(v.velocity.x, 0.);
-    info!(x_vel.x);
+    //info!(x_vel.x);
     if x_vel.cmpne(Vec2::ZERO).any() {
         timer.tick(time.delta());
 
