@@ -13,11 +13,8 @@ enum MATTER_STATE {
 #[derive(Component)]
 pub struct Element {
     has_gravity: bool,
-    state: MATTER_STATE
+    state: MATTER_STATE,
     collision: bool,
     iterate_for_collision: bool,
     
-
-
-
 }
