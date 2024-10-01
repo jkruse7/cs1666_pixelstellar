@@ -1,11 +1,13 @@
 use bevy::prelude::*;
 
+use crate::core::engine::hitbox;
+use crate::core::engine::hitbox::Hitbox;
 use crate::LEVEL_H;
 use crate::LEVEL_W;
 use crate::WIN_W;
 use crate::WIN_H;
 
-const TILE_SIZE: u32 = 100;
+const TILE_SIZE: u32 = 80;
 
 const PLAYER_SPEED: f32 = 250.;
 const ACCEL_RATE: f32 = 5000.;
@@ -85,15 +87,18 @@ pub fn initialize(
         AnimationFrameCount(player_layout_len),
         Velocity::new(),
         Health::new(),
+        //assumes the player is a square
+        Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, Vec2::new(0., -210.)),
         Player,
     ));
 }
 pub fn move_player(
     time: Res<Time>,
     input: Res<ButtonInput<KeyCode>>,
-    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite), (With<Player>)>,
+    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox), (With<Player>)>,
+    mut hitboxes: Query<(&Hitbox), Without<Player>>,
 ) {
-    let (mut pt, mut pv, mut ps) = player.single_mut();
+    let (mut pt, mut pv, mut ps, mut hb) = player.single_mut();
 
     let mut deltav = Vec2::splat(0.);
 
@@ -128,18 +133,24 @@ pub fn move_player(
     let change = pv.velocity * deltat;
 
     let new_pos = pt.translation + Vec3::new(change.x, 0., 0.);
+    let new_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, new_pos.xy());
     if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
         && new_pos.x <= LEVEL_W- (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
+        && !new_hb.all_player_collisions(&hitboxes)
     {
         pt.translation = new_pos;
-        //info!("player coords: {}/{}", pt.translation.x, pt.translation.y);
+        hb.offset = new_pos.xy();
+        info!("player coords: {}/{}", pt.translation.x, pt.translation.y);
     }
 
     let new_pos = pt.translation + Vec3::new(0., change.y, 0.);
+    let new_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, new_pos.xy());
     if new_pos.y >= -(WIN_H / 2.) + (TILE_SIZE as f32) / 2.
         && new_pos.y <= WIN_H / 2. - (TILE_SIZE as f32) / 2.
+        && !new_hb.all_player_collisions(&hitboxes)
     {
         pt.translation = new_pos;
+        hb.offset = new_pos.xy();
     }
 }
 

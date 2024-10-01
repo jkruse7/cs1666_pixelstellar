@@ -1,3 +1,4 @@
+use bevy::ecs::query;
 use bevy::{prelude::*, window::PresentMode};
 
 mod core;
@@ -80,5 +81,3 @@ fn setup_system(mut commands: Commands, asset_server: Res<AssetServer>) {
         None,              
     );
 }
-
-

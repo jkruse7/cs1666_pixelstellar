@@ -36,6 +36,8 @@ pub fn initialize(
     );
     while i * FLOOR_TILE_SIZE < (LEVEL_LEN as u32) {
         info!("Spawning brick at {:?}", t);
+
+        let floor_hitbox = crate::core::engine::hitbox::Hitbox::new(FLOOR_TILE_SIZE as f32, FLOOR_TILE_SIZE as f32, Vec2::new(t.x, t.y));
         commands.spawn((
             SpriteBundle {
                 texture: floor_sheet_handle.clone(),
@@ -50,6 +52,7 @@ pub fn initialize(
                 index: (i as usize) % floor_layout_len,
             },
             Floor,
+            floor_hitbox,
         ));
 
         i += 1;
