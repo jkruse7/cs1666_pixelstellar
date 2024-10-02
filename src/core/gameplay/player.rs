@@ -5,11 +5,14 @@ use crate::LEVEL_H;
 use crate::LEVEL_W;
 use crate::WIN_W;
 use crate::WIN_H;
+use crate::core::engine::gravity::Gravity;
 
 const TILE_SIZE: u32 = 100;
 
+const MAX_FLIGHT_SPEED: f32 = 250.;
 const PLAYER_SPEED: f32 = 250.;
-const ACCEL_RATE: f32 = 5000.;
+const ACCEL_RATE_X: f32 = 5000.;
+const ACCEL_RATE_Y: f32 = 10800.;
 
 const ANIM_TIME: f32 = 0.2;
 
@@ -86,6 +89,7 @@ pub fn initialize(
         AnimationFrameCount(player_layout_len),
         Velocity::new(),
         Health::new(),
+        Gravity::new(),
         Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, Vec2::new(0., -210.)),
         Player,
     ));
@@ -97,19 +101,88 @@ pub fn move_player(
     mut hitboxes: Query<(&Hitbox), Without<Player>>,
 ) {
     let (mut pt, mut pv, mut ps, mut hb) = player.single_mut();
-    let mut deltav = Vec2::splat(0.);
+    let mut deltav_x = 0.;
 
     if input.pressed(KeyCode::KeyA) {
-        deltav.x -= 1.;
+        deltav_x -= 1.;
         ps.flip_x = true;
     }
 
     if input.pressed(KeyCode::KeyD) {
-        deltav.x += 1.;
+        deltav_x += 1.;
         ps.flip_x = false;
     }
+    let deltat = time.delta_seconds();
+    let acc_x = ACCEL_RATE_X * deltat;
 
-   if input.pressed(KeyCode::KeyW) {
+    if deltav_x != 0. {
+        if pv.velocity.y >= 0. {
+            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED, PLAYER_SPEED);
+        }
+        else {
+            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED * 0.3, PLAYER_SPEED * 0.3);
+        }
+    } else if pv.velocity.x.abs() > acc_x {
+        pv.velocity.x -= pv.velocity.x.signum() * acc_x;
+    } else {
+        pv.velocity.x = 0.;
+    }
+
+    let change = pv.velocity * deltat;
+    let new_pos = pt.translation + change.extend(0.);
+    let new_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, new_pos.xy());
+
+    if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
+        && new_pos.x <= LEVEL_W - (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
+        && !new_hb.all_player_collisions(&hitboxes)
+    {
+        pt.translation = new_pos;
+        *hb = new_hb;
+    }
+}
+
+pub fn flight(
+    time: Res<Time>, 
+    input: Res<ButtonInput<KeyCode>>, 
+    mut player: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox), With<Player>>, 
+    mut hitboxes: Query<(&Hitbox), Without<Player>>
+) {
+    let (mut pt, mut pv, mut pg, mut hb) = player.single_mut();
+
+    let deltat = time.delta_seconds();
+    let acc_y = ACCEL_RATE_Y * deltat;
+
+    if input.pressed(KeyCode::Space) {
+        pg.reset_G();
+        pv.velocity.y = f32::min(MAX_FLIGHT_SPEED, pv.velocity.y + (1. * acc_y))
+    }else {
+        pg.update_G(&pv.velocity.y, &deltat);
+        pv.velocity.y = pg.get_G();
+    }
+
+    let change = pv.velocity * deltat;
+    let new_pos = pt.translation + change.extend(0.);
+    let new_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, new_pos.xy());
+    //Bound player to within level height
+
+    if new_pos.y >= -(WIN_H / 2.) + (TILE_SIZE as f32) / 2.
+        && new_pos.y <= WIN_H - (TILE_SIZE as f32) / 2.
+        && !new_hb.all_player_collisions(&hitboxes)
+    {
+        pt.translation = new_pos;
+        *hb = new_hb;
+    }  
+    
+    let new_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, new_pos.xy());
+    // Velocity is zero when player hits the ground
+    if pt.translation.y <= -(LEVEL_H / 2.) + (TILE_SIZE as f32) ||
+        new_hb.all_player_collisions(&hitboxes) 
+    {
+        pv.velocity.y = 0.;
+    }
+    //assumes the player is a square and pt.translation is the lower-left corner
+}
+/*    if input.pressed(KeyCode::KeyW) {
         deltav.y += 1.;
     }
 
@@ -150,7 +223,7 @@ pub fn move_player(
         *hb = new_hb;
     }
     //assumes the player is a square and pt.translation is the lower-left corner
-}
+}*/
 
 pub fn animate_player(
     time: Res<Time>,
@@ -165,7 +238,9 @@ pub fn animate_player(
     >,
 ) {
     let (v, mut texture_atlas, mut timer, frame_count) = player.single_mut();
-    if v.velocity.cmpne(Vec2::ZERO).any() {
+    let x_vel = Vec2::new(v.velocity.x, 0.);
+    //info!(x_vel.x);
+    if x_vel.cmpne(Vec2::ZERO).any() {
         timer.tick(time.delta());
 
         if timer.just_finished() {
