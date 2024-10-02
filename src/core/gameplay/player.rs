@@ -7,14 +7,19 @@ use crate::WIN_W;
 use crate::WIN_H;
 use crate::core::engine::gravity::Gravity;
 
+use crate::core::engine::gravity::Gravity;
+
 const TILE_SIZE: u32 = 100;
 
 const MAX_FLIGHT_SPEED: f32 = 250.;
+
 const PLAYER_SPEED: f32 = 250.;
 const ACCEL_RATE_X: f32 = 5000.;
 const ACCEL_RATE_Y: f32 = 10800.;
 
 const ANIM_TIME: f32 = 0.2;
+
+
 
 #[derive(Component)]
 pub struct Player;
@@ -94,6 +99,7 @@ pub fn initialize(
         Player,
     ));
 }
+
 pub fn move_player(
     time: Res<Time>,
     input: Res<ButtonInput<KeyCode>>,
@@ -182,48 +188,6 @@ pub fn flight(
     }
     //assumes the player is a square and pt.translation is the lower-left corner
 }
-/*    if input.pressed(KeyCode::KeyW) {
-        deltav.y += 1.;
-    }
-
-    if input.pressed(KeyCode::KeyS) {
-        deltav.y -= 1.;
-    }
-
-    let deltat = time.delta_seconds();
-    let acc = ACCEL_RATE * deltat;
-
-    pv.velocity = if deltav.length() > 0. {
-        (pv.velocity + (deltav.normalize_or_zero() * acc)).clamp_length_max(PLAYER_SPEED)
-    } else if pv.velocity.length() > acc {
-        pv.velocity + (pv.velocity.normalize_or_zero() * -acc)
-    } else {
-        Vec2::splat(0.)
-    };
-    let change = pv.velocity * deltat;
-
-    let new_pos = pt.translation + Vec3::new(change.x, 0., 0.);
-    let new_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, new_pos.xy());
-    if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
-        && new_pos.x <= LEVEL_W- (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
-        && !new_hb.all_player_collisions(&hitboxes)
-    {
-        pt.translation = new_pos;
-        *hb = new_hb;
-        //info!("player coords: {}/{}", pt.translation.x, pt.translation.y);
-    }
-
-    let new_pos = pt.translation + Vec3::new(0., change.y, 0.);
-    let new_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, new_pos.xy());
-    if new_pos.y >= -(WIN_H / 2.) + (TILE_SIZE as f32) / 2.
-        && new_pos.y <= WIN_H - (TILE_SIZE as f32) / 2.
-        && !new_hb.all_player_collisions(&hitboxes)
-    {
-        pt.translation = new_pos;
-        *hb = new_hb;
-    }
-    //assumes the player is a square and pt.translation is the lower-left corner
-}*/
 
 pub fn animate_player(
     time: Res<Time>,

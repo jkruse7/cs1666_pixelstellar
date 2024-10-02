@@ -27,7 +27,6 @@ pub fn move_camera(
 
     let mut ct = camera.single_mut();
     let x_diff = pt.translation - ct.translation;
-    info!("Player: {}, Camera: {}, ({})", pt.translation, ct.translation, x_diff);
     if x_diff.x > THRESHOLD_X{ ct.translation.x = pt.translation.x.clamp(-x_bound, x_bound) - THRESHOLD_X; }
     if x_diff.x < -THRESHOLD_X { ct.translation.x = pt.translation.x.clamp(-x_bound, x_bound) + THRESHOLD_X; }
     if x_diff.y > THRESHOLD_Y{ ct.translation.y = pt.translation.y.clamp(-y_bound, y_bound) - THRESHOLD_Y; }
