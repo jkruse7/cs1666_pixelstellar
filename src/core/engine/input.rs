@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 // Define the InputPlugin struct
-pub struct InputPlugin;
+pub struct InputPlugin; 
 
 // // Implement the Plugin trait for InputPlugin
 // impl Plugin for InputPlugin {
