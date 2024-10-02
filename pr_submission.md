@@ -6,7 +6,7 @@
 
 2. `git pull` syncs your local repo with the remote repo.
 
-3. `git checkout -b feature/<name-of-feature>` moves you to a new feature branch.
+3. `git checkout -b <name-of-feature> develop` moves you to a new feature branch, coming off of the develop branch
 
 ### During your coding process:
 
