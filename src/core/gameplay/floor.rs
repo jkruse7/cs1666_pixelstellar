@@ -1,9 +1,9 @@
 use bevy::prelude::*;
 use std::convert::From;
+use crate::core::engine::hitbox::Hitbox;
 use crate::core::world::planet1;
 
 
-use crate::core::engine::collision::AABB;
 use crate::LEVEL_H;
 use crate::LEVEL_W;
 use crate::WIN_W;
@@ -37,8 +37,7 @@ pub fn initialize(
     while i * FLOOR_TILE_SIZE < (LEVEL_LEN as u32) {
         info!("Spawning brick at {:?}", t);
 
-        let floor_aabb = AABB::new(t, t+Vec2::new(FLOOR_TILE_SIZE as f32, FLOOR_TILE_SIZE as f32));
-        //info! ("Floor AABB: {:?}", floor_aabb);
+        let floor_hitbox = crate::core::engine::hitbox::Hitbox::new(FLOOR_TILE_SIZE as f32, FLOOR_TILE_SIZE as f32, Vec2::new(t.x, t.y));
         commands.spawn((
             SpriteBundle {
                 texture: floor_sheet_handle.clone(),
@@ -53,7 +52,7 @@ pub fn initialize(
                 index: (i as usize) % floor_layout_len,
             },
             Floor,
-            floor_aabb,
+            floor_hitbox,
         ));
 
         i += 1;
@@ -68,7 +67,7 @@ pub fn initialize(
     while (5+i) * FLOOR_TILE_SIZE < (LEVEL_LEN as u32) {
         info!("Spawning brick at {:?}", t);
 
-        let floor_aabb = AABB::new(t, t+Vec2::new(FLOOR_TILE_SIZE as f32, FLOOR_TILE_SIZE as f32));
+        let floor_hitbox = Hitbox::new(FLOOR_TILE_SIZE as f32, FLOOR_TILE_SIZE as f32, Vec2::new(t.x, t.y));
         //info! ("Floor AABB: {:?}", floor_aabb);
         commands.spawn((
             SpriteBundle {
@@ -84,7 +83,7 @@ pub fn initialize(
                 index: (i as usize) % floor_layout_len,
             },
             Floor,
-            floor_aabb,
+            floor_hitbox,
         ));
 
         i += 1;
