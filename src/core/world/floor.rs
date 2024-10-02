@@ -12,7 +12,7 @@ const LEVEL_LEN: u32 = LEVEL_W as u32;
 const LEVEL_H_INT: i16 = LEVEL_H as i16;
 const LEVEL_W_INT: i16 = LEVEL_W as i16;
 
-const FLOOR_TILE_SIZE: u32 = 100;
+const FLOOR_TILE_SIZE: u32 = 50;
 
 #[derive(Component)]
 

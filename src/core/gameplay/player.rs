@@ -5,9 +5,9 @@ use crate::LEVEL_H;
 use crate::LEVEL_W;
 use crate::WIN_W;
 use crate::WIN_H;
-use crate::core::engine::gravity::Gravity;
 
 use crate::core::engine::gravity::Gravity;
+
 
 const TILE_SIZE: u32 = 100;
 
@@ -95,7 +95,7 @@ pub fn initialize(
         Velocity::new(),
         Health::new(),
         Gravity::new(),
-        Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, Vec2::new(0., -210.)),
+        Hitbox::new(40 as f32, 40 as f32, Vec2::new(0., -210.)),
         Player,
     ));
 }
