@@ -4,11 +4,11 @@ pub mod engine {
     pub mod particles;
     pub mod physics;
     pub mod hitbox;
+    pub mod gravity;
 }
 pub mod gameplay {
     pub mod enemy;
     pub mod player;
-    pub mod floor;
 }
 pub mod ui {
     pub mod button;
@@ -19,4 +19,5 @@ pub mod ui {
 pub mod world {
     pub mod lab;
     pub mod planet1;
+    pub mod floor;
 }
