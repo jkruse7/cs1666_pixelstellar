@@ -1,6 +1,7 @@
 use bevy::ecs::query;
 use bevy::{prelude::*, window::PresentMode};
 use crate::core::gameplay::player::Player;
+use crate::core::gameplay::enemy::Enemy;
 
 #[derive(Component)]
 #[derive(Debug)]
@@ -36,7 +37,14 @@ impl Hitbox {
         }
         false
     }
-    
-
+    pub fn all_enemy_collisions(&self, hitboxes: &Query<&Hitbox, Without<Enemy>>)  -> bool {
+        for hitbox in hitboxes.iter() {
+            if self.collides_with(hitbox) {
+                info!("Enemy Collision detected between {:?} and {:?}", self, hitbox);
+                return true;
+            }
+        }
+        false
+    }
 
 }

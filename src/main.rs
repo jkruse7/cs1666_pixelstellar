@@ -48,6 +48,7 @@ fn main() {
         .add_systems(Startup, core::ui::camera::initialize)
         .add_systems(Startup, core::ui::background::initialize)
         .add_systems(Startup, core::gameplay::player::initialize)
+        .add_systems(Startup, core::gameplay::enemy::initialize)
         .add_systems(Startup, core::world::floor::initialize)
         //.add_systems(Startup,setup_system)
         // Systems for updating game state
@@ -55,6 +56,10 @@ fn main() {
         .add_systems(Update, core::gameplay::player::move_player)
         .add_systems(Update, core::gameplay::player::flight)
         .add_systems(Update, core::gameplay::player::animate_player.after(core::gameplay::player::move_player))
+        //.add_systems(Update, core::gameplay::enemy::move_enemy)
+        .add_systems(Update, core::gameplay::enemy::flight)
+        .add_systems(Update, core::gameplay::enemy::track_player.after(core::gameplay::player::move_player))
+        .add_systems(Update, core::gameplay::enemy::animate_enemy.after(core::gameplay::enemy::track_player))
         .add_systems(Update, core::ui::camera::move_camera.after(core::gameplay::player::move_player))
         .add_systems(Update, button_interaction_system)
         // Run game logic only in InGame state
