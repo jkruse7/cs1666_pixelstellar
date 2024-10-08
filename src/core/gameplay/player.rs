@@ -7,6 +7,7 @@ use crate::WIN_W;
 use crate::WIN_H;
 
 use crate::core::engine::gravity::Gravity;
+use crate::core::gameplay::enemy::Enemy;
 
 
 const TILE_SIZE: u32 = 100;
@@ -19,7 +20,9 @@ const ACCEL_RATE_Y: f32 = 10800.;
 
 const ANIM_TIME: f32 = 0.2;
 
-
+//Julianne 10/8: These will be used for hitbox sizes.
+const SPRITE_HEIGHT: u32 = 50;
+const SPRITE_WIDTH: u32 = 30;
 
 #[derive(Component)]
 pub struct Player;
@@ -49,16 +52,28 @@ impl From<Vec2> for Velocity {
     }
 }
 
+// #[derive(Component)]
+// pub struct Health {
+//     hp: i32,
+// }
+
+// impl Health {
+//     fn new() -> Self {
+//         Self {
+//             hp: 100,
+//         }
+//     }
+// }
+
 #[derive(Component)]
 pub struct Health {
-    hp: i32,
+    pub max: f32,
+    pub current: f32,
 }
 
 impl Health {
-    fn new() -> Self {
-        Self {
-            hp: 100,
-        }
+    pub fn new(max: f32) -> Self {
+        Self { max, current: max }
     }
 }
 
@@ -93,9 +108,9 @@ pub fn initialize(
         AnimationTimer(Timer::from_seconds(ANIM_TIME, TimerMode::Repeating)),
         AnimationFrameCount(player_layout_len),
         Velocity::new(),
-        Health::new(),
+        Health::new(100.0),
         Gravity::new(),
-        Hitbox::new(40 as f32, 40 as f32, Vec2::new(0., -210.)),
+        Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
         Player,
     ));
 }
@@ -103,10 +118,11 @@ pub fn initialize(
 pub fn move_player(
     time: Res<Time>,
     input: Res<ButtonInput<KeyCode>>,
-    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox), (With<Player>)>,
+    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut Health), (With<Player>)>,
     mut hitboxes: Query<(&Hitbox), Without<Player>>,
+    mut enemy_hitboxes: Query<(&Hitbox), (With<Enemy>, Without<Player>)>,
 ) {
-    let (mut pt, mut pv, mut ps, mut hb) = player.single_mut();
+    let (mut pt, mut pv, mut ps, mut hb, mut player_health) = player.single_mut();
     let mut deltav_x = 0.;
 
     if input.pressed(KeyCode::KeyA) {
@@ -136,8 +152,13 @@ pub fn move_player(
 
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
-    let new_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, new_pos.xy());
+    let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
 
+    
+    if new_hb.player_enemy_collision(&enemy_hitboxes){
+        info!("updating");
+        player_health.current -=1.;
+    }
     if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
         && new_pos.x <= LEVEL_W - (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
         && !new_hb.all_player_collisions(&hitboxes)
@@ -145,6 +166,7 @@ pub fn move_player(
         pt.translation = new_pos;
         *hb = new_hb;
     }
+
 }
 
 pub fn flight(
@@ -168,7 +190,7 @@ pub fn flight(
 
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
-    let new_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, new_pos.xy());
+    let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
     //Bound player to within level height
 
     if new_pos.y >= -(WIN_H / 2.) + (TILE_SIZE as f32) / 2.
@@ -179,7 +201,7 @@ pub fn flight(
         *hb = new_hb;
     }  
     
-    let new_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, new_pos.xy());
+    let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
     // Velocity is zero when player hits the ground
     if pt.translation.y <= -(LEVEL_H / 2.) + (TILE_SIZE as f32) ||
         new_hb.all_player_collisions(&hitboxes) 
