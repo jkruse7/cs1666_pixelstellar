@@ -37,6 +37,14 @@ impl Hitbox {
         }
         false
     }
+    pub fn player_enemy_collision(&self, hitboxes: &Query<&Hitbox, (With<Enemy>, Without<Player>)>)  -> bool {
+        for hitbox in hitboxes.iter() {
+            if self.collides_with(hitbox) {
+                return true;
+            }
+        }
+        false
+    }
     pub fn all_enemy_collisions(&self, hitboxes: &Query<&Hitbox, Without<Enemy>>)  -> bool {
         for hitbox in hitboxes.iter() {
             if self.collides_with(hitbox) {

@@ -101,15 +101,13 @@ pub fn initialize(
 
 pub fn enemy_gravity(
     time: Res<Time>, 
-    input: Res<ButtonInput<KeyCode>>, 
     mut enemy: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox), With<Enemy>>, 
-    mut hitboxes: Query<(&Hitbox), Without<Enemy>>
+    hitboxes: Query<(&Hitbox), Without<Enemy>>
 ) {
     /*Julianne 10/8: This function is the same as player flight, but only makes the downward force on the enemy (no flight)*/
     let (mut pt, mut pv, mut pg, mut hb) = enemy.single_mut();
 
     let deltat = time.delta_seconds();
-    let acc_y = ACCEL_RATE_Y * deltat;
 
     //update gravity here
     pg.update_G(&pv.velocity.y, &deltat);
@@ -171,13 +169,13 @@ pub fn track_player(
     time: Res<Time>,
     mut enemy: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut AnimationTimer), (With<Enemy>, Without<Player>)>,
     mut player: Query<(&mut Transform), (With<Player>, Without<Enemy>)>,
-    mut hitboxes: Query<(&Hitbox), Without<Enemy>>, 
+    hitboxes: Query<(&Hitbox), Without<Enemy>>, 
     mut camera: Query<&mut Transform, (Without<Player>, Without<Enemy>, With<Camera>)>
 ){
     //get enemy, player and camera
     let (mut et, mut ev, mut es, mut ehb, mut timer) = enemy.single_mut();
-    let mut pt = player.single_mut();
-    let mut cam_t = camera.single_mut();
+    let pt = player.single_mut();
+    let cam_t = camera.single_mut();
 
     let mut deltav_x = 0.;
 

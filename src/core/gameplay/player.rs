@@ -7,6 +7,7 @@ use crate::WIN_W;
 use crate::WIN_H;
 
 use crate::core::engine::gravity::Gravity;
+use crate::core::gameplay::enemy::Enemy;
 
 
 const TILE_SIZE: u32 = 100;
@@ -117,10 +118,11 @@ pub fn initialize(
 pub fn move_player(
     time: Res<Time>,
     input: Res<ButtonInput<KeyCode>>,
-    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox), (With<Player>)>,
+    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut Health), (With<Player>)>,
     mut hitboxes: Query<(&Hitbox), Without<Player>>,
+    mut enemy_hitboxes: Query<(&Hitbox), (With<Enemy>, Without<Player>)>,
 ) {
-    let (mut pt, mut pv, mut ps, mut hb) = player.single_mut();
+    let (mut pt, mut pv, mut ps, mut hb, mut player_health) = player.single_mut();
     let mut deltav_x = 0.;
 
     if input.pressed(KeyCode::KeyA) {
@@ -152,6 +154,11 @@ pub fn move_player(
     let new_pos = pt.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
 
+    
+    if new_hb.player_enemy_collision(&enemy_hitboxes){
+        info!("updating");
+        player_health.current -=1.;
+    }
     if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
         && new_pos.x <= LEVEL_W - (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
         && !new_hb.all_player_collisions(&hitboxes)
@@ -159,6 +166,7 @@ pub fn move_player(
         pt.translation = new_pos;
         *hb = new_hb;
     }
+
 }
 
 pub fn flight(

@@ -38,6 +38,7 @@ pub fn update_health_bar(
     player_query: Query<&Health, With<Player>>,
 ) {
     let health = player_query.single();
+    info!("Curr Health: {:?}", health.current);
     let percentage = health.current / health.max;
 
     for (mut style, mut background_color) in query.iter_mut() {
