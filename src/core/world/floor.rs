@@ -34,16 +34,17 @@ pub fn initialize(
     let mut i = 0;
     let mut t = Vec2::new(
         -WIN_W + (FLOOR_TILE_SIZE as f32) / 2.,
-        -2. * WIN_H + (FLOOR_TILE_SIZE as f32) / 2.,
+        -WIN_H + (FLOOR_TILE_SIZE as f32) / 2.,
     );
     while i * FLOOR_TILE_SIZE < (LEVEL_LEN as u32) {
-
-        let mut noise = get_1DPn_value(t.x, 1., 25., 0.2);
+        // Create noise with x coordinates, fixed y, an amplitude of 10, and a frequency of 0.01
+        let mut noise = get_1DPn_value(t.x, 1., 10., 0.01);
         noise = noise.floor();
         let mut j = 0;
+
+        // This inner loop is going to stack tiles at a fixed x coordinate
         while j <= (noise as u32) {
             t += Vec2::new(0., (FLOOR_TILE_SIZE) as f32);
-
             let floor_hitbox = crate::core::engine::hitbox::Hitbox::new(FLOOR_TILE_SIZE as f32, FLOOR_TILE_SIZE as f32, Vec2::new(t.x, t.y));
             commands.spawn((
                 SpriteBundle {
@@ -64,24 +65,6 @@ pub fn initialize(
             j += 1;
         }
         t -= Vec2::new(0., (j * FLOOR_TILE_SIZE) as f32);
-
-        // let floor_hitbox = crate::core::engine::hitbox::Hitbox::new(FLOOR_TILE_SIZE as f32, FLOOR_TILE_SIZE as f32, Vec2::new(t.x, t.y));
-        // commands.spawn((
-        //     SpriteBundle {
-        //         texture: floor_sheet_handle.clone(),
-        //         transform: Transform {
-        //             translation: t.extend(0.0),
-        //             ..default()
-        //         },
-        //         ..default()
-        //     },
-        //     TextureAtlas {
-        //         layout: floor_layout_handle.clone(),
-        //         index: (i as usize) % floor_layout_len,
-        //     },
-        //     Floor,
-        //     floor_hitbox,
-        // ));
 
         i += 1;
         t += Vec2::new((FLOOR_TILE_SIZE) as f32, 0.);

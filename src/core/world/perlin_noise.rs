@@ -1,20 +1,22 @@
 use rand::seq::SliceRandom;
 use rand::thread_rng;
 
-// fn main() {
-//     let perm = generate_permutation_array();
-
-//     let width = 30;
-//     // let height = 10;
-//     let scale = 0.5;
-
-//     for x in 0..width {
-//         let noise_value = perlin(x as f32 * scale, 1.0 as f32 * scale, &perm);
-//         print!("{:.2}", noise_value);
-//         println!();
-//     }
-// }
-
+/// Generates a 1D Perlin noise value for a given position and configuration.
+///
+/// # Arguments
+/// 
+/// * `x` - The position on the x-axis for which you want to compute the noise. 
+/// 
+/// * `y` - The position on the y-axis for which you want to compute the noise. 
+/// 
+/// * `amplitude` - The scaling factor that controls the height of the noise value. 
+///                 It multiplies the resulting noise to adjust the range.
+///                 A larger amplitude makes the noise values more pronounced (taller peaks and deeper valleys), 
+///                 while a smaller amplitude reduces the range of the noise values.
+/// 
+/// * `frequency` - The frequency factor for how frequently the noise value fluctuates.
+///                 A higher frequency causes the noise to fluctuate more frequently over a small range of x-values, 
+///                 while a lower frequency makes the noise change more slowly.
 pub fn get_1DPn_value(x: f32, y: f32, amplitude: f32, frequency: f32) -> f32 {
     let perm = generate_permutation_array();
     let noise_value = amplitude * perlin(x as f32 * frequency, 1.0 as f32 * frequency, &perm);
