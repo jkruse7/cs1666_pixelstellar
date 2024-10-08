@@ -15,6 +15,12 @@ use rand::thread_rng;
 //     }
 // }
 
+pub fn get_1DPn_value(x: f32, y: f32, amplitude: f32, frequency: f32) -> f32 {
+    let perm = generate_permutation_array();
+    let noise_value = amplitude * perlin(x as f32 * frequency, 1.0 as f32 * frequency, &perm);
+    noise_value
+}
+
 fn perlin(x: f32, y: f32, perm: &[usize; 512]) -> f32 {
     let x0 = x.floor() as isize;
     let y0 = y.floor() as isize;
