@@ -31,7 +31,7 @@ impl Hitbox {
     pub fn all_player_collisions(&self, hitboxes: &Query<&Hitbox, Without<Player>>)  -> bool {
         for hitbox in hitboxes.iter() {
             if self.collides_with(hitbox) {
-                info!("Collision detected between {:?} and {:?}", self, hitbox);
+                //info!("Collision detected between {:?} and {:?}", self, hitbox);
                 return true;
             }
         }
@@ -40,7 +40,7 @@ impl Hitbox {
     pub fn all_enemy_collisions(&self, hitboxes: &Query<&Hitbox, Without<Enemy>>)  -> bool {
         for hitbox in hitboxes.iter() {
             if self.collides_with(hitbox) {
-                info!("Enemy Collision detected between {:?} and {:?}", self, hitbox);
+                //info!("Enemy Collision detected between {:?} and {:?}", self, hitbox);
                 return true;
             }
         }

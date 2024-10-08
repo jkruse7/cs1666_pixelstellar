@@ -19,7 +19,9 @@ const ACCEL_RATE_Y: f32 = 10800.;
 
 const ANIM_TIME: f32 = 0.2;
 
-
+//Julianne 10/8: These will be used for hitbox sizes.
+const SPRITE_HEIGHT: u32 = 50;
+const SPRITE_WIDTH: u32 = 30;
 
 #[derive(Component)]
 pub struct Player;
@@ -95,7 +97,7 @@ pub fn initialize(
         Velocity::new(),
         Health::new(),
         Gravity::new(),
-        Hitbox::new(40 as f32, 40 as f32, Vec2::new(0., -210.)),
+        Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
         Player,
     ));
 }
@@ -136,7 +138,7 @@ pub fn move_player(
 
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
-    let new_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, new_pos.xy());
+    let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
 
     if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
         && new_pos.x <= LEVEL_W - (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
@@ -168,7 +170,7 @@ pub fn flight(
 
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
-    let new_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, new_pos.xy());
+    let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
     //Bound player to within level height
 
     if new_pos.y >= -(WIN_H / 2.) + (TILE_SIZE as f32) / 2.
@@ -179,7 +181,7 @@ pub fn flight(
         *hb = new_hb;
     }  
     
-    let new_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, new_pos.xy());
+    let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
     // Velocity is zero when player hits the ground
     if pt.translation.y <= -(LEVEL_H / 2.) + (TILE_SIZE as f32) ||
         new_hb.all_player_collisions(&hitboxes) 
