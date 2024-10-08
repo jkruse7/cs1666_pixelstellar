@@ -5,6 +5,7 @@ mod core;
 
 use crate::core::ui::button::{spawn_custom_button, button_interaction_system};
 use crate::core::ui::camera::{mouse_coordinates};
+use crate::core::ui::health::{setup_health_bar, update_health_bar};
 
 const TITLE: &str = "Pixelstellar";
 const WIN_W: f32 = 1280.;
@@ -47,9 +48,11 @@ fn main() {
         // // Initialize essential components like camera, background, and player
         .add_systems(Startup, core::ui::camera::initialize)
         .add_systems(Startup, core::ui::background::initialize)
+        //.add_systems(Startup, core::ui::health::setup_health_bar)
         .add_systems(Startup, core::gameplay::player::initialize)
         .add_systems(Startup, core::gameplay::enemy::initialize)
         .add_systems(Startup, core::world::floor::initialize)
+        .add_systems(Startup, core::ui::health::setup_health_bar)
         //.add_systems(Startup,setup_system)
         // Systems for updating game state
         .add_systems(Update, core::ui::camera::mouse_coordinates)
@@ -62,6 +65,7 @@ fn main() {
         .add_systems(Update, core::gameplay::enemy::animate_enemy.after(core::gameplay::enemy::track_player))
         .add_systems(Update, core::ui::camera::move_camera.after(core::gameplay::player::move_player))
         .add_systems(Update, button_interaction_system)
+        .add_systems(Update, core::ui::health::update_health_bar)
         // Run game logic only in InGame state
         // .add_systems(Update, core::gameplay::play_game.run_if(in_state(core::engine::update_state::AppState::InGame)))
         // // Handle pause/resume using ESC key, applicable only in InGame or Paused states
@@ -87,9 +91,3 @@ fn setup_system(mut commands: Commands, asset_server: Res<AssetServer>) {
         None,              
     );
 }
-
-
-
-
-
-

@@ -51,16 +51,28 @@ impl From<Vec2> for Velocity {
     }
 }
 
+// #[derive(Component)]
+// pub struct Health {
+//     hp: i32,
+// }
+
+// impl Health {
+//     fn new() -> Self {
+//         Self {
+//             hp: 100,
+//         }
+//     }
+// }
+
 #[derive(Component)]
 pub struct Health {
-    hp: i32,
+    pub max: f32,
+    pub current: f32,
 }
 
 impl Health {
-    fn new() -> Self {
-        Self {
-            hp: 100,
-        }
+    pub fn new(max: f32) -> Self {
+        Self { max, current: max }
     }
 }
 
@@ -95,7 +107,7 @@ pub fn initialize(
         AnimationTimer(Timer::from_seconds(ANIM_TIME, TimerMode::Repeating)),
         AnimationFrameCount(player_layout_len),
         Velocity::new(),
-        Health::new(),
+        Health::new(100.0),
         Gravity::new(),
         Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
         Player,
