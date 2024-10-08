@@ -6,13 +6,18 @@ const TERMINAL_VELOCITY: f32 = 750.;
 
 #[derive(Component)]
 pub struct Gravity {
-    current_G: f32,
+    current_G: f32, // I think this is current y velocity
 }
 
 impl Gravity {
     pub fn new() -> Self {
         Self {
             current_G: 0.,
+        }
+    }
+    pub fn new_with_G(G: f32) -> Self {
+        Self {
+            current_G: G,
         }
     }
 
