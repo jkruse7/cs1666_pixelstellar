@@ -34,17 +34,18 @@ pub fn setup_health_bar(
 }
 
 pub fn update_health_bar(
-    mut query: Query<(&mut Style, &mut BackgroundColor), With<HealthBar>>, 
+    mut query: Query<(&mut Style, &mut BackgroundColor, &mut Text), With<HealthBar>>, 
     player_query: Query<&Health, With<Player>>,
 ) {
     let health = player_query.single();
     info!("Curr Health: {:?}", health.current);
     let percentage = health.current / health.max;
 
-    for (mut style, mut background_color) in query.iter_mut() {
+    for (mut style, mut background_color, mut text) in query.iter_mut() {
         // Update width based on health
         style.width = Val::Px(200.0 * percentage);
         // Optionally change the color based on health (e.g., green -> red)
         *background_color = Color::rgb(1.0 - percentage, percentage, 0.0).into();
-    }
+
+}
 }
