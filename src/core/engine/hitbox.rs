@@ -3,7 +3,7 @@ use bevy::{prelude::*, window::PresentMode};
 use crate::core::gameplay::player::Player;
 use crate::core::gameplay::enemy::Enemy;
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 #[derive(Debug)]
 pub struct Hitbox {
     pub width: f32,

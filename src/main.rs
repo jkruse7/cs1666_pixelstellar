@@ -53,11 +53,12 @@ fn main() {
         .add_systems(Startup, core::gameplay::enemy::initialize)
         .add_systems(Startup, core::world::floor::initialize)
         .add_systems(Startup, core::ui::health::setup_health_bar)
+        .add_systems(Startup, core::engine::particles::test_particle_spawn)
         //.add_systems(Startup,setup_system)
         // Systems for updating game state
         .add_systems(Update, core::ui::camera::mouse_coordinates)
         .add_systems(Update, core::gameplay::player::move_player)
-        .add_systems(Update, core::gameplay::player::flight)
+        .add_systems(Update, core::gameplay::player::flight.after(core::gameplay::player::move_player))
         .add_systems(Update, core::gameplay::player::animate_player.after(core::gameplay::player::move_player))
         //.add_systems(Update, core::gameplay::enemy::move_enemy)
         .add_systems(Update, core::gameplay::enemy::enemy_gravity)
@@ -66,6 +67,7 @@ fn main() {
         .add_systems(Update, core::ui::camera::move_camera.after(core::gameplay::player::move_player))
         .add_systems(Update, button_interaction_system)
         .add_systems(Update, core::ui::health::update_health_bar)
+        .add_systems(Update,core::engine::particles::Particle::move_and_handle_collisions.after(core::gameplay::player::flight))
         // Run game logic only in InGame state
         // .add_systems(Update, core::gameplay::play_game.run_if(in_state(core::engine::update_state::AppState::InGame)))
         // // Handle pause/resume using ESC key, applicable only in InGame or Paused states
