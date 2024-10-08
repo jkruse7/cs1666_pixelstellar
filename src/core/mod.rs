@@ -20,4 +20,5 @@ pub mod world {
     pub mod lab;
     pub mod planet1;
     pub mod floor;
+    pub mod perlin_noise;
 }
