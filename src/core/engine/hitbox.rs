@@ -2,7 +2,7 @@ use bevy::ecs::query;
 use bevy::{prelude::*, window::PresentMode};
 use crate::core::gameplay::player::Player;
 
-#[derive(Component)]
+#[derive(Component, Clone)]
 #[derive(Debug)]
 pub struct Hitbox {
     pub width: f32,
@@ -36,7 +36,5 @@ impl Hitbox {
         }
         false
     }
-    
-
 
 }
