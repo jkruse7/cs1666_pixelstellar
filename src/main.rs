@@ -49,6 +49,7 @@ fn main() {
         .add_systems(Startup, core::ui::background::initialize)
         .add_systems(Startup, core::gameplay::player::initialize)
         .add_systems(Startup, core::world::floor::initialize)
+        .add_systems(Startup, core::engine::particles::test_particle_spawn)
         //.add_systems(Startup,setup_system)
         // Systems for updating game state
         .add_systems(Update, core::ui::camera::mouse_coordinates)

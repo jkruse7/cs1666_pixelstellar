@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+use crate::core::gameplay::player;
+
 use super::{gravity::{self, Gravity}, hitbox::Hitbox};
 
 // 10/1 Julianne: base struct for all elements
@@ -55,21 +57,21 @@ impl Default for Particle {
             iterate_for_collision: true,
             hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE, Vec2::ZERO),
             velocity: Vec2::ZERO,
-            gravity: Gravity::new(),
+            gravity: Gravity::new(
+            ),
             transform: Transform::from_translation(Vec3::ZERO),
         }
     }
 }
 
 impl Particle {
-    
+
     pub fn new(
         has_gravity: bool,
         element: ELEMENT,
         collision: bool,
         iterate_for_collision: bool,
         velocity: Vec2,
-        gravity: Gravity,
         transform: Transform,
     ) -> Self {
         Particle {
@@ -80,7 +82,7 @@ impl Particle {
             iterate_for_collision,
             hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE, transform.translation.truncate()),
             velocity,
-            gravity,
+            gravity: Gravity::new_with_G(velocity.y),
             transform
         }
     }
@@ -99,13 +101,16 @@ impl Particle {
                 transform: particle.transform,  // Use the transform provided by the particle
                 ..Default::default()
             },
+            particle.hitbox.clone(),  // Insert the Hitbox component itself
             particle,  // Insert the Particle component itself
+
         ));
     }
 
     pub fn move_and_handle_collisions(
         time: Res<Time>,
-        mut parts: Query<(Entity, &mut Particle, &mut Hitbox, &mut Transform)>, //particles
+        mut parts: Query<(Entity, &mut Particle, &mut Hitbox, &mut Transform), Without<player::Player>>,
+        mut player_hitboxes: Query<(&Hitbox, &player::Player)>, //player
     ) {
         let deltat = time.delta_seconds();
 
@@ -121,7 +126,7 @@ impl Particle {
             }
 
             let proposed_offset = hitbox.offset + particle.velocity * deltat;
-
+            //info!("Proposed offset: {:?}", proposed_offset);
             proposed_movements.push((entity, particle.velocity, proposed_offset));
         }
 
@@ -134,9 +139,16 @@ impl Particle {
                 if *entity == other_entity {
                     continue; // Skip self
                 }
-
+                info!("Checking collision between {:?} and hb offset{:?}", entity, other_hitbox.offset);
                 // If proposed movement collides with another hitbox, adjust velocity
                 if Hitbox::new(PARTICLE_SIZE,PARTICLE_SIZE, *proposed_offset).collides_with(&other_hitbox) {
+                    collides = true;
+                    break;
+                }
+            }
+            // Check for collisions with player
+            for (player_hitbox, _player) in player_hitboxes.iter() {
+                if Hitbox::new(PARTICLE_SIZE,PARTICLE_SIZE, *proposed_offset).collides_with(&player_hitbox) {
                     collides = true;
                     break;
                 }
@@ -152,6 +164,7 @@ impl Particle {
                     }
                 }
             } else {
+                info!("Collision detected for entity {:?}", entity);
                 // Handle collision (right now just stop the particle)
                 for (ent, mut part, hb, tr) in parts.iter_mut() {
                     if ent == *entity {
@@ -161,4 +174,38 @@ impl Particle {
             }
         }
     }
+}
+pub fn test_particle_spawn(
+    mut commands: Commands,
+) {
+    let particle = Particle::new(
+        true,
+        ELEMENT::WATER,
+        true,
+        true,
+        Vec2::new(0., 0.),
+        Transform::from_translation(Vec3::new(0., 200., 0.)),
+    );
+    Particle::spawn_particle(&mut commands, particle);
+
+    let particle = Particle::new(
+        true,
+        ELEMENT::WATER,
+        true,
+        true,
+        Vec2::new(240., 100.),
+        Transform::from_translation(Vec3::new(0., -100., 0.)),
+    );
+    Particle::spawn_particle(&mut commands, particle);
+
+    let bedrock = Particle::new(
+        false,
+        ELEMENT::BEDROCK,
+        true,
+        true,
+        Vec2::new(0., 0.),
+        Transform::from_translation(Vec3::new(0., -120., 0.)),
+    );
+    info!("bedrock hb offset: {:?}", bedrock.hitbox.offset);
+    Particle::spawn_particle(&mut commands, bedrock);
 }
