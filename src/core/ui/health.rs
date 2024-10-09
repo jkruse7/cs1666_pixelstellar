@@ -3,9 +3,22 @@ use crate::core::gameplay::player::{Health, Player};
 
 #[derive(Component)]
 pub struct HealthBar;
-
+#[derive(Component)]
+pub struct health {
+    pub max: f32,
+    pub current: f32,
+}
 //const DEFAULT_GREEN_COLOR: Color = Color::srgba(0.0, 1.0, 0.0, 1.0); 
+impl health {
+    pub fn new(max: f32) -> Self {
+        Self { max, current: max }
+    }
 
+    pub fn take_damage(&mut self, amount: f32) {
+        self.current = (self.current - amount).max(0.0);
+        info!("Player took damage, current health: {}", self.current);
+    }
+}
 
 pub fn setup_health_bar(
     mut commands: Commands,
@@ -50,4 +63,5 @@ pub fn update_health_bar(
         *background_color = Color::rgb(1.0 - percentage, percentage, 0.0).into();
 
 }
+
 }

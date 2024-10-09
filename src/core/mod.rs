@@ -22,4 +22,6 @@ pub mod world {
     pub mod planet1;
     pub mod floor;
     pub mod perlin_noise;
+    pub mod water;
+    pub mod tiles;
 }
