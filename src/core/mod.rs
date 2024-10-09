@@ -14,10 +14,12 @@ pub mod ui {
     pub mod button;
     pub mod background;
     pub mod camera;
+    pub mod health;
     // pub mod menu;
 }
 pub mod world {
     pub mod lab;
     pub mod planet1;
     pub mod floor;
+    pub mod perlin_noise;
 }
