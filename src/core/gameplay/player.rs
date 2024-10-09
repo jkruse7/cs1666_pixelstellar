@@ -156,7 +156,7 @@ pub fn move_player(
 
     
     if new_hb.player_enemy_collision(&enemy_hitboxes){
-        info!("updating");
+        info!("updating!");
         player_health.current -=1.;
     }
     if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.

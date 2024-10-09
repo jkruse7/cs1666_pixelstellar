@@ -1,3 +1,5 @@
+use core::world::water::setup_water_tiles;
+
 use bevy::ecs::query;
 use bevy::{prelude::*, window::PresentMode};
 
@@ -56,6 +58,8 @@ fn main() {
         .add_systems(Startup, core::engine::particles::test_particle_spawn)
         //.add_systems(Startup,setup_system)
         // Systems for updating game state
+        .add_systems(Startup, setup)
+        .add_systems(Update, core::world::water::update_water_tiles)
         .add_systems(Update, core::ui::camera::mouse_coordinates)
         .add_systems(Update, core::gameplay::player::move_player)
         .add_systems(Update, core::gameplay::player::flight.after(core::gameplay::player::move_player))
@@ -92,4 +96,13 @@ fn setup_system(mut commands: Commands, asset_server: Res<AssetServer>) {
         Some(Color::srgba(0.35, 0.15, 0.35, 1.0)), // 按下颜色
         None,              
     );
+}
+fn setup(
+    mut commands: Commands,
+) {
+    let tile_size = 50.0; 
+    let tile_count_x = 10; 
+    let tile_count_y = 10; 
+
+    setup_water_tiles(commands, tile_size, tile_count_x, tile_count_y);
 }

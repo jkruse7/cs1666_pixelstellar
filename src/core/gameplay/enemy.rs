@@ -8,6 +8,8 @@ use crate::WIN_H;
 
 use crate::core::engine::gravity::Gravity;
 use crate::core::gameplay::player::Player;
+use crate::core::gameplay::player::Health;
+use crate::core::ui::health::update_health_bar;
 
 
 const TILE_SIZE: u32 = 100;
@@ -50,11 +52,11 @@ impl From<Vec2> for Velocity {
 }
 
 #[derive(Component)]
-pub struct Health {
+pub struct EnemyHealth {
     hp: i32,
 }
 
-impl Health {
+impl EnemyHealth {
     fn new() -> Self {
         Self {
             hp: 100,
@@ -92,12 +94,34 @@ pub fn initialize(
         AnimationTimer(Timer::from_seconds(ANIM_TIME, TimerMode::Repeating)),
         AnimationFrameCount(enemy_layout_len),
         Velocity::new(),
-        Health::new(),
+        EnemyHealth::new(),
         Gravity::new(),
         Hitbox::new(40 as f32, 40 as f32, Vec2::new(0., -210.)),
+        DamageBox::new(50.0, 50.0, Vec2::new(0., -210.)),  
         Enemy,
     ));
 }
+
+#[derive(Component, Clone, Debug)]
+pub struct DamageBox {
+    pub width: f32,
+    pub height: f32,
+    pub offset: Vec2,
+}
+
+impl DamageBox {
+    pub fn new(width: f32, height: f32, offset: Vec2) -> Self {
+        Self { width, height, offset }
+    }
+
+    pub fn collides_with(&self, other: &Hitbox, self_pos: Vec2, other_pos: Vec2) -> bool {
+        let self_tr = self_pos + self.offset + Vec2::new(self.width, self.height);
+        let other_tr = other_pos + other.offset + Vec2::new(other.width, other.height);
+        
+        self_pos.x < other_tr.x && self_tr.x > other_pos.x && self_pos.y < other_tr.y && self_tr.y > other_pos.y
+    }
+}
+
 
 pub fn enemy_gravity(
     time: Res<Time>, 
@@ -167,16 +191,16 @@ pub fn animate_enemy(
  This also check if enemy is within camera frame. If they are not, they will not move*/
 pub fn track_player(
     time: Res<Time>,
-    mut enemy: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut AnimationTimer), (With<Enemy>, Without<Player>)>,
-    mut player: Query<(&mut Transform), (With<Player>, Without<Enemy>)>,
+    mut commands: Commands, 
+    mut enemy: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut DamageBox, &mut AnimationTimer), (With<Enemy>, Without<Player>)>,
+    mut player: Query<(&mut Transform, &mut Health), (With<Player>, Without<Enemy>)>,
     hitboxes: Query<(&Hitbox), Without<Enemy>>, 
     mut camera: Query<&mut Transform, (Without<Player>, Without<Enemy>, With<Camera>)>
 ){
     //get enemy, player and camera
-    let (mut et, mut ev, mut es, mut ehb, mut timer) = enemy.single_mut();
-    let pt = player.single_mut();
+    let (mut et, mut ev, mut es, mut ehb, mut edb, mut timer) = enemy.single_mut();
+    let (mut pt, mut player_health) = player.single_mut();
     let cam_t = camera.single_mut();
-
     let mut deltav_x = 0.;
 
     // Is enemy within the camera frame?
@@ -216,6 +240,7 @@ pub fn track_player(
     let change = ev.velocity * deltat;
     let new_pos = et.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
+    
 
     if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
         && new_pos.x <= LEVEL_W - (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
@@ -223,5 +248,12 @@ pub fn track_player(
     {
         et.translation = new_pos;
         *ehb = new_hb;
+    }
+    let enemy_pos = et.translation.xy();
+    let player_pos = pt.translation.xy();
+
+    if edb.collides_with(&ehb, enemy_pos, player_pos) {
+        player_health.current -= 10.0; 
+        info!("Player hit! Current health: {:?}", player_health.current); // 记录伤害
     }
 }

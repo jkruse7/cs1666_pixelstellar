@@ -2,6 +2,7 @@ use bevy::ecs::query;
 use bevy::{prelude::*, window::PresentMode};
 use crate::core::gameplay::player::Player;
 use crate::core::gameplay::enemy::Enemy;
+use crate::core::world::tiles::tiles;
 
 #[derive(Component, Clone)]
 #[derive(Debug)]
@@ -54,5 +55,25 @@ impl Hitbox {
         }
         false
     }
+    pub fn tile_collision(&self, tile: &tiles) -> bool {
+        self.collides_with(&tile.hitbox)
+    }
 
+    pub fn all_tile_collisions(&self, tiles: &Query<&tiles>) -> bool {
+        for tile in tiles.iter() {
+            if self.tile_collision(tile) {
+                return true;
+            }
+        }
+        false
+    }
+    pub fn contains(&self, position: &Vec2) -> bool {
+        // 假设 hitbox 以中心为原点
+        let half_width = self.width / 2.0;
+        let half_height = self.height / 2.0;
+        position.x >= self.offset.x - half_width &&
+        position.x <= self.offset.x + half_width &&
+        position.y >= self.offset.y - half_height &&
+        position.y <= self.offset.y + half_height
+    }
 }
