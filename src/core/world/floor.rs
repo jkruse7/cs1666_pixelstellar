@@ -9,7 +9,7 @@ use crate::LEVEL_W;
 use crate::WIN_W;
 use crate::WIN_H;
 
-use crate::core::world::perlin_noise::perlin_1d;
+use crate::core::world::perlin_noise::get_1DPn_value;
 
 const LEVEL_LEN: u32 = LEVEL_W as u32;
 const LEVEL_H_INT: i16 = LEVEL_H as i16;
@@ -38,7 +38,7 @@ pub fn initialize(
     );
     while i * FLOOR_TILE_SIZE < (LEVEL_LEN as u32) {
         // Create noise with x coordinates, fixed y, an amplitude of 10, and a frequency of 0.01
-        let mut noise = perlin_1d(t.x, 1., 10., 0.01);
+        let mut noise = get_1DPn_value(t.x, 1., 10., 0.01);
         noise = noise.floor();
         let mut j = 0;
 

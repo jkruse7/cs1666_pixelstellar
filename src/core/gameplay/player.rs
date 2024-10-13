@@ -181,11 +181,11 @@ pub fn flight(
     let acc_y = ACCEL_RATE_Y * deltat;
 
     if input.pressed(KeyCode::Space) {
-        pg.reset_g();
+        pg.reset_G();
         pv.velocity.y = f32::min(MAX_FLIGHT_SPEED, pv.velocity.y + (1. * acc_y))
     }else {
-        pg.update_g(&pv.velocity.y, &deltat);
-        pv.velocity.y = pg.get_g();
+        pg.update_G(&pv.velocity.y, &deltat);
+        pv.velocity.y = pg.get_G();
     }
 
     let change = pv.velocity * deltat;
