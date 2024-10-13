@@ -3,11 +3,11 @@ use bevy::prelude::*;
 use crate::core::engine::hitbox::Hitbox;
 
 #[derive(Component)]
-pub struct Tiles {
+pub struct tiles {
     pub hitbox: Hitbox,
 }
 
-impl Tiles {
+impl tiles {
     pub fn new(width: f32, height: f32, offset: Vec2) -> Self {
         Self {
             hitbox: Hitbox::new(width, height, offset),

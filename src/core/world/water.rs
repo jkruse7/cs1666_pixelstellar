@@ -68,8 +68,8 @@ pub fn update_water_tiles(
 
 // 这个函数用于更新重力
 fn update_gravity(gravity: &mut Gravity, time: &Res<Time>) {
-    let current_velocity = gravity.get_g(); // 获取当前的重力值
-    gravity.update_g(&current_velocity, &time.delta_seconds());
+    let current_velocity = gravity.get_G(); // 获取当前的重力值
+    gravity.update_G(&current_velocity, &time.delta_seconds());
 }
 
 // 水块的水平移动逻辑

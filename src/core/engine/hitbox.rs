@@ -2,9 +2,10 @@ use bevy::ecs::query;
 use bevy::{prelude::*, window::PresentMode};
 use crate::core::gameplay::player::Player;
 use crate::core::gameplay::enemy::Enemy;
-use crate::core::world::tiles::Tiles;
+use crate::core::world::tiles::tiles;
 
-#[derive(Component, Clone, Debug)]
+#[derive(Component, Clone)]
+#[derive(Debug)]
 pub struct Hitbox {
     pub width: f32,
     pub height: f32,
@@ -54,11 +55,11 @@ impl Hitbox {
         }
         false
     }
-    pub fn tile_collision(&self, tile: &Tiles) -> bool {
+    pub fn tile_collision(&self, tile: &tiles) -> bool {
         self.collides_with(&tile.hitbox)
     }
 
-    pub fn all_tile_collisions(&self, tiles: &Query<&Tiles>) -> bool {
+    pub fn all_tile_collisions(&self, tiles: &Query<&tiles>) -> bool {
         for tile in tiles.iter() {
             if self.tile_collision(tile) {
                 return true;
