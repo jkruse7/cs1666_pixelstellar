@@ -4,12 +4,12 @@ use crate::core::gameplay::player::{Health, Player};
 #[derive(Component)]
 pub struct HealthBar;
 #[derive(Component)]
-pub struct health {
+pub struct PlayerHealth {
     pub max: f32,
     pub current: f32,
 }
 //const DEFAULT_GREEN_COLOR: Color = Color::srgba(0.0, 1.0, 0.0, 1.0); 
-impl health {
+impl PlayerHealth {
     pub fn new(max: f32) -> Self {
         Self { max, current: max }
     }
@@ -48,7 +48,7 @@ pub fn setup_health_bar(
 
 pub fn update_health_bar(
     mut query: Query<(&mut Style, &mut BackgroundColor, &mut Text), With<HealthBar>>, 
-    player_query: Query<&Health, With<Player>>,
+    player_query: Query<&PlayerHealth, With<Player>>,
 ) {
     let health = player_query.single();
     info!("Curr Health: {:?}", health.current);
