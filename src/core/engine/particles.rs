@@ -11,26 +11,26 @@ use super::{gravity::{self, Gravity}, hitbox::Hitbox};
 // TODO: add visual representation of particles
 
 const PARTICLE_SIZE: f32 = 4.;
-enum MATTER_STATE {
+enum MatterState {
     LIQUID,
     GAS, 
     SOLID,
 }
 
-pub enum ELEMENT {
+pub enum Element {
     WATER, BEDROCK,
 }
-impl ELEMENT {
+impl Element {
     pub fn color(&self) -> Color {
         match self {
-            ELEMENT::WATER => Color::srgb(0.0, 0.0, 1.0), // Blue for water
-            ELEMENT::BEDROCK => Color::srgb(0.5, 0.5, 0.5), // Gray for bedrock
+            Element::WATER => Color::srgb(0.0, 0.0, 1.0), // Blue for water
+            Element::BEDROCK => Color::srgb(0.5, 0.5, 0.5), // Gray for bedrock
         }
     }
-    pub fn state(&self) -> MATTER_STATE {
+    pub fn state(&self) -> MatterState {
         match self {
-            ELEMENT::WATER => MATTER_STATE::LIQUID,
-            ELEMENT::BEDROCK => MATTER_STATE::SOLID,
+            Element::WATER => MatterState::LIQUID,
+            Element::BEDROCK => MatterState::SOLID,
         }
     }
 }
@@ -38,8 +38,8 @@ impl ELEMENT {
 #[derive(Component)]
 pub struct Particle {
     has_gravity: bool,
-    state: MATTER_STATE,
-    element: ELEMENT,
+    state: MatterState,
+    element: Element,
     collision: bool,
     iterate_for_collision: bool,
     hitbox: Hitbox, 
@@ -51,8 +51,8 @@ impl Default for Particle {
     fn default() -> Self {
         Particle {
             has_gravity: true,
-            element: ELEMENT::BEDROCK,
-            state: ELEMENT::BEDROCK.state(),
+            element: Element::BEDROCK,
+            state: Element::BEDROCK.state(),
             collision: true,
             iterate_for_collision: true,
             hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE, Vec2::ZERO),
@@ -68,7 +68,7 @@ impl Particle {
 
     pub fn new(
         has_gravity: bool,
-        element: ELEMENT,
+        element: Element,
         collision: bool,
         iterate_for_collision: bool,
         velocity: Vec2,
@@ -82,7 +82,7 @@ impl Particle {
             iterate_for_collision,
             hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE, transform.translation.truncate()),
             velocity,
-            gravity: Gravity::new_with_G(velocity.y),
+            gravity: Gravity::new_with_g(velocity.y),
             transform
         }
     }
@@ -121,8 +121,8 @@ impl Particle {
             // Apply gravity if necessary
             if particle.has_gravity {
                 let velocity_y = particle.velocity.y;
-                particle.gravity.update_G(&velocity_y, &deltat);
-                particle.velocity.y = particle.gravity.get_G();
+                particle.gravity.update_g(&velocity_y, &deltat);
+                particle.velocity.y = particle.gravity.get_g();
             }
 
             let proposed_offset = hitbox.offset + particle.velocity * deltat;
@@ -180,7 +180,7 @@ pub fn test_particle_spawn(
 ) {
     let particle = Particle::new(
         true,
-        ELEMENT::WATER,
+        Element::WATER,
         true,
         true,
         Vec2::new(0., 0.),
@@ -190,7 +190,7 @@ pub fn test_particle_spawn(
 
     let particle = Particle::new(
         true,
-        ELEMENT::WATER,
+        Element::WATER,
         true,
         true,
         Vec2::new(240., 100.),
@@ -200,7 +200,7 @@ pub fn test_particle_spawn(
 
     let bedrock = Particle::new(
         false,
-        ELEMENT::BEDROCK,
+        Element::BEDROCK,
         true,
         true,
         Vec2::new(0., 0.),

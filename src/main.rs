@@ -70,7 +70,7 @@ fn main() {
         .add_systems(Update, core::gameplay::enemy::animate_enemy.after(core::gameplay::enemy::track_player))
         .add_systems(Update, core::ui::camera::move_camera.after(core::gameplay::player::move_player))
         .add_systems(Update, button_interaction_system)
-        .add_systems(Update, core::ui::health::update_health_bar)
+        //.add_systems(Update, core::ui::health::update_health_bar)
         .add_systems(Update,core::engine::particles::Particle::move_and_handle_collisions.after(core::gameplay::player::flight))
         // Run game logic only in InGame state
         // .add_systems(Update, core::gameplay::play_game.run_if(in_state(core::engine::update_state::AppState::InGame)))

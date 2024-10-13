@@ -134,8 +134,8 @@ pub fn enemy_gravity(
     let deltat = time.delta_seconds();
 
     //update gravity here
-    pg.update_G(&pv.velocity.y, &deltat);
-    pv.velocity.y = pg.get_G();
+    pg.update_g(&pv.velocity.y, &deltat);
+    pv.velocity.y = pg.get_g();
     
 
     let change = pv.velocity * deltat;

@@ -17,7 +17,7 @@ use rand::thread_rng;
 /// * `frequency` - The frequency factor for how frequently the noise value fluctuates.
 ///                 A higher frequency causes the noise to fluctuate more frequently over a small range of x-values, 
 ///                 while a lower frequency makes the noise change more slowly.
-pub fn get_1DPn_value(x: f32, y: f32, amplitude: f32, frequency: f32) -> f32 {
+pub fn perlin_1d(x: f32, y: f32, amplitude: f32, frequency: f32) -> f32 {
     let perm = generate_permutation_array();
     let noise_value = amplitude * perlin(x as f32 * frequency, 1.0 as f32 * frequency, &perm);
     noise_value
