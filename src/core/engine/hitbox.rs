@@ -4,8 +4,7 @@ use crate::core::gameplay::player::Player;
 use crate::core::gameplay::enemy::Enemy;
 use crate::core::world::tiles::Tiles;
 
-#[derive(Component, Clone)]
-#[derive(Debug)]
+#[derive(Component, Clone, Debug)]
 pub struct Hitbox {
     pub width: f32,
     pub height: f32,

@@ -17,20 +17,20 @@ enum MatterState {
     SOLID,
 }
 
-pub enum ELEMENT {
+pub enum Element {
     WATER, BEDROCK,
 }
-impl ELEMENT {
+impl Element {
     pub fn color(&self) -> Color {
         match self {
-            ELEMENT::WATER => Color::srgb(0.0, 0.0, 1.0), // Blue for water
-            ELEMENT::BEDROCK => Color::srgb(0.5, 0.5, 0.5), // Gray for bedrock
+            Element::WATER => Color::srgb(0.0, 0.0, 1.0), // Blue for water
+            Element::BEDROCK => Color::srgb(0.5, 0.5, 0.5), // Gray for bedrock
         }
     }
     pub fn state(&self) -> MatterState {
         match self {
-            ELEMENT::WATER => MatterState::LIQUID,
-            ELEMENT::BEDROCK => MatterState::SOLID,
+            Element::WATER => MatterState::LIQUID,
+            Element::BEDROCK => MatterState::SOLID,
         }
     }
 }
@@ -39,7 +39,7 @@ impl ELEMENT {
 pub struct Particle {
     has_gravity: bool,
     state: MatterState,
-    element: ELEMENT,
+    element: Element,
     collision: bool,
     iterate_for_collision: bool,
     hitbox: Hitbox, 
@@ -51,8 +51,8 @@ impl Default for Particle {
     fn default() -> Self {
         Particle {
             has_gravity: true,
-            element: ELEMENT::BEDROCK,
-            state: ELEMENT::BEDROCK.state(),
+            element: Element::BEDROCK,
+            state: Element::BEDROCK.state(),
             collision: true,
             iterate_for_collision: true,
             hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE, Vec2::ZERO),
@@ -68,7 +68,7 @@ impl Particle {
 
     pub fn new(
         has_gravity: bool,
-        element: ELEMENT,
+        element: Element,
         collision: bool,
         iterate_for_collision: bool,
         velocity: Vec2,
@@ -180,7 +180,7 @@ pub fn test_particle_spawn(
 ) {
     let particle = Particle::new(
         true,
-        ELEMENT::WATER,
+        Element::WATER,
         true,
         true,
         Vec2::new(0., 0.),
@@ -190,7 +190,7 @@ pub fn test_particle_spawn(
 
     let particle = Particle::new(
         true,
-        ELEMENT::WATER,
+        Element::WATER,
         true,
         true,
         Vec2::new(240., 100.),
@@ -200,7 +200,7 @@ pub fn test_particle_spawn(
 
     let bedrock = Particle::new(
         false,
-        ELEMENT::BEDROCK,
+        Element::BEDROCK,
         true,
         true,
         Vec2::new(0., 0.),
