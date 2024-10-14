@@ -1,15 +1,15 @@
 use bevy::prelude::*;
 
-use crate::core::engine::hitbox::Hitbox;
+use crate::engine::hitbox::Hitbox;
 use crate::LEVEL_H;
 use crate::LEVEL_W;
 use crate::WIN_W;
 use crate::WIN_H;
 
-use crate::core::engine::gravity::Gravity;
-use crate::core::gameplay::player::Player;
-use crate::core::gameplay::player::Health;
-use crate::core::ui::health::update_health_bar;
+use crate::engine::gravity::Gravity;
+use crate::gameplay::player::Player;
+use crate::gameplay::player::Health;
+use crate::ui::health::update_health_bar;
 
 
 const TILE_SIZE: u32 = 100;

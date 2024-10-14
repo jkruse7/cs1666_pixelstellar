@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::core::gameplay::player::{Health, Player}; 
+use crate::gameplay::player::{Health, Player}; 
 
 #[derive(Component)]
 pub struct HealthBar;
@@ -43,15 +43,17 @@ pub fn setup_health_bar(
             left: Val::Px(10.0),
             ..default()
         }),
+        HealthBar, 
     ));
 }
+
 
 pub fn update_health_bar(
     mut query: Query<(&mut Style, &mut BackgroundColor, &mut Text), With<HealthBar>>, 
     player_query: Query<&Health, With<Player>>,
 ) {
     let health = player_query.single();
-    info!("Curr Health: {:?}", health.current);
+   // info!("Curr Health: {:?}", health.current);
     let percentage = health.current / health.max;
 
     for (mut style, mut background_color, mut text) in query.iter_mut() {

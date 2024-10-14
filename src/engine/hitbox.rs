@@ -1,8 +1,8 @@
 use bevy::ecs::query;
 use bevy::{prelude::*, window::PresentMode};
-use crate::core::gameplay::player::Player;
-use crate::core::gameplay::enemy::Enemy;
-use crate::core::world::tiles::tiles;
+use crate::gameplay::player::Player;
+use crate::gameplay::enemy::Enemy;
+use crate::world::tiles::tiles;
 
 #[derive(Component, Clone)]
 #[derive(Debug)]

@@ -5,7 +5,7 @@ use crate::LEVEL_W;
 use crate::WIN_H;
 use crate::WIN_W;
 
-use crate::core::gameplay::player::Player;
+use crate::gameplay::player::Player;
 
 
 const THRESHOLD_X: f32 = 160.;

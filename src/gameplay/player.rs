@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 
-use crate::core::engine::hitbox::Hitbox;
+use crate::engine::hitbox::Hitbox;
 use crate::LEVEL_H;
 use crate::LEVEL_W;
 use crate::WIN_W;
 use crate::WIN_H;
 
-use crate::core::engine::gravity::Gravity;
-use crate::core::gameplay::enemy::Enemy;
+use crate::engine::gravity::Gravity;
+use crate::gameplay::enemy::Enemy;
 
 
 const TILE_SIZE: u32 = 100;
