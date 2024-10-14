@@ -1,15 +1,15 @@
 use bevy::prelude::*;
 use std::convert::From;
 
-use crate::core::world::planet1;
+use crate::{
+    world::planet1,
+    LEVEL_H,
+    LEVEL_W,
+};
 
-use crate::LEVEL_H;
-use crate::LEVEL_W;
 const LEVEL_H_INT: i16 = LEVEL_H as i16;
 const LEVEL_W_INT: i16 = LEVEL_W as i16;
-
 const BG_TILE_SIZE: u32 = 150;
-
 
 #[derive(Component)]
 struct Background;
@@ -53,7 +53,4 @@ pub fn initialize (
             )).insert(Background);
         }
     }
-
-
-
 }

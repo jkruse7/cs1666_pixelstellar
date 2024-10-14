@@ -1,19 +1,26 @@
-use bevy::ecs::query;
-use bevy::{prelude::*, window::PresentMode};
-use crate::core::gameplay::player::Player;
-use crate::core::gameplay::enemy::Enemy;
-use crate::core::world::tiles::tiles;
+use bevy::{
+    prelude::*,
+    window::PresentMode,
+    ecs::query,
+};
 
-#[derive(Component, Clone)]
-#[derive(Debug)]
+use crate::{
+    gameplay::{
+        player::Player,
+        enemy::Enemy,
+    },
+    world::tiles::tiles,
+};
+
+#[derive(Component)]
+pub struct DoNotSearchCollide;
+
+#[derive(Component, Clone, Debug)]
 pub struct Hitbox {
     pub width: f32,
     pub height: f32,
     pub offset: Vec2, //bottom left corner
 }
-
-#[derive(Component)]
-pub struct DoNotSearchCollide;
 
 impl Hitbox {
     pub fn new(width: f32, height: f32, offset: Vec2) -> Self {

@@ -1,14 +1,30 @@
-use core::world::water::setup_water_tiles;
+// rust and bevy imports
+use bevy::{
+    prelude::*,
+    window::PresentMode,
+    ecs::query,
+};
 
-use bevy::ecs::query;
-use bevy::{prelude::*, window::PresentMode};
+// module declarations and imports
+mod engine;
+mod gameplay;
+mod ui;
+mod world;
 
-mod core;
+use ui::{
+    button::{
+        spawn_custom_button,
+        button_interaction_system,
+    },
+    health::{
+        setup_health_bar,
+        update_health_bar,
+    },
+    camera::mouse_coordinates,
+};
+use world::water::setup_water_tiles;
 
-use crate::core::ui::button::{spawn_custom_button, button_interaction_system};
-use crate::core::ui::camera::{mouse_coordinates};
-use crate::core::ui::health::{setup_health_bar, update_health_bar};
-
+// constants
 const TITLE: &str = "Pixelstellar";
 const WIN_W: f32 = 1280.;
 const WIN_H: f32 = 720.;
@@ -30,52 +46,52 @@ fn main() {
             ..default()
         }))
         // Initialize the state machine with AppState
-        // .init_state::<core::engine::update_state::AppState>() 
+        // .init_state::<engine::update_state::AppState>() 
         // // Set default state to MainMenu on startup
-        // .add_startup_system(core::engine::update_state::setup_app_state)
+        // .add_startup_system(engine::update_state::setup_app_state)
        
         // // Systems for entering various game states
-        // .add_systems(OnEnter(core::engine::update_state::AppState::MainMenu), core::ui::menu::spawn_main_menu)
-        // // .add_systems(OnEnter(core::engine::update_state::AppState::InGame), core::gameplay::start_game)
-        // // .add_systems(OnEnter(core::engine::update_state::AppState::Paused), core::ui::pause_menu::spawn_pause_menu)
-        // // .add_systems(OnEnter(core::engine::update_state::AppState::Setting), core::ui::settings_menu::spawn_settings_menu)
-        // // .add_systems(OnEnter(core::engine::update_state::AppState::DevLab), core::world::lab::enter_dev_lab)
+        // .add_systems(OnEnter(engine::update_state::AppState::MainMenu), ui::menu::spawn_main_menu)
+        // // .add_systems(OnEnter(engine::update_state::AppState::InGame), gameplay::start_game)
+        // // .add_systems(OnEnter(engine::update_state::AppState::Paused), ui::pause_menu::spawn_pause_menu)
+        // // .add_systems(OnEnter(engine::update_state::AppState::Setting), ui::settings_menu::spawn_settings_menu)
+        // // .add_systems(OnEnter(engine::update_state::AppState::DevLab), world::lab::enter_dev_lab)
         
         // // // Systems for exiting various game states
-        // .add_systems(OnExit(core::engine::update_state::AppState::MainMenu), core::ui::menu::cleanup_main_menu)
-        // // .add_systems(OnExit(core::engine::update_state::AppState::InGame), core::gameplay::cleanup_game)
-        // .add_systems(OnExit(core::engine::update_state::AppState::Paused), core::ui::pause_menu::cleanup_pause_menu)
-        // .add_systems(OnExit(core::engine::update_state::AppState::Setting), core::ui::settings_menu::cleanup_settings_menu)
-        // .add_systems(OnExit(core::engine::update_state::AppState::DevLab), core::world::lab::exit_dev_lab)
+        // .add_systems(OnExit(engine::update_state::AppState::MainMenu), ui::menu::cleanup_main_menu)
+        // // .add_systems(OnExit(engine::update_state::AppState::InGame), gameplay::cleanup_game)
+        // .add_systems(OnExit(engine::update_state::AppState::Paused), ui::pause_menu::cleanup_pause_menu)
+        // .add_systems(OnExit(engine::update_state::AppState::Setting), ui::settings_menu::cleanup_settings_menu)
+        // .add_systems(OnExit(engine::update_state::AppState::DevLab), world::lab::exit_dev_lab)
         // // Initialize essential components like camera, background, and player
-        .add_systems(Startup, core::ui::camera::initialize)
-        .add_systems(Startup, core::ui::background::initialize)
-        //.add_systems(Startup, core::ui::health::setup_health_bar)
-        .add_systems(Startup, core::gameplay::player::initialize)
-        .add_systems(Startup, core::gameplay::enemy::initialize)
-        .add_systems(Startup, core::world::floor::initialize)
-        .add_systems(Startup, core::ui::health::setup_health_bar)
-        .add_systems(Startup, core::engine::particles::test_particle_spawn)
+        .add_systems(Startup, ui::camera::initialize)
+        .add_systems(Startup, ui::background::initialize)
+        //.add_systems(Startup, ui::health::setup_health_bar)
+        .add_systems(Startup, gameplay::player::initialize)
+        .add_systems(Startup, gameplay::enemy::initialize)
+        .add_systems(Startup, world::floor::initialize)
+        .add_systems(Startup, ui::health::setup_health_bar)
+        .add_systems(Startup, engine::particles::test_particle_spawn)
         //.add_systems(Startup,setup_system)
         // Systems for updating game state
         .add_systems(Startup, setup)
-        .add_systems(Update, core::world::water::update_water_tiles)
-        .add_systems(Update, core::ui::camera::mouse_coordinates)
-        .add_systems(Update, core::gameplay::player::move_player)
-        .add_systems(Update, core::gameplay::player::flight.after(core::gameplay::player::move_player))
-        .add_systems(Update, core::gameplay::player::animate_player.after(core::gameplay::player::move_player))
-        //.add_systems(Update, core::gameplay::enemy::move_enemy)
-        .add_systems(Update, core::gameplay::enemy::enemy_gravity)
-        .add_systems(Update, core::gameplay::enemy::track_player)
-        .add_systems(Update, core::gameplay::enemy::animate_enemy.after(core::gameplay::enemy::track_player))
-        .add_systems(Update, core::ui::camera::move_camera.after(core::gameplay::player::move_player))
+        .add_systems(Update, world::water::update_water_tiles)
+        .add_systems(Update, ui::camera::mouse_coordinates)
+        .add_systems(Update, gameplay::player::move_player)
+        .add_systems(Update, gameplay::player::flight.after(gameplay::player::move_player))
+        .add_systems(Update, gameplay::player::animate_player.after(gameplay::player::move_player))
+        //.add_systems(Update, gameplay::enemy::move_enemy)
+        .add_systems(Update, gameplay::enemy::enemy_gravity)
+        .add_systems(Update, gameplay::enemy::track_player)
+        .add_systems(Update, gameplay::enemy::animate_enemy.after(gameplay::enemy::track_player))
+        .add_systems(Update, ui::camera::move_camera.after(gameplay::player::move_player))
         .add_systems(Update, button_interaction_system)
-        .add_systems(Update, core::ui::health::update_health_bar)
-        .add_systems(Update,core::engine::particles::Particle::move_and_handle_collisions.after(core::gameplay::player::flight))
+        .add_systems(Update, ui::health::update_health_bar)
+        .add_systems(Update, engine::particles::Particle::move_and_handle_collisions.after(gameplay::player::flight))
         // Run game logic only in InGame state
-        // .add_systems(Update, core::gameplay::play_game.run_if(in_state(core::engine::update_state::AppState::InGame)))
+        // .add_systems(Update, gameplay::play_game.run_if(in_state(engine::update_state::AppState::InGame)))
         // // Handle pause/resume using ESC key, applicable only in InGame or Paused states
-        // .add_systems(Update, core::engine::update_state::pause_game.run_if(in_state(core::engine::update_state::AppState::InGame).or(in_state(core::engine::update_state::AppState::Paused))))
+        // .add_systems(Update, engine::update_state::pause_game.run_if(in_state(engine::update_state::AppState::InGame).or(in_state(engine::update_state::AppState::Paused))))
         .run();
 }
 

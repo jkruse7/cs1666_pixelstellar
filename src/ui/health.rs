@@ -1,8 +1,9 @@
 use bevy::prelude::*;
-use crate::core::gameplay::player::{Health, Player}; 
+use crate::gameplay::player::{Health, Player}; 
 
 #[derive(Component)]
 pub struct HealthBar;
+
 #[derive(Component)]
 pub struct health {
     pub max: f32,
@@ -62,6 +63,5 @@ pub fn update_health_bar(
         // Optionally change the color based on health (e.g., green -> red)
         *background_color = Color::rgb(1.0 - percentage, percentage, 0.0).into();
 
-}
-
+    }
 }

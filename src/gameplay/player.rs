@@ -1,23 +1,23 @@
 use bevy::prelude::*;
 
-use crate::core::engine::hitbox::Hitbox;
-use crate::LEVEL_H;
-use crate::LEVEL_W;
-use crate::WIN_W;
-use crate::WIN_H;
-
-use crate::core::engine::gravity::Gravity;
-use crate::core::gameplay::enemy::Enemy;
+use crate::{
+    engine::{
+        hitbox::Hitbox,
+        gravity::Gravity,
+    },
+    gameplay::enemy::Enemy,
+    LEVEL_H,
+    LEVEL_W,
+    WIN_W,
+    WIN_H,
+};
 
 
 const TILE_SIZE: u32 = 100;
-
 const MAX_FLIGHT_SPEED: f32 = 250.;
-
 const PLAYER_SPEED: f32 = 250.;
 const ACCEL_RATE_X: f32 = 5000.;
 const ACCEL_RATE_Y: f32 = 10800.;
-
 const ANIM_TIME: f32 = 0.2;
 
 //Julianne 10/8: These will be used for hitbox sizes.
@@ -181,11 +181,11 @@ pub fn flight(
     let acc_y = ACCEL_RATE_Y * deltat;
 
     if input.pressed(KeyCode::Space) {
-        pg.reset_G();
+        pg.reset_g();
         pv.velocity.y = f32::min(MAX_FLIGHT_SPEED, pv.velocity.y + (1. * acc_y))
     }else {
-        pg.update_G(&pv.velocity.y, &deltat);
-        pv.velocity.y = pg.get_G();
+        pg.update_g(&pv.velocity.y, &deltat);
+        pv.velocity.y = pg.get_g();
     }
 
     let change = pv.velocity * deltat;
