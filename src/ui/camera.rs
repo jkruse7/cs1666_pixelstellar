@@ -1,16 +1,15 @@
 use bevy::prelude::*;
 
-use crate::LEVEL_H;
-use crate::LEVEL_W;
-use crate::WIN_H;
-use crate::WIN_W;
-
-use crate::gameplay::player::Player;
-
+use crate::{
+    gameplay::player::Player,
+    LEVEL_H,
+    LEVEL_W,
+    WIN_H,
+    WIN_W,
+};
 
 const THRESHOLD_X: f32 = 160.;
 const THRESHOLD_Y: f32 = 90.;
-
 
 pub fn initialize(mut commands: Commands){
     commands.spawn(Camera2dBundle::default());
