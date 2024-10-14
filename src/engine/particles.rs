@@ -1,7 +1,13 @@
 use bevy::prelude::*;
 use crate::gameplay::player;
 
-use super::{gravity::{self, Gravity}, hitbox::Hitbox};
+use super::{
+    gravity::{
+        self,
+        Gravity
+    },
+    hitbox::Hitbox,
+};
 
 // 10/1 Julianne: base struct for all elements
 // This should include all the componenets that will 
@@ -11,7 +17,7 @@ use super::{gravity::{self, Gravity}, hitbox::Hitbox};
 // TODO: add visual representation of particles
 
 const PARTICLE_SIZE: f32 = 4.;
-enum MATTER_STATE {
+enum MatterState {
     LIQUID,
     GAS, 
     SOLID,
@@ -27,10 +33,10 @@ impl ELEMENT {
             ELEMENT::BEDROCK => Color::srgb(0.5, 0.5, 0.5), // Gray for bedrock
         }
     }
-    pub fn state(&self) -> MATTER_STATE {
+    pub fn state(&self) -> MatterState {
         match self {
-            ELEMENT::WATER => MATTER_STATE::LIQUID,
-            ELEMENT::BEDROCK => MATTER_STATE::SOLID,
+            ELEMENT::WATER => MatterState::LIQUID,
+            ELEMENT::BEDROCK => MatterState::SOLID,
         }
     }
 }
@@ -38,7 +44,7 @@ impl ELEMENT {
 #[derive(Component)]
 pub struct Particle {
     has_gravity: bool,
-    state: MATTER_STATE,
+    state: MatterState,
     element: ELEMENT,
     collision: bool,
     iterate_for_collision: bool,
