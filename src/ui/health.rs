@@ -3,6 +3,7 @@ use crate::gameplay::player::{Health, Player};
 
 #[derive(Component)]
 pub struct HealthBar;
+
 #[derive(Component)]
 pub struct health {
     pub max: f32,
@@ -47,7 +48,6 @@ pub fn setup_health_bar(
     ));
 }
 
-
 pub fn update_health_bar(
     mut query: Query<(&mut Style, &mut BackgroundColor, &mut Text), With<HealthBar>>, 
     player_query: Query<&Health, With<Player>>,
@@ -62,6 +62,5 @@ pub fn update_health_bar(
         // Optionally change the color based on health (e.g., green -> red)
         *background_color = Color::rgb(1.0 - percentage, percentage, 0.0).into();
 
-}
-
+    }
 }
