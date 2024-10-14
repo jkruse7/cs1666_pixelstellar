@@ -1,17 +1,30 @@
-use world::water::setup_water_tiles;
+// rust and bevy imports
+use bevy::{
+    prelude::*,
+    window::PresentMode,
+    ecs::query,
+};
 
-use bevy::ecs::query;
-use bevy::{prelude::*, window::PresentMode};
-
+// module declarations and imports
 mod engine;
 mod gameplay;
 mod ui;
 mod world;
 
-use crate::ui::button::{spawn_custom_button, button_interaction_system};
-use crate::ui::camera::{mouse_coordinates};
-use crate::ui::health::{setup_health_bar, update_health_bar};
+use ui::{
+    button::{
+        spawn_custom_button,
+        button_interaction_system,
+    },
+    health::{
+        setup_health_bar,
+        update_health_bar,
+    },
+    camera::mouse_coordinates,
+};
+use world::water::setup_water_tiles;
 
+// constants
 const TITLE: &str = "Pixelstellar";
 const WIN_W: f32 = 1280.;
 const WIN_H: f32 = 720.;
@@ -74,7 +87,7 @@ fn main() {
         .add_systems(Update, ui::camera::move_camera.after(gameplay::player::move_player))
         .add_systems(Update, button_interaction_system)
         .add_systems(Update, ui::health::update_health_bar)
-        .add_systems(Update,engine::particles::Particle::move_and_handle_collisions.after(gameplay::player::flight))
+        .add_systems(Update, engine::particles::Particle::move_and_handle_collisions.after(gameplay::player::flight))
         // Run game logic only in InGame state
         // .add_systems(Update, gameplay::play_game.run_if(in_state(engine::update_state::AppState::InGame)))
         // // Handle pause/resume using ESC key, applicable only in InGame or Paused states
