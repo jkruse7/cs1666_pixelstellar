@@ -1,5 +1,9 @@
 use bevy::prelude::*;
-use crate::engine::{gravity::Gravity, hitbox::Hitbox};
+
+use crate::engine::{
+    gravity::Gravity,
+    hitbox::Hitbox,
+};
 
 // 水块组件
 #[derive(Component)]
