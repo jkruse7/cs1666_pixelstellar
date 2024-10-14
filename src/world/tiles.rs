@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::core::engine::hitbox::Hitbox;
+use crate::engine::hitbox::Hitbox;
 
 #[derive(Component)]
 pub struct tiles {

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use std::convert::From;
-use crate::core::engine::hitbox::Hitbox;
-use crate::core::world::planet1;
+use crate::engine::hitbox::Hitbox;
+use crate::world::planet1;
 
 
 use crate::LEVEL_H;
@@ -9,7 +9,7 @@ use crate::LEVEL_W;
 use crate::WIN_W;
 use crate::WIN_H;
 
-use crate::core::world::perlin_noise::get_1DPn_value;
+use crate::world::perlin_noise::get_1DPn_value;
 
 const LEVEL_LEN: u32 = LEVEL_W as u32;
 const LEVEL_H_INT: i16 = LEVEL_H as i16;
@@ -45,7 +45,7 @@ pub fn initialize(
         // This inner loop is going to stack tiles at a fixed x coordinate
         while j <= (noise as u32) {
             t += Vec2::new(0., (FLOOR_TILE_SIZE) as f32);
-            let floor_hitbox = crate::core::engine::hitbox::Hitbox::new(FLOOR_TILE_SIZE as f32, FLOOR_TILE_SIZE as f32, Vec2::new(t.x, t.y));
+            let floor_hitbox = crate::engine::hitbox::Hitbox::new(FLOOR_TILE_SIZE as f32, FLOOR_TILE_SIZE as f32, Vec2::new(t.x, t.y));
             commands.spawn((
                 SpriteBundle {
                     texture: floor_sheet_handle.clone(),

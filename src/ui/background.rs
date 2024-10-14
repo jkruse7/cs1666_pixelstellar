@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use std::convert::From;
 
-use crate::core::world::planet1;
+use crate::world::planet1;
 
 use crate::LEVEL_H;
 use crate::LEVEL_W;

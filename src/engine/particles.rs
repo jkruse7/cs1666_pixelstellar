@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::core::gameplay::player;
+use crate::gameplay::player;
 
 use super::{gravity::{self, Gravity}, hitbox::Hitbox};
 
