@@ -1,5 +1,7 @@
-use bevy::prelude::*;
-use bevy::input::keyboard::KeyCode; 
+use bevy::{
+    prelude::*,
+    input::keyboard::KeyCode,
+};
 
 #[derive(Debug, Clone, Eq, PartialEq, Hash, Default, States)]
 pub enum AppState {
