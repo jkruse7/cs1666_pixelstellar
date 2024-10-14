@@ -82,7 +82,7 @@ impl Particle {
             iterate_for_collision,
             hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE, transform.translation.truncate()),
             velocity,
-            gravity: Gravity::new_with_G(velocity.y),
+            gravity: Gravity::new_with_g(velocity.y),
             transform
         }
     }
@@ -121,8 +121,8 @@ impl Particle {
             // Apply gravity if necessary
             if particle.has_gravity {
                 let velocity_y = particle.velocity.y;
-                particle.gravity.update_G(&velocity_y, &deltat);
-                particle.velocity.y = particle.gravity.get_G();
+                particle.gravity.update_g(&velocity_y, &deltat);
+                particle.velocity.y = particle.gravity.get_g();
             }
 
             let proposed_offset = hitbox.offset + particle.velocity * deltat;
