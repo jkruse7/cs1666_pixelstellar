@@ -1,14 +1,16 @@
 use bevy::prelude::*;
+
+// Define default button colors for different states
+const DEFAULT_NORMAL_COLOR: Color = Color::srgba(0.15, 0.15, 0.15, 1.0);  // Default normal state color
+const DEFAULT_HOVERED_COLOR: Color = Color::srgba(0.25, 0.25, 0.25, 1.0); // Default hovered state color
+const DEFAULT_PRESSED_COLOR: Color = Color::srgba(0.35, 0.75, 0.35, 1.0); // Default pressed state color
+
 #[derive(Component)]
 pub struct ButtonColors { 
     pub normal: Color,   
     pub hovered: Color,   
     pub pressed: Color,   
 }
-// Define default button colors for different states
-const DEFAULT_NORMAL_COLOR: Color = Color::srgba(0.15, 0.15, 0.15, 1.0);  // Default normal state color
-const DEFAULT_HOVERED_COLOR: Color = Color::srgba(0.25, 0.25, 0.25, 1.0); // Default hovered state color
-const DEFAULT_PRESSED_COLOR: Color = Color::srgba(0.35, 0.75, 0.35, 1.0); // Default pressed state color
 
 /// Function to spawn a button with customizable colors and opacity
 pub fn spawn_custom_button(
@@ -108,4 +110,3 @@ pub fn button_interaction_system(
         }
     }
 }
-

@@ -1,25 +1,26 @@
 use bevy::prelude::*;
 
-use crate::engine::hitbox::Hitbox;
-use crate::LEVEL_H;
-use crate::LEVEL_W;
-use crate::WIN_W;
-use crate::WIN_H;
-
-use crate::engine::gravity::Gravity;
-use crate::gameplay::player::Player;
-use crate::gameplay::player::Health;
-use crate::ui::health::update_health_bar;
-
+use crate::{
+    engine::{
+        hitbox::Hitbox,
+        gravity::Gravity,
+    },
+    gameplay::player::{
+        Player,
+        Health,
+    },
+    ui::health::update_health_bar,
+    LEVEL_H,
+    LEVEL_W,
+    WIN_W,
+    WIN_H,
+};
 
 const TILE_SIZE: u32 = 100;
-
 const ENEMY_SPEED: f32 = 100.;
 const ACCEL_RATE_X: f32 = 5000.;
 const ACCEL_RATE_Y: f32 = 10800.;
-
 const ANIM_TIME: f32 = 0.2;
-
 const SPRITE_HEIGHT: u32 = 50;
 const SPRITE_WIDTH: u32 = 30;
 
@@ -68,7 +69,7 @@ pub fn initialize(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
-){
+) {
     let enemy_sheet_handle = asset_server.load("enemy_walking.png");
     let enemy_layout = TextureAtlasLayout::from_grid(UVec2::splat(TILE_SIZE), 4, 1, None, None);
     let enemy_layout_len = enemy_layout.textures.len();
@@ -134,8 +135,8 @@ pub fn enemy_gravity(
     let deltat = time.delta_seconds();
 
     //update gravity here
-    pg.update_G(&pv.velocity.y, &deltat);
-    pv.velocity.y = pg.get_G();
+    pg.update_g(&pv.velocity.y, &deltat);
+    pv.velocity.y = pg.get_g();
     
 
     let change = pv.velocity * deltat;

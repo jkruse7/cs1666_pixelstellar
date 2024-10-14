@@ -1,20 +1,21 @@
 use bevy::prelude::*;
 use std::convert::From;
-use crate::engine::hitbox::Hitbox;
-use crate::world::planet1;
 
-
-use crate::LEVEL_H;
-use crate::LEVEL_W;
-use crate::WIN_W;
-use crate::WIN_H;
-
-use crate::world::perlin_noise::get_1DPn_value;
+use crate::{
+    world::{
+        planet1,
+        perlin_noise::get_1d_pn_value,
+    },
+    engine::hitbox::Hitbox,
+    LEVEL_H,
+    LEVEL_W,
+    WIN_H,
+    WIN_W,
+};
 
 const LEVEL_LEN: u32 = LEVEL_W as u32;
 const LEVEL_H_INT: i16 = LEVEL_H as i16;
 const LEVEL_W_INT: i16 = LEVEL_W as i16;
-
 const FLOOR_TILE_SIZE: u32 = 50;
 
 #[derive(Component)]
@@ -38,7 +39,7 @@ pub fn initialize(
     );
     while i * FLOOR_TILE_SIZE < (LEVEL_LEN as u32) {
         // Create noise with x coordinates, fixed y, an amplitude of 10, and a frequency of 0.01
-        let mut noise = get_1DPn_value(t.x, 1., 10., 0.01);
+        let mut noise = get_1d_pn_value(t.x, 1., 10., 0.01);
         noise = noise.floor();
         let mut j = 0;
 
