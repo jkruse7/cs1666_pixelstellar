@@ -4,7 +4,7 @@ use std::convert::From;
 use crate::{
     world::{
         planet1,
-        perlin_noise::get_1DPn_value,
+        perlin_noise::get_1d_pn_value,
     },
     engine::hitbox::Hitbox,
     LEVEL_H,
@@ -39,7 +39,7 @@ pub fn initialize(
     );
     while i * FLOOR_TILE_SIZE < (LEVEL_LEN as u32) {
         // Create noise with x coordinates, fixed y, an amplitude of 10, and a frequency of 0.01
-        let mut noise = get_1DPn_value(t.x, 1., 10., 0.01);
+        let mut noise = get_1d_pn_value(t.x, 1., 10., 0.01);
         noise = noise.floor();
         let mut j = 0;
 
