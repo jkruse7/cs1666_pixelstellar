@@ -8,11 +8,14 @@ use crate::{
     WIN_W,
 };
 
+#[derive(Component)]
+pub struct MainCamera;
+
 const THRESHOLD_X: f32 = 160.;
 const THRESHOLD_Y: f32 = 90.;
 
 pub fn initialize(mut commands: Commands){
-    commands.spawn(Camera2dBundle::default());
+    commands.spawn((Camera2dBundle::default(), MainCamera));
 }
 
 pub fn move_camera(
