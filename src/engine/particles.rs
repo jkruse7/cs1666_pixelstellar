@@ -145,7 +145,7 @@ impl Particle {
                 if *entity == other_entity {
                     continue; // Skip self
                 }
-                info!("Checking collision between {:?} and hb offset{:?}", entity, other_hitbox.offset);
+                //info!("Checking collision between {:?} and hb offset{:?}", entity, other_hitbox.offset);
                 // If proposed movement collides with another hitbox, adjust velocity
                 if Hitbox::new(PARTICLE_SIZE,PARTICLE_SIZE, *proposed_offset).collides_with(&other_hitbox) {
                     collides = true;
@@ -170,7 +170,7 @@ impl Particle {
                     }
                 }
             } else {
-                info!("Collision detected for entity {:?}", entity);
+                //info!("Collision detected for entity {:?}", entity);
                 // Handle collision (right now just stop the particle)
                 for (ent, mut part, hb, tr) in parts.iter_mut() {
                     if ent == *entity {
@@ -212,6 +212,6 @@ pub fn test_particle_spawn(
         Vec2::new(0., 0.),
         Transform::from_translation(Vec3::new(0., -120., 0.)),
     );
-    info!("bedrock hb offset: {:?}", bedrock.hitbox.offset);
+    //info!("bedrock hb offset: {:?}", bedrock.hitbox.offset);
     Particle::spawn_particle(&mut commands, bedrock);
 }
