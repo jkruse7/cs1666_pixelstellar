@@ -23,13 +23,17 @@ pub fn move_camera(
 
     let x_bound = LEVEL_W / 2. - WIN_W / 2.;
     let y_bound = LEVEL_H / 2. - WIN_H / 2.;
+    
 
     let mut ct = camera.single_mut();
     let x_diff = pt.translation - ct.translation;
-    if x_diff.x > THRESHOLD_X{ ct.translation.x = pt.translation.x.clamp(-x_bound, x_bound) - THRESHOLD_X; }
-    if x_diff.x < -THRESHOLD_X { ct.translation.x = pt.translation.x.clamp(-x_bound, x_bound) + THRESHOLD_X; }
-    if x_diff.y > THRESHOLD_Y{ ct.translation.y = pt.translation.y.clamp(-y_bound, y_bound) - THRESHOLD_Y; }
-    if x_diff.y < -THRESHOLD_Y { ct.translation.y = pt.translation.y.clamp(-y_bound, y_bound) + THRESHOLD_Y; }
+
+    //info!("player: {}, new: {}, {} (bounds: {}, {})", pt.translation, pt.translation.x.clamp(-x_bound, x_bound) - THRESHOLD_X,  pt.translation.y.clamp(-y_bound, y_bound) - THRESHOLD_Y, x_bound, y_bound);
+    if x_diff.x > THRESHOLD_X{ ct.translation.x = pt.translation.x.clamp(-x_bound - THRESHOLD_X, x_bound + THRESHOLD_X) - THRESHOLD_X; }
+    if x_diff.x < -THRESHOLD_X { ct.translation.x = pt.translation.x.clamp(-x_bound - THRESHOLD_X, x_bound + THRESHOLD_X) + THRESHOLD_X; }
+    if x_diff.y > THRESHOLD_Y{ ct.translation.y = pt.translation.y.clamp(-y_bound - THRESHOLD_Y, y_bound + THRESHOLD_Y) - THRESHOLD_Y; }
+    if x_diff.y < -THRESHOLD_Y { ct.translation.y = pt.translation.y.clamp(-y_bound - THRESHOLD_Y, y_bound + THRESHOLD_Y) + THRESHOLD_Y; }
+
 }
 
 

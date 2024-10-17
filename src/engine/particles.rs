@@ -16,7 +16,7 @@ use super::{
 // TODO: remove bedrock from having to be iterated over on outer loop
 // TODO: add visual representation of particles
 
-const PARTICLE_SIZE: f32 = 4.;
+pub const PARTICLE_SIZE: f32 = 4.;
 enum MatterState {
     LIQUID,
     GAS, 
@@ -112,6 +112,10 @@ impl Particle {
 
         ));
     }
+    
+    pub fn teleport_to(&mut self, new_position: Vec3){
+        self.transform.translation = new_position;
+    }
 
     pub fn move_and_handle_collisions(
         time: Res<Time>,
@@ -145,7 +149,7 @@ impl Particle {
                 if *entity == other_entity {
                     continue; // Skip self
                 }
-                info!("Checking collision between {:?} and hb offset{:?}", entity, other_hitbox.offset);
+                //info!("Checking collision between {:?} and hb offset{:?}", entity, other_hitbox.offset);
                 // If proposed movement collides with another hitbox, adjust velocity
                 if Hitbox::new(PARTICLE_SIZE,PARTICLE_SIZE, *proposed_offset).collides_with(&other_hitbox) {
                     collides = true;
@@ -170,7 +174,7 @@ impl Particle {
                     }
                 }
             } else {
-                info!("Collision detected for entity {:?}", entity);
+                //info!("Collision detected for entity {:?}", entity);
                 // Handle collision (right now just stop the particle)
                 for (ent, mut part, hb, tr) in parts.iter_mut() {
                     if ent == *entity {
@@ -181,6 +185,9 @@ impl Particle {
         }
     }
 }
+
+
+
 pub fn test_particle_spawn(
     mut commands: Commands,
 ) {
@@ -199,7 +206,7 @@ pub fn test_particle_spawn(
         ELEMENT::WATER,
         true,
         true,
-        Vec2::new(240., 100.),
+        Vec2::new(0., 0.),
         Transform::from_translation(Vec3::new(0., -100., 0.)),
     );
     Particle::spawn_particle(&mut commands, particle);
@@ -212,6 +219,6 @@ pub fn test_particle_spawn(
         Vec2::new(0., 0.),
         Transform::from_translation(Vec3::new(0., -120., 0.)),
     );
-    info!("bedrock hb offset: {:?}", bedrock.hitbox.offset);
+    //info!("bedrock hb offset: {:?}", bedrock.hitbox.offset);
     Particle::spawn_particle(&mut commands, bedrock);
 }

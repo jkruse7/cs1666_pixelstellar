@@ -8,8 +8,6 @@ use crate::{
     gameplay::enemy::Enemy,
     LEVEL_H,
     LEVEL_W,
-    WIN_W,
-    WIN_H,
 };
 
 
@@ -91,7 +89,7 @@ pub fn initialize(
         SpriteBundle {
             texture: player_sheet_handle,
             transform: Transform {
-                translation: Vec3::new(0., -(WIN_H / 2.) + ((TILE_SIZE as f32) * 1.5), 900.),
+                translation: Vec3::new(0., -(LEVEL_H / 2.) + ((TILE_SIZE as f32) * 1.5), 900.),
                 ..default()
             },
             sprite: Sprite {
@@ -156,16 +154,17 @@ pub fn move_player(
 
     
     if new_hb.player_enemy_collision(&enemy_hitboxes){
-        info!("updating!");
+        //info!("updating!");
         player_health.current -=1.;
     }
-    if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
-        && new_pos.x <= LEVEL_W - (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
+    if new_pos.x >= -(LEVEL_W / 2.) + (TILE_SIZE as f32) / 2.
+        && new_pos.x <= LEVEL_W - (LEVEL_W / 2. + (TILE_SIZE as f32) / 2.)
         && !new_hb.all_player_collisions(&hitboxes)
     {
         pt.translation = new_pos;
         *hb = new_hb;
     }
+    //info!("{}", pt.translation);
 
 }
 
@@ -193,8 +192,8 @@ pub fn flight(
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
     //Bound player to within level height
 
-    if new_pos.y >= -(WIN_H / 2.) + (TILE_SIZE as f32) / 2.
-        && new_pos.y <= WIN_H - (TILE_SIZE as f32) / 2.
+    if new_pos.y >= -(LEVEL_H / 2.) + (TILE_SIZE as f32) / 2.
+        && new_pos.y <= LEVEL_H - (TILE_SIZE as f32) / 2.
         && !new_hb.all_player_collisions(&hitboxes)
     {
         pt.translation = new_pos;

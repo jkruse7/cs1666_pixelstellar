@@ -28,13 +28,18 @@ use world::water::setup_water_tiles;
 const TITLE: &str = "Pixelstellar";
 const WIN_W: f32 = 1280.;
 const WIN_H: f32 = 720.;
-const LEVEL_W: f32 = 6300.;
+const LEVEL_W: f32 = 6400.;
 const LEVEL_H: f32 = 3600.;
+
+use engine::particles::PARTICLE_SIZE;
+use world::grid;
+
 
 fn main() {
     App::new()
         // Set the background color for the window
         .insert_resource(ClearColor(Color::Srgba(Srgba::gray(0.75))))
+        .insert_resource(StateArray::initialize(LEVEL_W, LEVEL_H, PARTICLE_SIZE))
         // Add default plugins and configure the primary window
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
@@ -69,7 +74,7 @@ fn main() {
         //.add_systems(Startup, ui::health::setup_health_bar)
         .add_systems(Startup, gameplay::player::initialize)
         .add_systems(Startup, gameplay::enemy::initialize)
-        .add_systems(Startup, world::floor::initialize)
+        //.add_systems(Startup, world::floor::initialize)
         .add_systems(Startup, ui::health::setup_health_bar)
         .add_systems(Startup, engine::particles::test_particle_spawn)
         //.add_systems(Startup,setup_system)
@@ -96,29 +101,20 @@ fn main() {
 }
 
 
-//just for test, will be removed
-fn setup_system(mut commands: Commands, asset_server: Res<AssetServer>) {
-    
-    let font = asset_server.load("fonts/Silkscreen-Bold.ttf");
-
-    spawn_custom_button(
-        &mut commands,         
-        "Start Game",           
-        Vec2::new(160.0, 40.0),
-        Some(Vec2::new(0.,0.)),
-        font,                   
-        Some(Color::srgba(0.15, 0.15, 0.15, 1.0)), // 默认颜色
-        Some(Color::srgba(0.25, 0.25, 0.25, 1.0)), // 悬停颜色
-        Some(Color::srgba(0.35, 0.15, 0.35, 1.0)), // 按下颜色
-        None,              
-    );
-}
+use crate::grid::StateArray;
+use engine::particles::ELEMENT;
+use engine::particles::Particle;
+use world::perlin_noise::get_1d_pn_value;
 fn setup(
     mut commands: Commands,
+    mut state_array: ResMut<StateArray>
 ) {
-    let tile_size = 50.0; 
-    let tile_count_x = 10; 
-    let tile_count_y = 10; 
+    let mut x = -3200;
+    while x < 0 {
+        info!("X:{}. gives: ({}, {})", x, ((x as f32) / 160.), get_1d_pn_value(((x as f32) / 160.), 30., 0.6));
+        let (closest_x, y): (usize, usize) = StateArray::get_closest(x as f32, get_1d_pn_value(((x as f32) / 160.),5., 0.6));
+        state_array.spawn(&mut commands, closest_x, y, 0);
+        x = x + 4;
+    }
 
-    setup_water_tiles(commands, tile_size, tile_count_x, tile_count_y);
 }
