@@ -4,3 +4,4 @@ pub mod perlin_noise;
 pub mod planet1;
 pub mod tiles;
 pub mod water;
+pub mod grid;
