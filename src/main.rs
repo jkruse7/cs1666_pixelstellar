@@ -10,6 +10,7 @@ mod world;
 use crate::{
     engine::test_particle::*,
     world::grid::*,
+    world::floor::*,
 };
 
 // constants
@@ -34,6 +35,7 @@ fn main() {
         }))
         .add_systems(Startup, setup_camera)
         .add_systems(Startup, setup_particles)
+        .add_systems(Startup, generate_floor)
         .add_systems(Update, update_particles)
         .run();
 }

@@ -63,8 +63,10 @@ pub fn update_particles(
 ) {
     // generate random water particles on the screen
     let mut rng = rand::thread_rng();
-    let i = Index::new(rng.gen_range(0..grid.w), rng.gen_range(0..grid.h));
-    grid.set(i, ParticleType::Water);
+    let i = Index::new(rng.gen_range(0..grid.w), rng.gen_range((grid.h / 2)..grid.h));
+    if grid.get(i) == ParticleType::Air {
+        grid.set(i, ParticleType::Water);
+    }
 
     for (index, mut block, mut sprite) in &mut particles {
         match *block {
@@ -90,13 +92,9 @@ pub fn update_water(grid: &mut ResMut<Grid>, index: Index) {
         ParticleType::Air => {
             // swap current particle with particle below
             grid.set(index, ParticleType::Air);
-            grid.set(index.down().down(), ParticleType::Water);
+            grid.set(index.down(), ParticleType::Water);
         },
         ParticleType::BedRock => {
-            
-        },
-        ParticleType::Water => {
-            
             let next_index = if rng.gen_bool(0.5) {
                 index.left().left()
             } else {
@@ -110,7 +108,21 @@ pub fn update_water(grid: &mut ResMut<Grid>, index: Index) {
                 ParticleType::BedRock => {},
                 ParticleType::Water => {},
             }
-
+        },
+        ParticleType::Water => {
+            let next_index = if rng.gen_bool(0.5) {
+                index.left()
+            } else {
+                index.right()
+            };
+            match grid.get(next_index) {
+                ParticleType::Air => {
+                    grid.set(index, ParticleType::Air);
+                    grid.set(next_index, ParticleType::Water);
+                },
+                ParticleType::BedRock => {},
+                ParticleType::Water => {},
+            }
         },
     }
 }
