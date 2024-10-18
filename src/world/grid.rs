@@ -1,85 +1,81 @@
 use bevy::prelude::*;
-use rand::Rng;
 use crate::{
     LEVEL_W,
     LEVEL_H,
     engine::test_particle::*,
 };
 
-pub const GRID_W: f32 = LEVEL_W / PARTICLE_SIZE;
-pub const GRID_H: f32 = LEVEL_H / PARTICLE_SIZE;
-
-#[derive(Component)]
-pub struct Index {
-    pub i: i32,
-    pub j: i32,
-}
-
-impl Index {
-    pub fn new(i: i32, j: i32) -> Self {
-        Self {
-            i: i,
-            j: j,
-        }
-    }
-}
+const GRID_W: usize = (LEVEL_W / PARTICLE_SIZE) as usize;
+const GRID_H: usize = (LEVEL_H / PARTICLE_SIZE) as usize;
 
 #[derive(Resource)]
 pub struct Grid {
-    grid: [[ParticleType; GRID_H as usize]; GRID_W as usize],
+    pub w: usize,
+    pub h: usize,
+    grid: [[ParticleType; GRID_H]; GRID_W],
 }
 
 impl Grid {
     pub fn new() -> Self {
         Self {
-            grid: [[ParticleType::Air; GRID_H as usize]; GRID_W as usize],
+            w: GRID_W,
+            h: GRID_H,
+            grid: [[ParticleType::Air; GRID_H]; GRID_W],
         }
     }
 
-    pub fn get(&self, i: i32, j: i32) -> ParticleType {
-        self.grid[i as usize][j as usize]
+    pub fn get(&self, index: Index) -> ParticleType {
+        self.grid[index.i][index.j]
     }
 
-    pub fn set(&mut self, i: i32, j: i32, block: ParticleType) {
-        self.grid[i as usize][j as usize] = block;
-    }
-}
-
-pub fn draw_water(
-    mut grid: ResMut<Grid>,
-) {
-    let mut rng = rand::thread_rng();
-    for _t in 0..100 {
-        let i = rng.gen_range(0..GRID_W as i32);
-        let j = rng.gen_range(0..GRID_H as i32);
-        grid.set(i, j, ParticleType::Water);
+    pub fn set(&mut self, index: Index, block: ParticleType) {
+        self.grid[index.i][index.j] = block;
     }
 }
 
-pub fn update_grid(mut grid: ResMut<Grid>) {
-    for i in 0..GRID_W as i32 {
-        for j in 0..GRID_H as i32 {
-            if grid.get(i, j) != ParticleType::Water {
-                continue;
-            }
+#[derive(Component, Copy, Clone)]
+pub struct Index {
+    pub i: usize,
+    pub j: usize,
+}
 
-            if j > 0 {
-                match grid.get(i, j - 1) {
-                    ParticleType::Air => {
-                        grid.set(i, j, ParticleType::Air);
-                        grid.set(i, j - 1, ParticleType::Water);
-                    },
-                    ParticleType::BedRock => {
-            
-                    },
-                    ParticleType::Water => {
+impl Index {
+    pub fn new(i: usize, j: usize) -> Self {
+        Self {
+            i: i,
+            j: j,
+        }
+    }
 
-                    },
-                }
-            } else {
-                grid.set(i, j, ParticleType::Air);
-                grid.set(i, GRID_H as i32 - 1, ParticleType::Water);
-            }
+    pub fn up(&self) -> Index {
+        if self.j < GRID_H - 1 {
+            Index::new(self.i, self.j + 1)
+        } else {
+            *self
+        }
+    }
+
+    pub fn down(&self) -> Index {
+        if self.j > 0 {
+            Index::new(self.i, self.j - 1)
+        } else {
+            *self
+        }
+    }
+
+    pub fn left(&self) -> Index {
+        if self.i < GRID_W - 1 {
+            Index::new(self.i + 1, self.j)
+        } else {
+            *self
+        }
+    }
+
+    pub fn right(&self) -> Index {
+        if self.j > 0 {
+            Index::new(self.i - 1, self.j)
+        } else {
+            *self
         }
     }
 }

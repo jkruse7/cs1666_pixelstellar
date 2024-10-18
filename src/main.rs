@@ -32,8 +32,12 @@ fn main() {
             }),
             ..default()
         }))
-        .add_systems(Startup, (setup_particles, draw_water))
-        .add_systems(Update, update_grid)
+        .add_systems(Startup, setup_camera)
+        .add_systems(Startup, setup_particles)
         .add_systems(Update, update_particles)
         .run();
+}
+
+fn setup_camera(mut commands: Commands) {
+    commands.spawn(Camera2dBundle::default());
 }

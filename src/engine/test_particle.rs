@@ -1,9 +1,13 @@
 use bevy::prelude::*;
+use rand::{seq::index, Rng};
 use crate::{LEVEL_W, LEVEL_H, world::grid::*,};
 
 pub const PARTICLE_SIZE: f32 = 4.;
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Component)]
+pub struct Particle;
+
+#[derive(Component, Copy, Clone, PartialEq)]
 pub enum ParticleType {
     Air,
     BedRock,
@@ -20,70 +24,66 @@ impl ParticleType {
     }
 }
 
-#[derive(Component)]
-pub struct Particle {
-    position: Vec3,
-    block: ParticleType,
-    color: Color,
-}
-
-impl Particle {
-    pub fn new(position: Vec3, block: ParticleType) -> Self {
-        Self {
-            position: position,
-            block: block,
-            color: block.get_color(),
-        }
-    }
-
-    pub fn change_type(&mut self, block: ParticleType) {
-        self.block = block;
-        self.color = block.get_color();
-    }
-}
-
 pub fn setup_particles(
     grid: Res<Grid>,
     mut commands: Commands,
 ) {
-    commands.spawn(Camera2dBundle::default());
-
-    for i in 0..GRID_W as i32 {
-        for j in 0..GRID_H as i32 {
-            let particle = Particle::new(
-                Vec3::new(
-                    PARTICLE_SIZE * i as f32 - LEVEL_W / 2. + PARTICLE_SIZE / 2.,
-                    PARTICLE_SIZE * j as f32 - LEVEL_H / 2. + PARTICLE_SIZE / 2.,
-                    0.,
-                ),
-                grid.get(i, j),
-            );
+    for i in 0..grid.w {
+        for j in 0..grid.h {
+            let index = Index::new(i, j);
+            let particle_type = grid.get(index);
 
             commands
-                .spawn(SpriteBundle {
+                .spawn(Particle)
+                .insert(index)
+                .insert(particle_type)
+                .insert(SpriteBundle {
                     sprite: Sprite {
-                        color: particle.color,
+                        color: particle_type.get_color(),
                         custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
                         ..default()
                     },
                     transform: Transform {
-                        translation: particle.position,
+                        translation: Vec3::new(
+                            PARTICLE_SIZE * i as f32 - LEVEL_W / 2. + PARTICLE_SIZE / 2.,
+                            PARTICLE_SIZE * j as f32 - LEVEL_H / 2. + PARTICLE_SIZE / 2.,
+                            0.,
+                        ),
                         ..default()
                     },
                     ..default()
-                })
-                .insert(particle)
-                .insert(Index::new(i, j));
+                });
         }
     }
 }
 
 pub fn update_particles(
-    grid: Res<Grid>,
-    mut query: Query<(&mut Sprite, &mut Particle, &Index)>,
+    mut grid: ResMut<Grid>,
+    mut particles: Query<(&Index, &mut ParticleType, &mut Sprite)>,
 ) {
-    for (mut sprite, mut particle, index) in &mut query {
-        particle.change_type(grid.get(index.i, index.j));
-        sprite.color = particle.color;
+    let mut rng = rand::thread_rng();
+    let i = Index::new(rng.gen_range(0..grid.w), rng.gen_range(0..grid.h));
+    grid.set(i, ParticleType::Water);
+
+    for (index, mut block, mut sprite) in &mut particles {
+        match *block {
+            ParticleType::Air => {},
+            ParticleType::BedRock => {},
+            ParticleType::Water => update_water(&mut grid, *index),
+        }
+
+        *block = grid.get(*index);
+        sprite.color = block.get_color();
+    }
+}
+
+pub fn update_water(grid: &mut ResMut<Grid>, index: Index) {
+    match grid.get(index.down()) {
+        ParticleType::Air => {
+            grid.set(index, ParticleType::Air);
+            grid.set(index.down(), ParticleType::Water);
+        },
+        ParticleType::BedRock => {},
+        ParticleType::Water => {},
     }
 }
