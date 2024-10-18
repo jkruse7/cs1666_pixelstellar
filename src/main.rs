@@ -11,6 +11,9 @@ use crate::{
     engine::test_particle::*,
     world::grid::*,
     world::floor::*,
+    gameplay::player::*,
+    ui::background::*,
+    ui::camera::*,
 };
 
 // constants
@@ -33,13 +36,18 @@ fn main() {
             }),
             ..default()
         }))
-        .add_systems(Startup, setup_camera)
+        //.add_systems(Startup, setup_camera)
+        .add_systems(Startup, initialize_camera)
+        .add_systems(Startup, initialize_background)
+        .add_systems(Startup, initialize_player)
         .add_systems(Startup, setup_particles)
         .add_systems(Startup, generate_floor)
-        .add_systems(Update, update_particles)
-        .run();
-}
 
-fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
+        // Updates
+        .add_systems(Update, update_particles)
+        .add_systems(Update, move_player)
+        .add_systems(Update, flight.after(move_player))
+        .add_systems(Update, animate_player.after(move_player))
+        .add_systems(Update, move_camera.after(move_player))
+        .run();
 }

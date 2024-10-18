@@ -17,9 +17,9 @@ pub enum ParticleType {
 impl ParticleType {
     fn get_color(&self) -> Color {
         match self {
-            Self::Air => Color::srgb_u8(0, 0, 0),
-            Self::BedRock => Color::srgb_u8(128, 128, 128),
-            Self::Water => Color::srgb_u8(0, 0, 255),
+            Self::Air => Color::srgba_u8(0, 0, 0,0),
+            Self::BedRock => Color::srgba_u8(128, 128, 128, 255),
+            Self::Water => Color::srgba_u8(0, 0, 255, 128),
         }
     }
 }

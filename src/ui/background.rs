@@ -14,7 +14,7 @@ const BG_TILE_SIZE: u32 = 150;
 #[derive(Component)]
 struct Background;
 
-pub fn initialize (
+pub fn initialize_background (
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,

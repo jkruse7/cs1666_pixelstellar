@@ -78,7 +78,7 @@ impl Health {
 }
 
 
-pub fn initialize(
+pub fn initialize_player(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,

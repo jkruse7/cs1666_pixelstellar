@@ -11,7 +11,7 @@ use crate::{
 const THRESHOLD_X: f32 = 160.;
 const THRESHOLD_Y: f32 = 90.;
 
-pub fn initialize(mut commands: Commands){
+pub fn initialize_camera(mut commands: Commands){
     commands.spawn(Camera2dBundle::default());
 }
 
