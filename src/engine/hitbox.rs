@@ -19,7 +19,7 @@ pub struct DoNotSearchCollide;
 pub struct Hitbox {
     pub width: f32,
     pub height: f32,
-    pub offset: Vec2, //bottom left corner
+    pub offset: Vec2, //center of the hitbox
 }
 
 impl Hitbox {
@@ -32,9 +32,11 @@ impl Hitbox {
     }
     pub fn collides_with(&self, other: &Hitbox) -> bool {
         //tr = topright corner
-        let self_tr = self.offset + Vec2::new(self.width,self.height);
-        let other_tr = other.offset + Vec2::new(other.width,other.height);
-        self.offset.x < other_tr.x && self_tr.x > other.offset.x && self.offset.y < other_tr.y && self_tr.y > other.offset.y
+        let self_tr = self.offset + Vec2::new(self.width,self.height)/2.0;
+        let self_bl = self.offset - Vec2::new(self.width,self.height)/2.0;
+        let other_bl = other.offset - Vec2::new(other.width,other.height)/2.0;
+        let other_tr = other.offset + Vec2::new(other.width,other.height)/2.0;
+        self_tr.x > other_bl.x && self_bl.x < other_tr.x && self_tr.y > other_bl.y && self_bl.y < other_tr.y
     }
     pub fn all_player_collisions(&self, hitboxes: &Query<&Hitbox, Without<Player>>)  -> bool {
         for hitbox in hitboxes.iter() {
