@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use rand::{seq::index, Rng};
+use rand::Rng;
 use crate::{LEVEL_W, LEVEL_H, world::grid::*,};
 
 pub const PARTICLE_SIZE: f32 = 4.;
@@ -33,6 +33,15 @@ pub fn setup_particles(
             let index = Index::new(i, j);
             let particle_type = grid.get(index);
 
+            // DONT SPAWN AIR PARTICLES AS ENTITIES
+            // AIR PARTICLE SHOULD BE REPRESENTATION OF NO PARTICLE
+            // SLOW AS SHIT WITHOUT THIS OPTIMIZATION
+            // FURTHER OPTIMIZATION COULD ENCLUDE ENTITY CAPS
+            // NEED TO LOOK INTO CHUNKING THE GRID INTO MORE MANAGABLE PARTS
+            if particle_type == ParticleType::Air {
+                continue;
+            }
+
             commands
                 .spawn(Particle)
                 .insert(index)
@@ -57,17 +66,47 @@ pub fn setup_particles(
     }
 }
 
+
+// TODO: in order to update:
+// 1. check if particle can be moved to next position based on state at grid position
+//  a. make funcition to map particle (x, y) to grid
+//  b. make funcition to map particle (x, y) to window (x, y) for translation
+// 2. set current position's state on grid to air and next position's state to water
+// 3. translate particle to next position
 pub fn update_particles(
     mut grid: ResMut<Grid>,
-    mut particles: Query<(&Index, &mut ParticleType, &mut Sprite)>,
+    mut commands: Commands,
+    mut particles: Query<(&Index, &mut ParticleType, &mut Sprite), With<Particle>>,
 ) {
     // generate random water particles on the screen
+    // TODO: make bevy system to spawn "rain" particles (for demo)
     let mut rng = rand::thread_rng();
     let i = Index::new(rng.gen_range(0..grid.w), rng.gen_range((grid.h / 2)..grid.h));
     if grid.get(i) == ParticleType::Air {
         grid.set(i, ParticleType::Water);
+        commands
+                .spawn(Particle)
+                .insert(i)
+                .insert(ParticleType::Water)
+                .insert(SpriteBundle {
+                    sprite: Sprite {
+                        color: ParticleType::Water.get_color(),
+                        custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                        ..default()
+                    },
+                    transform: Transform {
+                        translation: Vec3::new(
+                            PARTICLE_SIZE * i.i as f32 - LEVEL_W / 2. + PARTICLE_SIZE / 2.,
+                            PARTICLE_SIZE * i.j as f32 - LEVEL_H / 2. + PARTICLE_SIZE / 2.,
+                            0.,
+                        ),
+                        ..default()
+                    },
+                    ..default()
+                });
     }
 
+    // query probably needs fixed
     for (index, mut block, mut sprite) in &mut particles {
         match *block {
             ParticleType::Air => {},

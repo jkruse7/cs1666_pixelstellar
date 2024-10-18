@@ -17,8 +17,8 @@ use crate::{
 const TITLE: &str = "Pixelstellar";
 const WIN_W: f32 = 1280.;
 const WIN_H: f32 = 720.;
-const LEVEL_W: f32 = 1280.;
-const LEVEL_H: f32 = 720.;
+const LEVEL_W: f32 = WIN_W;
+const LEVEL_H: f32 = WIN_H;
 
 fn main() {
     App::new()
@@ -34,8 +34,8 @@ fn main() {
             ..default()
         }))
         .add_systems(Startup, setup_camera)
-        .add_systems(Startup, setup_particles)
         .add_systems(Startup, generate_floor)
+        .add_systems(Startup, setup_particles)
         .add_systems(Update, update_particles)
         .run();
 }
