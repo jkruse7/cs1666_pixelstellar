@@ -27,6 +27,9 @@ const SPRITE_WIDTH: u32 = 30;
 #[derive(Component)]
 pub struct Enemy;
 
+#[derive(Component)]
+pub struct IsDead;
+
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(Timer);
 
@@ -130,7 +133,7 @@ pub fn enemy_gravity(
     hitboxes: Query<(&Hitbox), Without<Enemy>>
 ) {
     /*Julianne 10/8: This function is the same as player flight, but only makes the downward force on the enemy (no flight)*/
-    let (mut pt, mut pv, mut pg, mut hb) = enemy.single_mut();
+    for (mut pt, mut pv, mut pg, mut hb) in &mut enemy{
 
     let deltat = time.delta_seconds();
 
@@ -159,6 +162,7 @@ pub fn enemy_gravity(
     {
         pv.velocity.y = 0.;
     }
+}
     //assumes the enemy is a square and pt.translation is the lower-left corner
 }
 
@@ -175,7 +179,8 @@ pub fn animate_enemy(
         With<Enemy>,
     >,
 ) {
-    let (v, mut texture_atlas, mut timer, frame_count) = enemy.single_mut();
+    for (v, mut texture_atlas, mut timer, frame_count) in &mut enemy {
+    //let (v, mut texture_atlas, mut timer, frame_count) = enemy.single_mut();
     let x_vel = Vec2::new(v.velocity.x, 0.);
     //info!(x_vel.x);
     if x_vel.cmpne(Vec2::ZERO).any() {
@@ -186,6 +191,7 @@ pub fn animate_enemy(
          }
     }
 }
+}
 
 /*Julianne 10/8: This finds if the player is on the left or right side
  and simply makes enemy walk towards the player, changing x translation only
@@ -193,13 +199,13 @@ pub fn animate_enemy(
 pub fn track_player(
     time: Res<Time>,
     mut commands: Commands, 
-    mut enemy: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut DamageBox, &mut AnimationTimer), (With<Enemy>, Without<Player>)>,
+    mut enemy: Query<(Entity, &mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut DamageBox, &mut AnimationTimer, &mut Gravity), (With<Enemy>, Without<Player>)>,
     mut player: Query<(&mut Transform, &mut Health), (With<Player>, Without<Enemy>)>,
     hitboxes: Query<(&Hitbox), Without<Enemy>>, 
     mut camera: Query<&mut Transform, (Without<Player>, Without<Enemy>, With<Camera>)>
 ){
     //get enemy, player and camera
-    let (mut et, mut ev, mut es, mut ehb, mut edb, mut timer) = enemy.single_mut();
+    for (enemy_ent, mut et, mut ev, mut es, mut ehb, mut edb, mut timer, mut eg) in &mut enemy{
     let (mut pt, mut player_health) = player.single_mut();
     let cam_t = camera.single_mut();
     let mut deltav_x = 0.;
@@ -242,7 +248,34 @@ pub fn track_player(
     let new_pos = et.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
     
+    if new_hb.all_enemy_collisions(&hitboxes){
+        commands.entity(enemy_ent)
+        .insert(IsDead);
+        let acc_y = ACCEL_RATE_Y * deltat;
 
+        eg.reset_g();
+        ev.velocity.y = f32::min(250., ev.velocity.y + (1. * acc_y));
+
+        let change = ev.velocity * deltat;
+        let new_pos = et.translation + change.extend(0.);
+        let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
+        //Bound player to within level height
+
+        if new_pos.y >= -(LEVEL_H / 2.) + (TILE_SIZE as f32) / 2.
+            && new_pos.y <= LEVEL_H - (TILE_SIZE as f32) / 2.
+        {
+            et.translation = new_pos;
+            *ehb = new_hb;
+        }  
+    
+        let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
+        // Velocity is zero when player hits the ground
+        if et.translation.y <= -(LEVEL_H / 2.) + (TILE_SIZE as f32) ||
+            new_hb.all_enemy_collisions(&hitboxes) 
+        {
+            ev.velocity.y = 0.;
+        }
+    }
     if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
         && new_pos.x <= LEVEL_W - (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
         && !new_hb.all_enemy_collisions(&hitboxes)
@@ -256,5 +289,16 @@ pub fn track_player(
     if edb.collides_with(&ehb, enemy_pos, player_pos) {
         player_health.current -= 10.0; 
         info!("Player hit! Current health: {:?}", player_health.current); // 记录伤害
+    }
+}
+}
+
+pub fn despawn_dead_enemies(
+    mut commands: Commands,
+    query: Query<Entity, (With<Enemy>, With<IsDead>)>
+
+){
+    for entity in query.iter() {
+        commands.entity(entity).despawn();
     }
 }
