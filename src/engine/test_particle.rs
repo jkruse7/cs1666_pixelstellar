@@ -61,6 +61,7 @@ pub fn update_particles(
     mut grid: ResMut<Grid>,
     mut particles: Query<(&Index, &mut ParticleType, &mut Sprite)>,
 ) {
+    // generate random water particles on the screen
     let mut rng = rand::thread_rng();
     let i = Index::new(rng.gen_range(0..grid.w), rng.gen_range(0..grid.h));
     grid.set(i, ParticleType::Water);
@@ -69,6 +70,7 @@ pub fn update_particles(
         match *block {
             ParticleType::Air => {},
             ParticleType::BedRock => {},
+            // insert the update function for the type of particle
             ParticleType::Water => update_water(&mut grid, *index),
         }
 
@@ -77,9 +79,15 @@ pub fn update_particles(
     }
 }
 
+// sample water automata method for physics simulation
 pub fn update_water(grid: &mut ResMut<Grid>, index: Index) {
+    // 1. check the next particle downward
+    // 2. move based on particle type
+    // SIDE NOTE:   we can add more components to the particles like hitboxes and velocity
+    //              and manipulate them around this area
     match grid.get(index.down()) {
         ParticleType::Air => {
+            // swap current particle with particle below
             grid.set(index, ParticleType::Air);
             grid.set(index.down(), ParticleType::Water);
         },
