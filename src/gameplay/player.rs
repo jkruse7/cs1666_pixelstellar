@@ -1,16 +1,24 @@
-use bevy::prelude::*;
+use bevy::{math::vec2, prelude::*};
+use bevy::window::PrimaryWindow;
 
+use crate::gameplay::blaster;
 use crate::{
     engine::{
         hitbox::Hitbox,
         gravity::Gravity,
     },
+    ui::camera::MainCamera,
     gameplay::enemy::Enemy,
     LEVEL_H,
     LEVEL_W,
 };
 
 
+
+use super::blaster::{Blaster, BlasterVector};
+
+const BLASTER_OFFSET_X: f32 = -5.;
+const BLASTER_OFFSET_Y: f32 = -15.;
 const TILE_SIZE: u32 = 100;
 const MAX_FLIGHT_SPEED: f32 = 250.;
 const PLAYER_SPEED: f32 = 250.;
@@ -119,9 +127,11 @@ pub fn move_player(
     mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut Health), (With<Player>)>,
     mut hitboxes: Query<(&Hitbox), Without<Player>>,
     mut enemy_hitboxes: Query<(&Hitbox), (With<Enemy>, Without<Player>)>,
+    mut blaster_transform: Query<(&mut Transform), (With<Blaster>, Without<Enemy>, Without<Player>)>
 ) {
     let (mut pt, mut pv, mut ps, mut hb, mut player_health) = player.single_mut();
     let mut deltav_x = 0.;
+    let mut bt = blaster_transform.single_mut();
 
     if input.pressed(KeyCode::KeyA) {
         deltav_x -= 1.;
@@ -163,6 +173,8 @@ pub fn move_player(
     {
         pt.translation = new_pos;
         *hb = new_hb;
+        bt.translation.x = pt.translation.x + BLASTER_OFFSET_X;
+        bt.translation.y = pt.translation.y + BLASTER_OFFSET_Y;
     }
     //info!("{}", pt.translation);
 
@@ -172,10 +184,11 @@ pub fn flight(
     time: Res<Time>, 
     input: Res<ButtonInput<KeyCode>>, 
     mut player: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox), With<Player>>, 
-    mut hitboxes: Query<(&Hitbox), Without<Player>>
+    mut hitboxes: Query<(&Hitbox), Without<Player>>,
+    mut blaster_transform: Query<(&mut Transform), (With<Blaster>, Without<Enemy>, Without<Player>)>
 ) {
     let (mut pt, mut pv, mut pg, mut hb) = player.single_mut();
-
+    let mut bt = blaster_transform.single_mut();
     let deltat = time.delta_seconds();
     let acc_y = ACCEL_RATE_Y * deltat;
 
@@ -198,6 +211,8 @@ pub fn flight(
     {
         pt.translation = new_pos;
         *hb = new_hb;
+        bt.translation.x = pt.translation.x + BLASTER_OFFSET_X;
+        bt.translation.y = pt.translation.y + BLASTER_OFFSET_Y;
     }  
     
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
@@ -232,4 +247,56 @@ pub fn animate_player(
         texture_atlas.index = (texture_atlas.index + 1) % **frame_count;
          }
     }
+}
+
+pub fn update_blaster_aim( //this gets window cursor position, not world position (https://bevy-cheatbook.github.io/cookbook/cursor2world.html)
+    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+    q_windows: Query<&Window, With<PrimaryWindow>>,
+    q_player: Query<&mut Transform, With<Player>>, 
+    mut q_blaster_transform: Query<(&mut Transform, &mut BlasterVector, &mut Sprite), (With<Blaster>, Without<Enemy>, Without<Player>)>,
+
+) {
+
+    let (mut blaster_transform, mut blaster_vector, mut blaster_sprite) = q_blaster_transform.single_mut();
+    let player_transform = q_player.single();
+    let mut cursor_pos = Vec2::new(0., 0.);
+    let update_aim_vec = get_game_coords(&mut cursor_pos, q_windows, q_camera);
+    info! ("Cursor pos: {}/{}", cursor_pos.x, cursor_pos.y);
+    if update_aim_vec {
+        let player_pos = player_transform.translation;
+        let aim_vec = cursor_pos - player_pos.truncate();
+        blaster_vector.vector = aim_vec.normalize();
+        blaster_transform.rotation = Quat::from_rotation_z(aim_vec.y.atan2(aim_vec.x));
+        //inverts the blaster if the blaster is facing left
+        if blaster_vector.vector.x < 0. {
+            blaster_sprite.flip_y = true;
+        } else {
+            blaster_sprite.flip_y = false;
+        }
+    }
+}
+
+fn get_game_coords( //gets window cursor pos and converts to world position
+    mut coords: &mut Vec2,
+    q_window: Query<&Window, With<PrimaryWindow>>,
+    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
+) -> bool {
+
+    // get the camera info and transform
+    let (camera, camera_transform) = q_camera.single();
+
+    // There is only one primary window, so we can similarly get it from the query:
+    let window = q_window.single();
+
+    // check if the cursor is inside the window and get its position
+    // then, ask bevy to convert into world coordinates, and truncate to discard Z
+    if let Some(world_position) = window.cursor_position()
+        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+        .map(|ray| ray.origin.truncate())
+    {
+        *coords = world_position;
+        // info!("World coords: {}/{}", coords.x, coords.y);
+        return true;
+    }
+    false
 }
