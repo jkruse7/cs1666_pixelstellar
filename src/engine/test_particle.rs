@@ -85,13 +85,32 @@ pub fn update_water(grid: &mut ResMut<Grid>, index: Index) {
     // 2. move based on particle type
     // SIDE NOTE:   we can add more components to the particles like hitboxes and velocity
     //              and manipulate them around this area
+    let mut rng = rand::thread_rng();
     match grid.get(index.down()) {
         ParticleType::Air => {
             // swap current particle with particle below
             grid.set(index, ParticleType::Air);
-            grid.set(index.down(), ParticleType::Water);
+            grid.set(index.down().down(), ParticleType::Water);
         },
-        ParticleType::BedRock => {},
-        ParticleType::Water => {},
+        ParticleType::BedRock => {
+            
+        },
+        ParticleType::Water => {
+            
+            let next_index = if rng.gen_bool(0.5) {
+                index.left().left()
+            } else {
+                index.right().right()
+            };
+            match grid.get(next_index) {
+                ParticleType::Air => {
+                    grid.set(index, ParticleType::Air);
+                    grid.set(next_index, ParticleType::Water);
+                },
+                ParticleType::BedRock => {},
+                ParticleType::Water => {},
+            }
+
+        },
     }
 }

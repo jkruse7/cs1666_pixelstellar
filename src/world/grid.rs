@@ -72,7 +72,7 @@ impl Index {
     }
 
     pub fn right(&self) -> Index {
-        if self.j > 0 {
+        if self.i > 0 {
             Index::new(self.i - 1, self.j)
         } else {
             *self
