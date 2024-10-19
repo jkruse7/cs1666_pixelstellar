@@ -1,0 +1,148 @@
+use bevy::prelude::*;
+use rand::Rng;
+
+use super::resources::PARTICLE_SIZE;
+
+// basic particle components
+// physics if you need to you can add velocity and hitbox to this
+#[derive(Component)]
+pub struct ParticlePosition {
+    pub x: i32,
+    pub y: i32,
+}
+
+impl ParticlePosition {
+    fn new(x: i32, y: i32) -> Self {
+        Self {
+            x: x,
+            y: y,
+        }
+    }
+}
+
+#[derive(Component, Clone, Copy, PartialEq)]
+pub enum ParticleData {
+    Air,
+    BedRock,
+    Water,
+    Sand,
+    // TODO: add more particle types
+}
+
+// this is a bundle of basic particle components,
+// you can add other basic components once implemented
+// **default can be implemented**
+#[derive(Bundle)]
+pub struct Particle {
+    position: ParticlePosition,
+    data: ParticleData,
+}
+
+// examples for specific particle types:
+
+// the component for queries
+#[derive(Component)]
+pub struct ParticleElementBedRock;
+
+// the bundle that makes it a particle
+#[derive(Bundle)]
+pub struct BedRockParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    element: ParticleElementBedRock,
+}
+
+// if you are adding new particles (mainly procedural) follow this implementation scheme:
+impl BedRockParticle {
+    pub fn new(x: i32, y: i32) -> Self {
+        // random color range
+        let mut rng = rand::thread_rng();
+        let gray = rng.gen_range(113..=128) as u8;
+        Self {
+            // implement its sprite with:
+            // 1. color
+            // 2. size
+            // 3. translation
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgb_u8(gray, gray, gray),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        0.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            // give the particle its position and data
+            particle: Particle {
+                position: ParticlePosition::new(x, y),
+                data: ParticleData::BedRock,
+            },
+            // name the particle for queries
+            element: ParticleElementBedRock,
+        }
+    }
+}
+
+// water particle
+#[derive(Component)]
+pub struct ParticleElementWater;
+
+#[derive(Bundle)]
+pub struct WaterParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    element: ParticleElementWater,
+}
+
+impl WaterParticle {
+    pub fn new(x: i32, y: i32) -> Self {
+        let mut rng = rand::thread_rng();
+        let r = rng.gen_range(15..=30) as u8;
+        let g = rng.gen_range(129..=144) as u8;
+        let b = rng.gen_range(240..=255) as u8;
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgb_u8(r, g, b),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        0.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosition::new(x, y),
+                data: ParticleData::Water,
+            },
+            element: ParticleElementWater,
+        }
+    }
+}
+
+#[derive(Component)]
+struct ParticleTypeSand;
+
+#[derive(Bundle)]
+struct SandParticle {
+
+}
+
+impl SandParticle {
+    // fn new() -> Self {
+        
+    // }
+}
