@@ -90,7 +90,6 @@ fn main() {
         .add_systems(Update, gameplay::enemy::enemy_gravity)
         .add_systems(Update, gameplay::enemy::track_player)
         .add_systems(Update, gameplay::enemy::animate_enemy.after(gameplay::enemy::track_player))
-        .add_systems(Update, gameplay::enemy::despawn_dead_enemies.after(gameplay::enemy::track_player))
         .add_systems(Update, ui::camera::move_camera.after(gameplay::player::move_player))
         .add_systems(Update, button_interaction_system)
         .add_systems(Update, ui::health::update_health_bar)

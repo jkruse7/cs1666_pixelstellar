@@ -249,8 +249,7 @@ pub fn track_player(
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
     
     if new_hb.all_enemy_collisions(&hitboxes){
-        commands.entity(enemy_ent)
-        .insert(IsDead);
+        // Enemy Jumps if colliding and can't move forward
         let acc_y = ACCEL_RATE_Y * deltat;
 
         eg.reset_g();
@@ -293,11 +292,12 @@ pub fn track_player(
 }
 }
 
-pub fn despawn_dead_enemies(
-    mut commands: Commands,
-    query: Query<Entity, (With<Enemy>, With<IsDead>)>
 
+pub fn check_enemy_death(
+    mut commands: Commands,
+    query: Query<Entity, (With<Enemy>)>
 ){
+    //TODO: Check if collided with blaster particle 
     for entity in query.iter() {
         commands.entity(entity).despawn();
     }
