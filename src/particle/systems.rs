@@ -92,3 +92,9 @@ impl Plugin for UpdateParticles {
         app.add_systems(Update, update_water);
     }
 }
+
+pub fn convert_to_grid_position(x: f32, y: f32) -> (i32, i32) {
+    let x = (x / PARTICLE_SIZE).round() as i32;
+    let y = (y / PARTICLE_SIZE).round() as i32;
+    (x, y)
+}

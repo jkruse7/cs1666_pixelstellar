@@ -1,9 +1,15 @@
+use std::convert;
+
 use bevy::{
     prelude::*,
     window::PresentMode,
     ecs::query,
 };
 
+use crate::particle::components::ParticleData;
+use crate::particle::systems::*;
+
+use crate::ParticleMap;
 use crate::{
     gameplay::{
         player::Player,
@@ -11,6 +17,8 @@ use crate::{
     },
     world::tiles::tiles,
 };
+
+
 
 #[derive(Component)]
 pub struct DoNotSearchCollide;
@@ -84,5 +92,25 @@ impl Hitbox {
         position.x <= self.offset.x + half_width &&
         position.y >= self.offset.y - half_height &&
         position.y <= self.offset.y + half_height
+    }
+
+    pub fn are_all_grid_tiles_air(&self, mut map: ResMut<ParticleMap>) -> bool {
+        let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
+        for x in top_left_x..=bottom_right_x {
+            for y in bottom_right_y..=top_left_y {
+                if map.get(x, y) != ParticleData::Air {
+                    return false;
+                }
+            }   
+        }
+        true
+    }
+
+    // return the grid position of the top left and bottom right corners of the hitbox
+    // (top_left_x, top_left_y, bottom_right_x, bottom_right_y) 
+    pub fn get_grid_tiles_to_check(&self) -> (i32, i32, i32, i32) { //
+        let top_left_grid_pos = convert_to_grid_position(self.offset.x - self.width / 2.0, self.offset.y + self.height / 2.0);
+        let bottom_right_grid_pos = convert_to_grid_position(self.offset.x + self.width / 2.0, self.offset.y - self.height / 2.0);
+        (top_left_grid_pos.0, top_left_grid_pos.1, bottom_right_grid_pos.0, bottom_right_grid_pos.1)
     }
 }

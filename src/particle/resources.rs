@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 use bevy::utils::HashMap;
-use crate::{WIN_W, WIN_H, particle::components::*};
+use crate::{particle::components::*, LEVEL_W, LEVEL_H};
 
 pub const PARTICLE_SIZE: f32 = 4.;
-pub const MIN_X: i32 = ((-WIN_W / 2.) / PARTICLE_SIZE) as i32;
-pub const MAX_X: i32 = ((WIN_W / 2.) / PARTICLE_SIZE) as i32;
-pub const MIN_Y: i32 = ((-WIN_H / 2.) / PARTICLE_SIZE) as i32;
-pub const MAX_Y: i32 = ((WIN_H / 2.) / PARTICLE_SIZE) as i32;
+pub const MIN_X: i32 = ((-LEVEL_W / 2.) / PARTICLE_SIZE) as i32;
+pub const MAX_X: i32 = ((LEVEL_W / 2.) / PARTICLE_SIZE) as i32;
+pub const MIN_Y: i32 = ((-LEVEL_H / 2.) / PARTICLE_SIZE) as i32;
+pub const MAX_Y: i32 = ((LEVEL_H / 2.) / PARTICLE_SIZE) as i32;
 
 #[derive(Resource)]
 pub struct ParticleMap {
@@ -35,6 +35,13 @@ impl ParticleMap {
     pub fn move_data(&mut self, old: (i32, i32), new: (i32, i32), data: &ParticleData) {
         self.particle_map.remove(&old);
         self.particle_map.insert(new, *data);
+    }
+
+    // Converts bevy coordinates to particle coordinates
+    pub fn convert_to_grid_position(&self, x: f32, y: f32) -> (i32, i32) {
+        let x = (x / PARTICLE_SIZE).round() as i32;
+        let y = (y / PARTICLE_SIZE).round() as i32;
+        (x, y)
     }
 }
 
