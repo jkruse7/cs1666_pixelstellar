@@ -36,12 +36,5 @@ impl ParticleMap {
         self.particle_map.remove(&old);
         self.particle_map.insert(new, *data);
     }
-
-    // Converts bevy coordinates to particle coordinates
-    pub fn convert_to_grid_position(&self, x: f32, y: f32) -> (i32, i32) {
-        let x = (x / PARTICLE_SIZE).round() as i32;
-        let y = (y / PARTICLE_SIZE).round() as i32;
-        (x, y)
-    }
 }
 
