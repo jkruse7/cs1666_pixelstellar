@@ -3,6 +3,48 @@ use rand::{
     thread_rng,
 };
 
+pub fn get_1d_octaves(x: f32, 
+                start_frequency: f32, octaves: usize, persistance: f32, frequency_modifier: f32, 
+                noise_range_min: f32, noise_range_max: f32, 
+                permutation_table: &[usize; 512]) -> f32 {
+    let mut amplitude = 1.;
+    let mut frequency = start_frequency;
+    let mut noise_sum = 0.;
+    let mut amplitude_sum = 0.;
+    
+    for octave in 0..octaves {
+        noise_sum += get_1d_pn_value(x, amplitude, frequency, &permutation_table);
+        amplitude_sum += amplitude;
+        amplitude *= persistance;
+        frequency *= frequency_modifier;
+    }
+
+    range_map(noise_sum / amplitude_sum, 0., 1., noise_range_min, noise_range_max)
+}
+
+pub fn get_2d_octaves(x: f32, y: f32, 
+                start_frequency: f32, octaves: usize, persistance: f32, frequency_modifier: f32, 
+                noise_range_min: f32, noise_range_max: f32, 
+                permutation_table: &[usize; 512]) -> f32 {
+    let mut amplitude = 1.;
+    let mut frequency = start_frequency;
+    let mut noise_sum = 0.;
+    let mut amplitude_sum = 0.;
+    
+    for octave in 0..octaves {
+        noise_sum += get_2d_pn_value(x, y, amplitude, frequency, &permutation_table);
+        amplitude_sum += amplitude;
+        amplitude *= persistance;
+        frequency *= frequency_modifier;
+    }
+
+    range_map(noise_sum / amplitude_sum, 0., 1., noise_range_min, noise_range_max)
+}
+
+fn range_map(input_value: f32, in_min: f32, in_max: f32, out_min: f32, out_max: f32) -> f32 {
+    out_min + (input_value - in_min) * (out_max - out_min) / (in_max - in_min)
+}
+
 /// Generates a 1D Perlin noise value for a given position and configuration.
 ///
 /// # Arguments
@@ -19,10 +61,29 @@ use rand::{
 /// * `frequency` - The frequency factor for how frequently the noise value fluctuates.
 ///                 A higher frequency causes the noise to fluctuate more frequently over a small range of x-values, 
 ///                 while a lower frequency makes the noise change more slowly.
-pub fn get_1d_pn_value(x: f32, amplitude: f32, frequency: f32) -> f32 {
-    let perm = generate_permutation_array();
-    let noise_value = amplitude * perlin(x as f32 * frequency, 1.0 as f32 * frequency, &perm);
+pub fn get_1d_pn_value(x: f32, amplitude: f32, frequency: f32, permutation_table: &[usize; 512]) -> f32 {
+    let noise_value = amplitude * perlin(x * frequency, 1.0 * frequency, &permutation_table);
     noise_value
+}
+
+pub fn get_2d_pn_value(x: f32, y: f32, amplitude: f32, frequency: f32, permutation_table: &[usize; 512]) -> f32 {
+    let noise_value = amplitude * perlin(x * frequency, y * frequency, &permutation_table);
+    noise_value
+}
+
+pub fn generate_permutation_array() -> [usize; 512] {
+    let mut perm: [usize; 256] = [0; 256];
+    for i in 0..256 {
+        perm[i] = i;
+    }
+    let mut rng = thread_rng();
+    perm.shuffle(&mut rng);
+
+    let mut perm_extended: [usize; 512] = [0; 512];
+    for i in 0..512 {
+        perm_extended[i] = perm[i % 255];
+    }
+    perm_extended
 }
 
 fn perlin(x: f32, y: f32, perm: &[usize; 512]) -> f32 {
@@ -55,21 +116,6 @@ fn perlin(x: f32, y: f32, perm: &[usize; 512]) -> f32 {
     n /= 2.0;
 
     n
-}
-
-fn generate_permutation_array() -> [usize; 512] {
-    let mut perm: [usize; 256] = [0; 256];
-    for i in 0..256 {
-        perm[i] = i;
-    }
-    let mut rng = thread_rng();
-    perm.shuffle(&mut rng);
-
-    let mut perm_extended: [usize; 512] = [0; 512];
-    for i in 0..512 {
-        perm_extended[i] = perm[i % 256];
-    }
-    perm_extended
 }
 
 fn fade(t: f32) -> f32 {
