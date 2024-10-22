@@ -195,8 +195,15 @@ pub fn flight(
     let acc_y = ACCEL_RATE_Y * deltat;
 
     if input.pressed(KeyCode::Space) {
-        pg.reset_g();
-        pv.velocity.y = f32::min(MAX_FLIGHT_SPEED, pv.velocity.y + (1. * acc_y))
+        if (pt.translation.y <= (LEVEL_H / 2.) - (SPRITE_HEIGHT as f32) / 2.) {
+            pg.reset_g();
+            pv.velocity.y = f32::min(MAX_FLIGHT_SPEED, pv.velocity.y + (1. * acc_y))
+        }
+        else {
+            pg.reset_g();
+            pv.velocity.y = 0.0;
+
+        }
     }else {
         pg.update_g(&pv.velocity.y, &deltat);
         pv.velocity.y = pg.get_g();
@@ -208,7 +215,7 @@ pub fn flight(
     //Bound player to within level height
 
     if new_pos.y >= -(LEVEL_H / 2.) + (TILE_SIZE as f32) / 2.
-        && new_pos.y <= LEVEL_H - (TILE_SIZE as f32) / 2.
+        && new_pos.y <= (LEVEL_H / 2.) - (SPRITE_HEIGHT as f32) / 2.
         && !new_hb.all_player_collisions(&hitboxes)
     {
         pt.translation = new_pos;
@@ -283,10 +290,27 @@ pub fn shoot_blaster(
     mut commands: Commands,
     q_blaster_transform: Query<(&Transform, &BlasterVector), (With<Blaster>, Without<Enemy>, Without<Player>)>,
     map: ResMut<ParticleMap>,
+    
+    q_window: Query<&Window, With<PrimaryWindow>>,
+    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
 ) { //check 
+
+    let (camera, camera_transform) = q_camera.single();
+    let window = q_window.single();
+
     if buttons.pressed(MouseButton::Left) {
+        
+        let mut coords: Vec2 = Vec2::splat(0.);
+        if let Some(world_position) = window.cursor_position()
+        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+        .map(|ray| ray.origin.truncate())
+        {
+            coords = world_position;
+            info!("World coords: {}/{}", coords.x, coords.y);
+        }
+        
         let (blaster_transform, blaster_vector) = q_blaster_transform.single();
-        let proposed_pos = blaster_transform.translation + blaster_vector.vector.extend(0.0) * 100.0;
+        let proposed_pos = blaster_transform.translation + blaster_vector.vector.extend(0.0) * 50.0;
         let proposed_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, proposed_pos.xy());
         if (proposed_hb.are_all_grid_tiles_air(&map)){
             let proposed_velocity = blaster_vector.vector * 1500.0;
@@ -302,7 +326,6 @@ pub fn shoot_blaster(
         }
     }   
 }
-
 fn get_game_coords( //gets window cursor pos and converts to world position
     mut coords: &mut Vec2,
     q_window: Query<&Window, With<PrimaryWindow>>,
@@ -322,7 +345,7 @@ fn get_game_coords( //gets window cursor pos and converts to world position
         .map(|ray| ray.origin.truncate())
     {
         *coords = world_position;
-        // info!("World coords: {}/{}", coords.x, coords.y);
+        info!("World coords: {}/{}", coords.x, coords.y);
         return true;
     }
     false
