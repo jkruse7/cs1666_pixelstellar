@@ -129,7 +129,8 @@ pub fn move_player(
     mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut Health), (With<Player>)>,
     mut hitboxes: Query<(&Hitbox), Without<Player>>,
     mut enemy_hitboxes: Query<(&Hitbox), (With<Enemy>, Without<Player>)>,
-    mut blaster_transform: Query<(&mut Transform), (With<Blaster>, Without<Enemy>, Without<Player>)>
+    mut blaster_transform: Query<(&mut Transform), (With<Blaster>, Without<Enemy>, Without<Player>)>,
+    map: ResMut<crate::ParticleMap>,
 ) {
     let (mut pt, mut pv, mut ps, mut hb, mut player_health) = player.single_mut();
     let mut deltav_x = 0.;
@@ -152,12 +153,18 @@ pub fn move_player(
             pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED, PLAYER_SPEED);
         }
         else {
-            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED * 0.3, PLAYER_SPEED * 0.3);
+            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED * 0.5, PLAYER_SPEED * 0.5);
         }
     } else if pv.velocity.x.abs() > acc_x {
         pv.velocity.x -= pv.velocity.x.signum() * acc_x;
     } else {
         pv.velocity.x = 0.;
+    }
+
+    //Account for player in water
+    let ratio_of_water_particles = hb.ratio_of_water_grid_tiles(&map);
+    if ratio_of_water_particles > 0.0 {
+        pv.velocity.x = pv.velocity.x * (1. - 0.7 * ratio_of_water_particles.powf(0.5));
     }
 
     let change = pv.velocity * deltat;
@@ -187,7 +194,8 @@ pub fn flight(
     input: Res<ButtonInput<KeyCode>>, 
     mut player: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox), With<Player>>, 
     mut hitboxes: Query<(&Hitbox), Without<Player>>,
-    mut blaster_transform: Query<(&mut Transform), (With<Blaster>, Without<Enemy>, Without<Player>)>
+    mut blaster_transform: Query<(&mut Transform), (With<Blaster>, Without<Enemy>, Without<Player>)>,
+    map: ResMut<crate::ParticleMap>,
 ) {
     let (mut pt, mut pv, mut pg, mut hb) = player.single_mut();
     let mut bt = blaster_transform.single_mut();
@@ -202,13 +210,16 @@ pub fn flight(
         else {
             pg.reset_g();
             pv.velocity.y = 0.0;
-
         }
-    }else {
+    } else {
         pg.update_g(&pv.velocity.y, &deltat);
         pv.velocity.y = pg.get_g();
     }
-
+    //Account for player in water
+    let ratio_of_water_particles = hb.ratio_of_water_grid_tiles(&map);
+    if ratio_of_water_particles > 0.0 {
+        pv.velocity.y = pv.velocity.y * (1. - 0.7 * ratio_of_water_particles.powf(0.5));
+    }
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
