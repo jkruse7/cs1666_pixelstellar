@@ -94,7 +94,7 @@ impl Hitbox {
         position.y <= self.offset.y + half_height
     }
 
-    pub fn are_all_grid_tiles_air(&self, mut map: ResMut<ParticleMap>) -> bool {
+    pub fn are_all_grid_tiles_air(&self, map: &ResMut<ParticleMap>) -> bool {
         let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
         for x in top_left_x..=bottom_right_x {
             for y in bottom_right_y..=top_left_y {
@@ -104,6 +104,18 @@ impl Hitbox {
             }   
         }
         true
+    }
+
+    pub fn are_any_grid_tiles_water(&self, map: &ResMut<ParticleMap>) -> bool {
+        let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
+        for x in top_left_x..=bottom_right_x {
+            for y in bottom_right_y..=top_left_y {
+                if map.get(x, y) == ParticleData::Water {
+                    return true;
+                }
+            }   
+        }
+        false
     }
 
     // return the grid position of the top left and bottom right corners of the hitbox

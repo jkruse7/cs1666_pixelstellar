@@ -263,7 +263,7 @@ pub fn update_blaster_aim( //this gets window cursor position, not world positio
     let player_transform = q_player.single();
     let mut cursor_pos = Vec2::new(0., 0.);
     let update_aim_vec = get_game_coords(&mut cursor_pos, q_windows, q_camera);
-    info! ("Cursor pos: {}/{}", cursor_pos.x, cursor_pos.y);
+    // info! ("Cursor pos: {}/{}", cursor_pos.x, cursor_pos.y);
     if update_aim_vec {
         let player_pos = player_transform.translation;
         let aim_vec = cursor_pos - player_pos.truncate();
@@ -282,13 +282,13 @@ pub fn shoot_blaster(
     buttons: Res<ButtonInput<MouseButton>>,
     mut commands: Commands,
     q_blaster_transform: Query<(&Transform, &BlasterVector), (With<Blaster>, Without<Enemy>, Without<Player>)>,
-    mut map: ResMut<ParticleMap>,
+    map: ResMut<ParticleMap>,
 ) { //check 
     if buttons.pressed(MouseButton::Left) {
         let (blaster_transform, blaster_vector) = q_blaster_transform.single();
         let proposed_pos = blaster_transform.translation + blaster_vector.vector.extend(0.0) * 100.0;
         let proposed_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, proposed_pos.xy());
-        if (proposed_hb.are_all_grid_tiles_air(map)){
+        if (proposed_hb.are_all_grid_tiles_air(&map)){
             let proposed_velocity = blaster_vector.vector * 1500.0;
             let particle = Particle::new(
                 true,
