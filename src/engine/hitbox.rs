@@ -116,6 +116,22 @@ impl Hitbox {
         false
     }
 
+    pub fn ratio_of_water_grid_tiles(&self, map: &ResMut<ParticleMap>) -> f32 {
+        let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
+        let mut count = 0;
+        let mut no_count = 0;
+        for x in top_left_x..=bottom_right_x {
+            for y in bottom_right_y..=top_left_y {
+                if map.get(x, y) == ParticleData::Water {
+                    count+=1;
+                }
+                else {
+                    no_count+=1;
+                }
+            }   
+        }
+        count as f32 / (count + no_count) as f32
+    }
     // return the grid position of the top left and bottom right corners of the hitbox
     // (top_left_x, top_left_y, bottom_right_x, bottom_right_y) 
     pub fn get_grid_tiles_to_check(&self) -> (i32, i32, i32, i32) { //

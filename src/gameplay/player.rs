@@ -129,7 +129,8 @@ pub fn move_player(
     mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut Health), (With<Player>)>,
     mut hitboxes: Query<(&Hitbox), Without<Player>>,
     mut enemy_hitboxes: Query<(&Hitbox), (With<Enemy>, Without<Player>)>,
-    mut blaster_transform: Query<(&mut Transform), (With<Blaster>, Without<Enemy>, Without<Player>)>
+    mut blaster_transform: Query<(&mut Transform), (With<Blaster>, Without<Enemy>, Without<Player>)>,
+    map: ResMut<crate::ParticleMap>,
 ) {
     let (mut pt, mut pv, mut ps, mut hb, mut player_health) = player.single_mut();
     let mut deltav_x = 0.;
@@ -152,12 +153,18 @@ pub fn move_player(
             pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED, PLAYER_SPEED);
         }
         else {
-            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED * 0.3, PLAYER_SPEED * 0.3);
+            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED * 0.5, PLAYER_SPEED * 0.5);
         }
     } else if pv.velocity.x.abs() > acc_x {
         pv.velocity.x -= pv.velocity.x.signum() * acc_x;
     } else {
         pv.velocity.x = 0.;
+    }
+
+    //Account for player in water
+    let ratio_of_water_particles = hb.ratio_of_water_grid_tiles(&map);
+    if ratio_of_water_particles > 0.0 {
+        pv.velocity.x = pv.velocity.x * (1. - 0.7 * ratio_of_water_particles.powf(0.5));
     }
 
     let change = pv.velocity * deltat;
@@ -187,7 +194,8 @@ pub fn flight(
     input: Res<ButtonInput<KeyCode>>, 
     mut player: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox), With<Player>>, 
     mut hitboxes: Query<(&Hitbox), Without<Player>>,
-    mut blaster_transform: Query<(&mut Transform), (With<Blaster>, Without<Enemy>, Without<Player>)>
+    mut blaster_transform: Query<(&mut Transform), (With<Blaster>, Without<Enemy>, Without<Player>)>,
+    map: ResMut<crate::ParticleMap>,
 ) {
     let (mut pt, mut pv, mut pg, mut hb) = player.single_mut();
     let mut bt = blaster_transform.single_mut();
@@ -202,13 +210,16 @@ pub fn flight(
         else {
             pg.reset_g();
             pv.velocity.y = 0.0;
-
         }
-    }else {
+    } else {
         pg.update_g(&pv.velocity.y, &deltat);
         pv.velocity.y = pg.get_g();
     }
-
+    //Account for player in water
+    let ratio_of_water_particles = hb.ratio_of_water_grid_tiles(&map);
+    if ratio_of_water_particles > 0.0 {
+        pv.velocity.y = pv.velocity.y * (1. - 0.7 * ratio_of_water_particles.powf(0.5));
+    }
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
@@ -256,83 +267,4 @@ pub fn animate_player(
         texture_atlas.index = (texture_atlas.index + 1) % **frame_count;
          }
     }
-}
-
-pub fn update_blaster_aim( //this gets window cursor position, not world position (https://bevy-cheatbook.github.io/cookbook/cursor2world.html)
-    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-    q_windows: Query<&Window, With<PrimaryWindow>>,
-    q_player: Query<&mut Transform, With<Player>>, 
-    mut q_blaster_transform: Query<(&mut Transform, &mut BlasterVector, &mut Sprite), (With<Blaster>, Without<Enemy>, Without<Player>)>,
-
-) {
-
-    let (mut blaster_transform, mut blaster_vector, mut blaster_sprite) = q_blaster_transform.single_mut();
-    let player_transform = q_player.single();
-    let mut cursor_pos = Vec2::new(0., 0.);
-    let update_aim_vec = get_game_coords(&mut cursor_pos, q_windows, q_camera);
-    // info! ("Cursor pos: {}/{}", cursor_pos.x, cursor_pos.y);
-    if update_aim_vec {
-        let player_pos = player_transform.translation;
-        let aim_vec = cursor_pos - player_pos.truncate();
-        blaster_vector.vector = aim_vec.normalize();
-        blaster_transform.rotation = Quat::from_rotation_z(aim_vec.y.atan2(aim_vec.x));
-        //inverts the blaster if the blaster is facing left
-        if blaster_vector.vector.x < 0. {
-            blaster_sprite.flip_y = true;
-        } else {
-            blaster_sprite.flip_y = false;
-        }
-    }
-}
-
-pub fn shoot_blaster(
-    time: Res<Time>,
-    buttons: Res<ButtonInput<MouseButton>>,
-    mut commands: Commands,
-    mut q_blaster: Query<(&Transform, &BlasterVector, &mut BlasterLastFiredTime), (With<Blaster>, Without<Enemy>, Without<Player>)>,
-    map: ResMut<ParticleMap>,
-) { //check 
-    let (blaster_transform, blaster_vector, mut blaster_last_fired_time) = q_blaster.single_mut();
-    let time_since_last_fired = time.elapsed_seconds_f64() - blaster_last_fired_time.last_fired;
-    if buttons.pressed(MouseButton::Left) && time_since_last_fired > 0.05 {
-        blaster_last_fired_time.last_fired = time.elapsed_seconds_f64();
-        let proposed_pos = blaster_transform.translation + blaster_vector.vector.extend(0.0) * 40.0;
-        let proposed_hb = Hitbox::new(crate::engine::particles::PARTICLE_SIZE as f32, crate::engine::particles::PARTICLE_SIZE as f32, proposed_pos.xy());
-        if proposed_hb.are_all_grid_tiles_air(&map) {
-            let proposed_velocity = blaster_vector.vector * 1500.0;
-            let particle = Particle::new(
-                true,
-                crate::engine::particles::ELEMENT::WATER,
-                true,
-                true,
-                proposed_velocity,
-                Transform::from_translation(Vec3::new(proposed_pos.x, proposed_pos.y, 0.)),
-            );
-            crate::engine::particles::Particle::spawn_particle(&mut commands, particle);
-        }
-    }   
-}
-fn get_game_coords( //gets window cursor pos and converts to world position
-    mut coords: &mut Vec2,
-    q_window: Query<&Window, With<PrimaryWindow>>,
-    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
-) -> bool {
-
-    // get the camera info and transform
-    let (camera, camera_transform) = q_camera.single();
-
-    // There is only one primary window, so we can similarly get it from the query:
-    let window = q_window.single();
-
-    // check if the cursor is inside the window and get its position
-    // then, ask bevy to convert into world coordinates, and truncate to discard Z
-    if let Some(world_position) = window.cursor_position()
-        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
-        .map(|ray| ray.origin.truncate())
-    {
-        *coords = world_position;
-        // info!("World coords: {}/{}", coords.x, coords.y);
-        return true;
-    }
-    false
 }
