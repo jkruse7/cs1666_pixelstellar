@@ -1,7 +1,9 @@
 use bevy::{math::vec2, prelude::*};
 use bevy::window::PrimaryWindow;
 
+use crate::engine::particles::Particle;
 use crate::gameplay::blaster;
+use crate::ParticleMap;
 use crate::{
     engine::{
         hitbox::Hitbox,
@@ -97,7 +99,7 @@ pub fn initialize(
         SpriteBundle {
             texture: player_sheet_handle,
             transform: Transform {
-                translation: Vec3::new(0., -(LEVEL_H / 2.) + ((TILE_SIZE as f32) * 1.5), 900.),
+                translation: Vec3::new(0., 100.0, 900.),
                 ..default()
             },
             sprite: Sprite {
@@ -116,7 +118,7 @@ pub fn initialize(
         Velocity::new(),
         Health::new(100.0),
         Gravity::new(),
-        Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
+        Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, Vec2::new(0., 100.)),
         Player,
     ));
 }
@@ -261,7 +263,7 @@ pub fn update_blaster_aim( //this gets window cursor position, not world positio
     let player_transform = q_player.single();
     let mut cursor_pos = Vec2::new(0., 0.);
     let update_aim_vec = get_game_coords(&mut cursor_pos, q_windows, q_camera);
-    info! ("Cursor pos: {}/{}", cursor_pos.x, cursor_pos.y);
+    // info! ("Cursor pos: {}/{}", cursor_pos.x, cursor_pos.y);
     if update_aim_vec {
         let player_pos = player_transform.translation;
         let aim_vec = cursor_pos - player_pos.truncate();
@@ -274,6 +276,31 @@ pub fn update_blaster_aim( //this gets window cursor position, not world positio
             blaster_sprite.flip_y = false;
         }
     }
+}
+
+pub fn shoot_blaster(
+    buttons: Res<ButtonInput<MouseButton>>,
+    mut commands: Commands,
+    q_blaster_transform: Query<(&Transform, &BlasterVector), (With<Blaster>, Without<Enemy>, Without<Player>)>,
+    map: ResMut<ParticleMap>,
+) { //check 
+    if buttons.pressed(MouseButton::Left) {
+        let (blaster_transform, blaster_vector) = q_blaster_transform.single();
+        let proposed_pos = blaster_transform.translation + blaster_vector.vector.extend(0.0) * 100.0;
+        let proposed_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, proposed_pos.xy());
+        if (proposed_hb.are_all_grid_tiles_air(&map)){
+            let proposed_velocity = blaster_vector.vector * 1500.0;
+            let particle = Particle::new(
+                true,
+                crate::engine::particles::ELEMENT::WATER,
+                true,
+                true,
+                proposed_velocity,
+                Transform::from_translation(Vec3::new(proposed_pos.x, proposed_pos.y, 0.)),
+            );
+            crate::engine::particles::Particle::spawn_particle(&mut commands, particle);
+        }
+    }   
 }
 
 fn get_game_coords( //gets window cursor pos and converts to world position

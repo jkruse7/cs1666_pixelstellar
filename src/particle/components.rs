@@ -1,11 +1,13 @@
 use bevy::prelude::*;
 use rand::Rng;
 
+use crate::engine::hitbox::Hitbox;
+
 use super::resources::PARTICLE_SIZE;
 
 // basic particle components
 // physics if you need to you can add velocity and hitbox to this
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct ParticlePosition {
     pub x: i32,
     pub y: i32,
@@ -20,7 +22,7 @@ impl ParticlePosition {
     }
 }
 
-#[derive(Component, Clone, Copy, PartialEq)]
+#[derive(Component, Clone, Copy, PartialEq, Debug)]
 pub enum ParticleData {
     Air,
     BedRock,
@@ -34,20 +36,21 @@ pub enum ParticleData {
 // this is a bundle of basic particle components,
 // you can add other basic components once implemented
 // **default can be implemented**
-#[derive(Bundle)]
+#[derive(Bundle, Debug)]
 pub struct Particle {
     position: ParticlePosition,
     data: ParticleData,
+    hitbox: Hitbox,
 }
 
 // examples for specific particle types:
 
 // the component for queries
-#[derive(Component)]
+#[derive(Component, Debug)]
 pub struct ParticleElementBedRock;
 
 // the bundle that makes it a particle
-#[derive(Bundle)]
+#[derive(Bundle, Debug)]
 pub struct BedRockParticle {
     sprite: SpriteBundle,
     particle: Particle,
@@ -85,6 +88,7 @@ impl BedRockParticle {
             particle: Particle {
                 position: ParticlePosition::new(x, y),
                 data: ParticleData::BedRock,
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
             },
             // name the particle for queries
             element: ParticleElementBedRock,
@@ -112,7 +116,7 @@ impl WaterParticle {
         Self {
             sprite: SpriteBundle {
                 sprite: Sprite {
-                    color: Color::srgb_u8(r, g, b),
+                    color: Color::srgba_u8(r, g, b, 128),
                     custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
                     ..default()
                 },
@@ -120,7 +124,7 @@ impl WaterParticle {
                     translation: Vec3::new(
                         x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
                         y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
-                        0.0,
+                        901.0,
                     ),
                     ..default()
                 },
@@ -129,6 +133,7 @@ impl WaterParticle {
             particle: Particle {
                 position: ParticlePosition::new(x, y),
                 data: ParticleData::Water,
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::splat(PARTICLE_SIZE / 2.))
             },
             element: ParticleElementWater,
         }
