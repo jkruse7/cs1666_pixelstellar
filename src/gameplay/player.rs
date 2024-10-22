@@ -3,7 +3,7 @@ use bevy::window::PrimaryWindow;
 
 use crate::engine::particles::Particle;
 use crate::gameplay::blaster;
-use crate::ParticleMap;
+use crate::{ParticleMap, PARTICLE_SIZE};
 use crate::{
     engine::{
         hitbox::Hitbox,
@@ -17,7 +17,7 @@ use crate::{
 
 
 
-use super::blaster::{Blaster, BlasterVector};
+use super::blaster::{Blaster, BlasterVector, BlasterLastFiredTime}; 
 
 const BLASTER_OFFSET_X: f32 = -5.;
 const BLASTER_OFFSET_Y: f32 = -15.;
@@ -286,33 +286,19 @@ pub fn update_blaster_aim( //this gets window cursor position, not world positio
 }
 
 pub fn shoot_blaster(
+    time: Res<Time>,
     buttons: Res<ButtonInput<MouseButton>>,
     mut commands: Commands,
-    q_blaster_transform: Query<(&Transform, &BlasterVector), (With<Blaster>, Without<Enemy>, Without<Player>)>,
+    mut q_blaster: Query<(&Transform, &BlasterVector, &mut BlasterLastFiredTime), (With<Blaster>, Without<Enemy>, Without<Player>)>,
     map: ResMut<ParticleMap>,
-    
-    q_window: Query<&Window, With<PrimaryWindow>>,
-    q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
 ) { //check 
-
-    let (camera, camera_transform) = q_camera.single();
-    let window = q_window.single();
-
-    if buttons.pressed(MouseButton::Left) {
-        
-        let mut coords: Vec2 = Vec2::splat(0.);
-        if let Some(world_position) = window.cursor_position()
-        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
-        .map(|ray| ray.origin.truncate())
-        {
-            coords = world_position;
-            info!("World coords: {}/{}", coords.x, coords.y);
-        }
-        
-        let (blaster_transform, blaster_vector) = q_blaster_transform.single();
-        let proposed_pos = blaster_transform.translation + blaster_vector.vector.extend(0.0) * 50.0;
-        let proposed_hb = Hitbox::new(TILE_SIZE as f32, TILE_SIZE as f32, proposed_pos.xy());
-        if (proposed_hb.are_all_grid_tiles_air(&map)){
+    let (blaster_transform, blaster_vector, mut blaster_last_fired_time) = q_blaster.single_mut();
+    let time_since_last_fired = time.elapsed_seconds_f64() - blaster_last_fired_time.last_fired;
+    if buttons.pressed(MouseButton::Left) && time_since_last_fired > 0.05 {
+        blaster_last_fired_time.last_fired = time.elapsed_seconds_f64();
+        let proposed_pos = blaster_transform.translation + blaster_vector.vector.extend(0.0) * 40.0;
+        let proposed_hb = Hitbox::new(crate::engine::particles::PARTICLE_SIZE as f32, crate::engine::particles::PARTICLE_SIZE as f32, proposed_pos.xy());
+        if proposed_hb.are_all_grid_tiles_air(&map) {
             let proposed_velocity = blaster_vector.vector * 1500.0;
             let particle = Particle::new(
                 true,
@@ -345,7 +331,7 @@ fn get_game_coords( //gets window cursor pos and converts to world position
         .map(|ray| ray.origin.truncate())
     {
         *coords = world_position;
-        info!("World coords: {}/{}", coords.x, coords.y);
+        // info!("World coords: {}/{}", coords.x, coords.y);
         return true;
     }
     false
