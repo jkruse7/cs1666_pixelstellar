@@ -25,7 +25,6 @@ fn main() {
         .add_systems(Startup, ui::background::initialize)
         .add_systems(Startup, gameplay::player::initialize)
         .add_systems(Startup, gameplay::blaster::initialize)
-        .add_systems(Startup, gameplay::enemy::initialize)
         .add_systems(Startup, ui::health::setup_health_bar)
 
         .add_systems(Update, gameplay::player::move_player)
@@ -35,9 +34,6 @@ fn main() {
         .add_systems(Update, gameplay::blaster::update_blaster_aim)
         .add_systems(Update, gameplay::blaster::shoot_blaster.after(gameplay::blaster::update_blaster_aim))
         .add_systems(Update, engine::particles::Particle::move_and_handle_collisions.after(gameplay::player::flight))
-        .add_systems(Update, gameplay::enemy::enemy_gravity)
-        .add_systems(Update, gameplay::enemy::track_player)
-        .add_systems(Update, gameplay::enemy::animate_enemy.after(gameplay::enemy::track_player))
         .add_systems(Update, ui::health::update_health_bar)
 
 
@@ -52,6 +48,7 @@ fn main() {
         }))
         .add_plugins(SpawnParticles)
         .add_plugins(UpdateParticles)
+        .add_plugins(gameplay::enemy::EnemyPlugin)
         .run();
 }
 
