@@ -45,7 +45,7 @@ impl Plugin for SpawnParticles {
     fn build(&self, app: &mut App) {
         app.insert_resource(ParticleMap::new());
         app.add_systems(Startup, draw_floor);
-        app.add_systems(Update, draw_rain);
+        // app.add_systems(Update, draw_rain);
     }
 }
 
@@ -90,5 +90,18 @@ pub struct UpdateParticles;
 impl Plugin for UpdateParticles {
     fn build(&self, app: &mut App) {
         app.add_systems(Update, update_water);
+    }
+}
+
+pub fn convert_to_grid_position(x: f32, y: f32) -> (i32, i32) {
+    let x = (x / PARTICLE_SIZE).round() as i32;
+    let y = (y / PARTICLE_SIZE).round() as i32;
+    (x, y)
+}
+
+pub fn add_water(x: i32, y: i32, map: &mut ResMut<ParticleMap>, commands: &mut Commands) {
+    if map.get(x, y) == ParticleData::Air {
+        map.insert(x, y, ParticleData::Water);
+        commands.spawn(WaterParticle::new(x, y));
     }
 }

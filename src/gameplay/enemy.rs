@@ -79,7 +79,7 @@ pub fn initialize(
             texture: enemy_sheet_handle,
             transform: Transform {
                 // Julianne 10/8: For now, enemy is being spawned at WIN_W. This will need to be changed eventually.
-                translation: Vec3::new(WIN_W, -(WIN_H / 2.) + ((TILE_SIZE as f32) * 1.5), 900.),
+                translation: Vec3::new(WIN_W, 400., 900.),
                 ..default()
             },
             sprite: Sprite {
