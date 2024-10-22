@@ -292,7 +292,7 @@ pub fn track_player(
     if player_hb.collides_with(&new_hb) {
         no_jump = true;
         player_health.current -= 1.; 
-        info!("Player hit! Current health: {:?}", player_health.current); // 记录伤害
+        //info!("Player hit! Current health: {:?}", player_health.current); // 记录伤害
     }
     if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
         && new_pos.x <= LEVEL_W - (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
