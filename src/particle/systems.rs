@@ -60,12 +60,14 @@ fn draw_rain(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
 ) {
-    let mut rng = rand::thread_rng();
-    let x = rng.gen_range(MIN_X..=MAX_X);
-    let y = rng.gen_range(MIN_Y / 2..=MAX_Y);
-    if map.get(x, y) == ParticleData::Air {
-        map.insert(x, y, ParticleData::Water);
-        commands.spawn(WaterParticle::new(x, y));
+    for i in 0..5{
+        let mut rng = rand::thread_rng();
+        let x = rng.gen_range(-50..=50);
+        let y = rng.gen_range(100..200);
+        if map.get(x, y) == ParticleData::Air {
+            map.insert(x, y, ParticleData::Water);
+            commands.spawn(WaterParticle::new(x, y));
+        }
     }
 }
 
@@ -77,7 +79,7 @@ impl Plugin for SpawnParticles {
     fn build(&self, app: &mut App) {
         app.insert_resource(ParticleMap::new());
         app.add_systems(Startup, draw_solid);
-        // app.add_systems(Update, draw_rain);
+        app.add_systems(Update, draw_rain);
     }
 }
 
@@ -109,6 +111,19 @@ fn update_water(
             map.move_data((position.x, position.y), (position.x + 1, position.y - 1), data);
             position.x += 1;
             position.y -= 1;
+            transform.translation.x = position.x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+            transform.translation.y = position.y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+        }
+        // check to the left as far as can go
+        else if map.get(position.x - 1, position.y) == ParticleData::Air {
+            map.move_data((position.x, position.y), (position.x - 1, position.y), data);
+            position.x -= 1;
+            transform.translation.x = position.x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+            transform.translation.y = position.y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+        }
+        else if map.get(position.x + 1, position.y) == ParticleData::Air {
+            map.move_data((position.x, position.y), (position.x + 1, position.y), data);
+            position.x += 1;
             transform.translation.x = position.x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
             transform.translation.y = position.y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
         }
