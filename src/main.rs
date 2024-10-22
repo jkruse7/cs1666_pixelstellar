@@ -16,7 +16,7 @@ const TITLE: &str = "Pixelstellar";
 const WIN_W: f32 = 1280.;
 const WIN_H: f32 = 720.;
 const LEVEL_W: f32 = WIN_W * 3.0;
-const LEVEL_H: f32 = WIN_H;
+const LEVEL_H: f32 = WIN_H * 2.0;
 fn main() {
     App::new()
         .insert_resource(ClearColor(Color::srgb_u8(0, 0, 0)))

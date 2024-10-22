@@ -28,6 +28,19 @@ impl BlasterVector {
     }
 }
 
+#[derive(Component)]
+pub struct BlasterLastFiredTime{
+    pub last_fired: f64,
+}
+
+impl BlasterLastFiredTime {
+    pub fn new() -> Self {
+        Self {
+            last_fired: 0.,
+        }
+    }
+}
+
 pub fn initialize(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -56,6 +69,7 @@ pub fn initialize(
             ..Default::default()
         },
         BlasterVector::new(),
+        BlasterLastFiredTime::new(),
         Blaster,)
     );
 }
