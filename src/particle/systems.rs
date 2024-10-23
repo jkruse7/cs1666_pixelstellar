@@ -45,16 +45,11 @@ fn draw_solid(
 
             map.insert::<BedRockParticle>(&mut commands, x, y);
                 // place particle on screen
-                commands.spawn(BedRockParticle::new(x, y));
             } else if current_particle == ParticleElement::Dirt {
-                //map.insert(x, y, ParticleElement::Dirt);
             map.insert::<DirtParticle>(&mut commands, x, y);
-                commands.spawn(DirtParticle::new(x, y));
             } else if current_particle == ParticleElement::Dirt {
 
             map.insert::<DirtParticle>(&mut commands, x, y);
-                //map.insert(x, y, ParticleElement::Dirt);
-                commands.spawn(DirtParticle::new(x, y));
             }
         }
     }
