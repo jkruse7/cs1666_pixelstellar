@@ -4,7 +4,7 @@ use bevy::{
     ecs::query,
 };
 
-use crate::particle::components::ParticleData;
+use crate::particle::components::ParticleElement;
 use crate::particle::systems::*;
 
 use crate::ParticleMap;
@@ -21,7 +21,7 @@ use crate::{
 #[derive(Component)]
 pub struct DoNotSearchCollide;
 
-#[derive(Component, Clone, Debug)]
+#[derive(Component, Clone, Debug, Copy)]
 pub struct Hitbox {
     pub width: f32,
     pub height: f32,
@@ -96,7 +96,7 @@ impl Hitbox {
         let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
         for x in top_left_x..=bottom_right_x {
             for y in bottom_right_y..=top_left_y {
-                if map.get(x, y) != ParticleData::Air {
+                if map.get(x, y).element != ParticleElement::Air {
                     return false;
                 }
             }   
@@ -108,7 +108,7 @@ impl Hitbox {
         let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
         for x in top_left_x..=bottom_right_x {
             for y in bottom_right_y..=top_left_y {
-                if map.get(x, y) == ParticleData::Water {
+                if map.get(x, y).element == ParticleElement::Water {
                     return true;
                 }
             }   
