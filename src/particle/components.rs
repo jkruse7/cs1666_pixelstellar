@@ -1,26 +1,23 @@
 use bevy::prelude::*;
 use rand::Rng;
-
 use crate::{engine::hitbox::Hitbox, LEVEL_H};
-
 use super::resources::PARTICLE_SIZE;
 
-// basic particle components
-// physics if you need to you can add velocity and hitbox to this
+
 #[derive(Component, Debug)]
 pub struct ParticlePosition {
-    pub x: i32,
-    pub y: i32,
+    pub grid_x: i32,
+    pub grid_y: i32,
 }
-
 impl ParticlePosition {
-    fn new(x: i32, y: i32) -> Self {
+    fn new(grid_x: i32, grid_y: i32) -> Self {
         Self {
-            x: x,
-            y: y,
+            grid_x: grid_x,
+            grid_y: grid_y,
         }
     }
 }
+
 
 #[derive(Component, Clone, Copy, PartialEq, Debug)]
 pub enum ParticleData {
@@ -29,45 +26,38 @@ pub enum ParticleData {
     Water,
     Sand,
     Dirt,
+    WetDirt,
     Stone,
-    // TODO: add more particle types
 }
 
-// this is a bundle of basic particle components,
-// you can add other basic components once implemented
-// **default can be implemented**
+
 #[derive(Bundle, Debug)]
 pub struct Particle {
     position: ParticlePosition,
     data: ParticleData,
     hitbox: Hitbox,
 }
+pub trait NewParticle {
+    const PARTICLE_DATA: ParticleData;
+    fn new(x: i32, y: i32) -> Self;
+}
 
-// examples for specific particle types:
 
-// the component for queries
 #[derive(Component, Debug)]
 pub struct ParticleElementBedRock;
-
-// the bundle that makes it a particle
 #[derive(Bundle, Debug)]
 pub struct BedRockParticle {
     sprite: SpriteBundle,
     particle: Particle,
     element: ParticleElementBedRock,
 }
-
-// if you are adding new particles (mainly procedural) follow this implementation scheme:
-impl BedRockParticle {
-    pub fn new(x: i32, y: i32) -> Self {
+impl NewParticle for BedRockParticle {
+    const PARTICLE_DATA: ParticleData = ParticleData::BedRock;
+    fn new(x: i32, y: i32) -> Self {
         // random color range
         let mut rng = rand::thread_rng();
         let black = rng.gen_range(0..=50) as u8;
         Self {
-            // implement its sprite with:
-            // 1. color
-            // 2. size
-            // 3. translation
             sprite: SpriteBundle {
                 sprite: Sprite {
                     color: Color::srgb_u8(black, black, black),
@@ -84,17 +74,16 @@ impl BedRockParticle {
                 },
                 ..default()
             },
-            // give the particle its position and data
             particle: Particle {
                 position: ParticlePosition::new(x, y),
                 data: ParticleData::BedRock,
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
             },
-            // name the particle for queries
             element: ParticleElementBedRock,
         }
     }
 }
+
 
 // water particle
 #[derive(Component)]
@@ -107,8 +96,9 @@ pub struct WaterParticle {
     element: ParticleElementWater,
 }
 
-impl WaterParticle {
-    pub fn new(x: i32, y: i32) -> Self {
+impl NewParticle for WaterParticle {
+    const PARTICLE_DATA: ParticleData = ParticleData::Water;
+    fn new(x: i32, y: i32) -> Self {
         let mut rng = rand::thread_rng();
         let r = rng.gen_range(15..=30) as u8;
         let g = rng.gen_range(129..=144) as u8;
@@ -166,8 +156,10 @@ pub struct DirtParticle {
     element: ParticleElementDirt,
 }
 
-impl DirtParticle {
-    pub fn new(x: i32, y: i32) -> Self {
+impl NewParticle for DirtParticle {
+    const PARTICLE_DATA: ParticleData = ParticleData::Dirt;
+
+    fn new(x: i32, y: i32) -> Self {
         let mut rng = rand::thread_rng();
         let r = rng.gen_range(118..=133) as u8;
         let g = rng.gen_range(85..=90) as u8;
@@ -199,6 +191,53 @@ impl DirtParticle {
     }
 }
 
+#[derive(Component)]
+pub struct ParticleElementWetDirt;
+
+#[derive(Bundle)]
+pub struct WetDirtParticle {
+    sprite: SpriteBundle, 
+    particle: Particle, 
+    element: ParticleElementWetDirt,
+}
+
+impl NewParticle for WetDirtParticle {
+    const PARTICLE_DATA: ParticleData = ParticleData::WetDirt;
+
+    fn new(x: i32, y: i32) -> Self {
+        let mut rng = rand::thread_rng();
+        let r = rng.gen_range(118..=133) as u8 - 80;
+        let g = rng.gen_range(85..=90) as u8 - 60;
+        let b = rng.gen_range(43..=73) as u8 - 40;
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgb_u8(r, g, b),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        0.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosition::new(x, y),
+                data: ParticleData::WetDirt,
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
+            },
+            element: ParticleElementWetDirt,
+        }
+    }
+}
+
+
+
 // the component for queries
 #[derive(Component)]
 pub struct ParticleElementStone;
@@ -212,8 +251,9 @@ pub struct StoneParticle {
 }
 
 // if you are adding new particles (mainly procedural) follow this implementation scheme:
-impl StoneParticle {
-    pub fn new(x: i32, y: i32) -> Self {
+impl NewParticle for StoneParticle {
+    const PARTICLE_DATA: ParticleData = ParticleData::Stone;
+    fn new(x: i32, y: i32) -> Self {
         // random color range
         let mut rng = rand::thread_rng();
         let gray = rng.gen_range(113..=128) as u8;

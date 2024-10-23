@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::{add_water, gameplay::{enemy, player}};
+use crate::{particle::components::WaterParticle, gameplay::{enemy, player}};
 
 use super::{
     gravity::{
@@ -199,7 +199,8 @@ impl Particle {
                     //if particle is water, despawn
                     if (ent == *entity && part.element == ELEMENT::WATER) {
                         let (x,y) = crate::particle::systems::convert_to_grid_position(hb.offset.x, hb.offset.y);
-                        add_water(x, y, &mut map, &mut commands);
+
+                        map.insert::<WaterParticle>(&mut commands, x, y);
                         commands.entity(*entity).despawn();
                     }
 
@@ -207,41 +208,4 @@ impl Particle {
             }
         }
     }
-}
-
-
-
-pub fn test_particle_spawn(
-    mut commands: Commands,
-) {
-    let particle = Particle::new(
-        true,
-        ELEMENT::WATER,
-        true,
-        true,
-        Vec2::new(0., 0.),
-        Transform::from_translation(Vec3::new(0., 200., 0.)),
-    );
-    Particle::spawn_particle(&mut commands, particle);
-
-    let particle = Particle::new(
-        true,
-        ELEMENT::WATER,
-        true,
-        true,
-        Vec2::new(0., 0.),
-        Transform::from_translation(Vec3::new(0., -100., 0.)),
-    );
-    Particle::spawn_particle(&mut commands, particle);
-
-    let bedrock = Particle::new(
-        false,
-        ELEMENT::BEDROCK,
-        true,
-        true,
-        Vec2::new(0., 0.),
-        Transform::from_translation(Vec3::new(0., -120., 0.)),
-    );
-    //info!("bedrock hb offset: {:?}", bedrock.hitbox.offset);
-    Particle::spawn_particle(&mut commands, bedrock);
 }

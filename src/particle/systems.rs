@@ -41,15 +41,20 @@ fn draw_solid(
             let current_particle: ParticleData = select_particle(((y + 90) as f32), noise, noise_dirt, noise_stone);
             if current_particle == ParticleData::BedRock {
                 // place data in map
-                map.insert(x, y, ParticleData::BedRock);
+                //map.insert(x, y, ParticleData::BedRock);
+
+            map.insert::<BedRockParticle>(&mut commands, x, y);
                 // place particle on screen
                 commands.spawn(BedRockParticle::new(x, y));
             } else if current_particle == ParticleData::Dirt {
-                map.insert(x, y, ParticleData::Dirt);
+                //map.insert(x, y, ParticleData::Dirt);
+            map.insert::<DirtParticle>(&mut commands, x, y);
                 commands.spawn(DirtParticle::new(x, y));
-            } else if current_particle == ParticleData::Stone {
-                map.insert(x, y, ParticleData::Stone);
-                commands.spawn(StoneParticle::new(x, y));
+            } else if current_particle == ParticleData::Dirt {
+
+            map.insert::<DirtParticle>(&mut commands, x, y);
+                //map.insert(x, y, ParticleData::Dirt);
+                commands.spawn(DirtParticle::new(x, y));
             }
         }
     }
@@ -60,13 +65,12 @@ fn draw_rain(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
 ) {
-    for i in 0..5{
+    for _ in 0..RAIN_INTENSITY{
         let mut rng = rand::thread_rng();
-        let x = rng.gen_range(-50..=50);
-        let y = rng.gen_range(100..200);
+        let x = rng.gen_range(RAIN_MIN_X..=RAIN_MAX_X);
+        let y = rng.gen_range(RAIN_MIN_Y..=RAIN_MAX_Y);
         if map.get(x, y) == ParticleData::Air {
-            map.insert(x, y, ParticleData::Water);
-            commands.spawn(WaterParticle::new(x, y));
+            map.insert::<WaterParticle>(&mut commands, x, y);
         }
     }
 }
@@ -79,55 +83,71 @@ impl Plugin for SpawnParticles {
     fn build(&self, app: &mut App) {
         app.insert_resource(ParticleMap::new());
         app.add_systems(Startup, draw_solid);
-        app.add_systems(Update, draw_rain);
+        //app.add_systems(Update, draw_rain);
     }
 }
 
 // use this as an example for cellular automation
 fn update_water(
     mut map: ResMut<ParticleMap>,
-    mut particles: Query<(&mut Transform, &mut ParticlePosition, &ParticleData), With<ParticleElementWater>>,
+    mut commands: Commands,
+    mut particles: Query<(Entity, &mut Transform, &mut ParticlePosition, &ParticleData), With<ParticleElementWater>>,
 ) {
     // loop through all of the queried water particles
-    for (mut transform, mut position, data) in &mut particles {
+    for (e_id, mut transform, mut position, data) in &mut particles {
         // if there is nothing below, fall down 1
-        if map.get(position.x, position.y - 1) == ParticleData::Air {
+        //info!("{:?}", map.get(position.grid_x, position.grid_y-1));
+        if map.get(position.grid_x, position.grid_y - 1) == ParticleData::Air {
             // move the particle data on the map down 1
-            map.move_data((position.x, position.y), (position.x, position.y - 1), data);
+            map.move_data((position.grid_x, position.grid_y), (position.grid_x, position.grid_y - 1), data);
             // update the particle's position
-            position.y -= 1;
+            position.grid_y -= 1;
             // move the particle on the screen
-            transform.translation.x = position.x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
-            transform.translation.y = position.y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
-            // check particle to bottom left
-        } else if map.get(position.x - 1, position.y - 1) == ParticleData::Air {
-            map.move_data((position.x, position.y), (position.x - 1, position.y - 1), data);
-            position.x -= 1;
-            position.y -= 1;
-            transform.translation.x = position.x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
-            transform.translation.y = position.y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+            transform.translation.x = position.grid_x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+            transform.translation.y = position.grid_y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+        }
+        else if map.get(position.grid_x, position.grid_y - 1) == ParticleData::Dirt{
+            // move the particle data on the map down 1
+            map.remove(&mut commands, e_id, position.grid_x, position.grid_y);
+            map.remove(&mut commands, e_id, position.grid_x, position.grid_y-1);
+            map.insert::<WetDirtParticle>(&mut commands, position.grid_x, position.grid_y - 1);
+        } 
+        // check particle to bottom left
+        else if map.get(position.grid_x - 1, position.grid_y - 1) == ParticleData::Air {
+            map.move_data((position.grid_x, position.grid_y), (position.grid_x - 1, position.grid_y - 1), data);
+            position.grid_x -= 1;
+            position.grid_y -= 1;
+            transform.translation.x = position.grid_x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+            transform.translation.y = position.grid_y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
             // check particle to bottom right
-        } else if map.get(position.x + 1, position.y - 1) == ParticleData::Air {
-            map.move_data((position.x, position.y), (position.x + 1, position.y - 1), data);
-            position.x += 1;
-            position.y -= 1;
-            transform.translation.x = position.x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
-            transform.translation.y = position.y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+        } else if map.get(position.grid_x + 1, position.grid_y - 1) == ParticleData::Air {
+            map.move_data((position.grid_x, position.grid_y), (position.grid_x + 1, position.grid_y - 1), data);
+            position.grid_x += 1;
+            position.grid_y -= 1;
+            transform.translation.x = position.grid_x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+            transform.translation.y = position.grid_y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
         }
         // check to the left as far as can go
-        else if map.get(position.x - 1, position.y) == ParticleData::Air {
-            map.move_data((position.x, position.y), (position.x - 1, position.y), data);
-            position.x -= 1;
-            transform.translation.x = position.x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
-            transform.translation.y = position.y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+        else if map.get(position.grid_x - 1, position.grid_y) == ParticleData::Air {
+            map.move_data((position.grid_x, position.grid_y), (position.grid_x - 1, position.grid_y), data);
+            position.grid_x -= 1;
+            transform.translation.x = position.grid_x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+            transform.translation.y = position.grid_y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
         }
-        else if map.get(position.x + 1, position.y) == ParticleData::Air {
-            map.move_data((position.x, position.y), (position.x + 1, position.y), data);
-            position.x += 1;
-            transform.translation.x = position.x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
-            transform.translation.y = position.y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+        else if map.get(position.grid_x + 1, position.grid_y) == ParticleData::Air {
+            map.move_data((position.grid_x, position.grid_y), (position.grid_x + 1, position.grid_y), data);
+            position.grid_x += 1;
+            transform.translation.x = position.grid_x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+            transform.translation.y = position.grid_y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
         }
     }
+}
+fn update_wet_dirt (
+    mut map: ResMut<ParticleMap>,
+    mut commands: Commands,
+    mut particles: Query<(Entity, &mut Transform, &mut ParticlePosition, &ParticleData, ), With<ParticleElementWetDirt>>,
+){
+
 }
 
 // once your automata system is complete,
@@ -146,16 +166,10 @@ pub fn convert_to_grid_position(x: f32, y: f32) -> (i32, i32) {
     (x, y)
 }
 
-pub fn add_water(x: i32, y: i32, map: &mut ResMut<ParticleMap>, commands: &mut Commands) {
-    if map.get(x, y) == ParticleData::Air {
-        map.insert(x, y, ParticleData::Water);
-        commands.spawn(WaterParticle::new(x, y));
-    }
-}
 
 fn select_particle(y: f32, noise: f32, dirt_height: f32, stone_height: f32) -> ParticleData {
     if y >= stone_height {
-        ParticleData::Stone
+        ParticleData::Dirt
     } else if y >= dirt_height{
         ParticleData::Dirt
     } else {

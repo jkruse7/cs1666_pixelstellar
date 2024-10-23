@@ -306,7 +306,7 @@ pub fn shoot_blaster(
         .map(|ray| ray.origin.truncate())
         {
             coords = world_position;
-            info!("World coords: {}/{}", coords.x, coords.y);
+            //info!("World coords: {}/{}", coords.x, coords.y);
         }
         
         let (blaster_transform, blaster_vector) = q_blaster_transform.single();
@@ -345,7 +345,7 @@ fn get_game_coords( //gets window cursor pos and converts to world position
         .map(|ray| ray.origin.truncate())
     {
         *coords = world_position;
-        info!("World coords: {}/{}", coords.x, coords.y);
+        //info!("World coords: {}/{}", coords.x, coords.y);
         return true;
     }
     false
