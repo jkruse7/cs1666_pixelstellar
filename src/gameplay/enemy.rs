@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-
+use crate::ParticleMap;
 use crate::{
     engine::{
         hitbox::Hitbox,
@@ -10,6 +10,7 @@ use crate::{
         Health,
     },
     ui::health::update_health_bar,
+    world::tiles::tiles,
     LEVEL_H,
     LEVEL_W,
     WIN_W,
@@ -26,6 +27,23 @@ const SPRITE_WIDTH: u32 = 30;
 
 #[derive(Component)]
 pub struct Enemy;
+
+#[derive(Component)]
+pub struct Jump {
+    is_jumping: bool,
+    needs_jump: bool,
+    jumped: bool,
+}
+
+impl Jump{
+    fn new() -> Self {
+        Self {
+            is_jumping: false,
+            needs_jump: false,
+            jumped: false,
+        }
+    }
+}
 
 #[derive(Component, Deref, DerefMut)]
 pub struct AnimationTimer(Timer);
@@ -65,6 +83,18 @@ impl EnemyHealth {
     }
 }
 
+pub struct EnemyPlugin;
+impl Plugin for EnemyPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, initialize)
+        .add_systems(Update, enemy_gravity.after(track_player))
+        .add_systems(Update, track_player)
+        .add_systems(Update, animate_enemy.after(track_player))
+        .add_systems(Update, check_enemy_death);
+    }
+}
+
+
 pub fn initialize(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
@@ -79,7 +109,7 @@ pub fn initialize(
             texture: enemy_sheet_handle,
             transform: Transform {
                 // Julianne 10/8: For now, enemy is being spawned at WIN_W. This will need to be changed eventually.
-                translation: Vec3::new(WIN_W, -(WIN_H / 2.) + ((TILE_SIZE as f32) * 1.5), 900.),
+                translation: Vec3::new(WIN_W / 2., 100.0, 900.),
                 ..default()
             },
             sprite: Sprite {
@@ -98,7 +128,8 @@ pub fn initialize(
         EnemyHealth::new(),
         Gravity::new(),
         Hitbox::new(40 as f32, 40 as f32, Vec2::new(0., -210.)),
-        DamageBox::new(50.0, 50.0, Vec2::new(0., -210.)),  
+        DamageBox::new(50.0, 50.0, Vec2::new(0., -210.)),
+        Jump::new(),  
         Enemy,
     ));
 }
@@ -123,45 +154,55 @@ impl DamageBox {
     }
 }
 
-
 pub fn enemy_gravity(
     time: Res<Time>, 
-    mut enemy: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox), With<Enemy>>, 
-    hitboxes: Query<(&Hitbox), Without<Enemy>>
+    mut enemy: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox, &mut Jump), With<Enemy>>, 
+    hitboxes: Query<(&Hitbox), Without<Enemy>>,
+    tiles: Query<(&tiles)>
 ) {
     /*Julianne 10/8: This function is the same as player flight, but only makes the downward force on the enemy (no flight)*/
-    let (mut pt, mut pv, mut pg, mut hb) = enemy.single_mut();
+    for (mut pt, mut pv, mut pg, mut hb, mut e_jump) in &mut enemy{
 
     let deltat = time.delta_seconds();
 
     //update gravity here
-    pg.update_g(&pv.velocity.y, &deltat);
-    pv.velocity.y = pg.get_g();
+    if e_jump.needs_jump && !e_jump.jumped{
+        pg.reset_g();
+        let acc_y = ACCEL_RATE_Y * deltat;
+        pv.velocity.y = f32::min(250., pv.velocity.y + (1. * acc_y));
+        e_jump.needs_jump = false;
+        e_jump.is_jumping = true;
+    }else {
+        pg.update_g(&pv.velocity.y, &deltat);
+        pv.velocity.y = pg.get_g();
+    }
     
 
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
     //Bound enemy to within level height
+    if new_pos.y >= -(LEVEL_H / 2.) + (TILE_SIZE as f32) / 2.
+        && new_pos.y <= LEVEL_H - (TILE_SIZE as f32) / 2.
+        && (!new_hb.all_enemy_collisions(&hitboxes)) && !e_jump.jumped
+    {    
 
-    if new_pos.y >= -(WIN_H / 2.) + (TILE_SIZE as f32) / 2.
-        && new_pos.y <= WIN_H - (TILE_SIZE as f32) / 2.
-        && !new_hb.all_enemy_collisions(&hitboxes)
-    {
-        pt.translation = new_pos;
-        *hb = new_hb;
+            pt.translation = new_pos;
+            *hb = new_hb; 
+            e_jump.jumped = true;
     }  
-    
-    let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
+    let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32,Vec2::new(new_pos.x + 1., new_pos.y));
     // Velocity is zero when enemy hits the ground
-    if pt.translation.y <= -(LEVEL_H / 2.) + (TILE_SIZE as f32) ||
-        new_hb.all_enemy_collisions(&hitboxes) 
+    if (pt.translation.y <= -(LEVEL_H / 2.) + (TILE_SIZE as f32) ||
+        new_hb.all_enemy_collisions(&hitboxes) )
     {
         pv.velocity.y = 0.;
+        e_jump.is_jumping = false;
+        e_jump.jumped = false;
+        
     }
-    //assumes the enemy is a square and pt.translation is the lower-left corner
 }
-
+}
 
 pub fn animate_enemy(
     time: Res<Time>,
@@ -175,7 +216,8 @@ pub fn animate_enemy(
         With<Enemy>,
     >,
 ) {
-    let (v, mut texture_atlas, mut timer, frame_count) = enemy.single_mut();
+    for (v, mut texture_atlas, mut timer, frame_count) in &mut enemy {
+    //let (v, mut texture_atlas, mut timer, frame_count) = enemy.single_mut();
     let x_vel = Vec2::new(v.velocity.x, 0.);
     //info!(x_vel.x);
     if x_vel.cmpne(Vec2::ZERO).any() {
@@ -186,6 +228,7 @@ pub fn animate_enemy(
          }
     }
 }
+}
 
 /*Julianne 10/8: This finds if the player is on the left or right side
  and simply makes enemy walk towards the player, changing x translation only
@@ -193,14 +236,16 @@ pub fn animate_enemy(
 pub fn track_player(
     time: Res<Time>,
     mut commands: Commands, 
-    mut enemy: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut DamageBox, &mut AnimationTimer), (With<Enemy>, Without<Player>)>,
+    mut enemy: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut DamageBox, &mut AnimationTimer, &mut Gravity, &mut Jump), (With<Enemy>, Without<Player>)>,
     mut player: Query<(&mut Transform, &mut Health), (With<Player>, Without<Enemy>)>,
     hitboxes: Query<(&Hitbox), Without<Enemy>>, 
+    mut player_hitbox: Query<(&Hitbox), (With<Player>, Without<Enemy>)>,
     mut camera: Query<&mut Transform, (Without<Player>, Without<Enemy>, With<Camera>)>
 ){
     //get enemy, player and camera
-    let (mut et, mut ev, mut es, mut ehb, mut edb, mut timer) = enemy.single_mut();
+    for (mut et, mut ev, mut es, mut ehb, mut edb, mut timer, mut eg, mut e_jump) in &mut enemy{
     let (mut pt, mut player_health) = player.single_mut();
+    let player_hb = player_hitbox.single_mut();
     let cam_t = camera.single_mut();
     let mut deltav_x = 0.;
 
@@ -210,8 +255,6 @@ pub fn track_player(
     else{
         timer.tick(time.delta());
     }
-    
-
     //face player and walk towards player
     if pt.translation.x >= et.translation.x {
         deltav_x += 1.;
@@ -242,7 +285,22 @@ pub fn track_player(
     let new_pos = et.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
     
+    let enemy_pos = et.translation.xy();
+    let player_pos = pt.translation.xy();
 
+    let mut no_jump = false;
+    if player_hb.collides_with(&new_hb) {
+        no_jump = true;
+        player_health.current -= 1.; 
+        //info!("Player hit! Current health: {:?}", player_health.current); // 记录伤害
+    }
+    if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
+        && new_pos.x <= LEVEL_W - (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
+        && new_hb.all_enemy_collisions(&hitboxes) && !e_jump.is_jumping && !no_jump
+    {
+        ev.velocity.x = 0.;
+        e_jump.needs_jump = true;
+    }
     if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
         && new_pos.x <= LEVEL_W - (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
         && !new_hb.all_enemy_collisions(&hitboxes)
@@ -250,11 +308,22 @@ pub fn track_player(
         et.translation = new_pos;
         *ehb = new_hb;
     }
-    let enemy_pos = et.translation.xy();
-    let player_pos = pt.translation.xy();
+    
+}
+}
 
-    if edb.collides_with(&ehb, enemy_pos, player_pos) {
-        player_health.current -= 10.0; 
-        info!("Player hit! Current health: {:?}", player_health.current); // 记录伤害
+
+pub fn check_enemy_death(
+    mut commands: Commands,
+    query: Query<(Entity, &mut Hitbox), (With<Enemy>)>,
+    map: ResMut<ParticleMap>,
+){
+    //TODO: Check if collided with blaster particle 
+    for (entity, ehb) in query.iter() {
+        if ehb.are_any_grid_tiles_water(&map) {
+            info!("Enemy hit by water particle");
+            commands.entity(entity).despawn();
+        }
+        
     }
 }

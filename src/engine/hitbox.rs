@@ -4,6 +4,10 @@ use bevy::{
     ecs::query,
 };
 
+use crate::particle::components::ParticleData;
+use crate::particle::systems::*;
+
+use crate::ParticleMap;
 use crate::{
     gameplay::{
         player::Player,
@@ -12,6 +16,8 @@ use crate::{
     world::tiles::tiles,
 };
 
+
+
 #[derive(Component)]
 pub struct DoNotSearchCollide;
 
@@ -19,7 +25,7 @@ pub struct DoNotSearchCollide;
 pub struct Hitbox {
     pub width: f32,
     pub height: f32,
-    pub offset: Vec2, //bottom left corner
+    pub offset: Vec2, //center of the hitbox
 }
 
 impl Hitbox {
@@ -32,9 +38,11 @@ impl Hitbox {
     }
     pub fn collides_with(&self, other: &Hitbox) -> bool {
         //tr = topright corner
-        let self_tr = self.offset + Vec2::new(self.width,self.height);
-        let other_tr = other.offset + Vec2::new(other.width,other.height);
-        self.offset.x < other_tr.x && self_tr.x > other.offset.x && self.offset.y < other_tr.y && self_tr.y > other.offset.y
+        let self_tr = self.offset + Vec2::new(self.width,self.height)/2.0;
+        let self_bl = self.offset - Vec2::new(self.width,self.height)/2.0;
+        let other_bl = other.offset - Vec2::new(other.width,other.height)/2.0;
+        let other_tr = other.offset + Vec2::new(other.width,other.height)/2.0;
+        self_tr.x > other_bl.x && self_bl.x < other_tr.x && self_tr.y > other_bl.y && self_bl.y < other_tr.y
     }
     pub fn all_player_collisions(&self, hitboxes: &Query<&Hitbox, Without<Player>>)  -> bool {
         for hitbox in hitboxes.iter() {
@@ -82,5 +90,53 @@ impl Hitbox {
         position.x <= self.offset.x + half_width &&
         position.y >= self.offset.y - half_height &&
         position.y <= self.offset.y + half_height
+    }
+
+    pub fn are_all_grid_tiles_air(&self, map: &ResMut<ParticleMap>) -> bool {
+        let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
+        for x in top_left_x..=bottom_right_x {
+            for y in bottom_right_y..=top_left_y {
+                if map.get(x, y) != ParticleData::Air {
+                    return false;
+                }
+            }   
+        }
+        true
+    }
+
+    pub fn are_any_grid_tiles_water(&self, map: &ResMut<ParticleMap>) -> bool {
+        let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
+        for x in top_left_x..=bottom_right_x {
+            for y in bottom_right_y..=top_left_y {
+                if map.get(x, y) == ParticleData::Water {
+                    return true;
+                }
+            }   
+        }
+        false
+    }
+
+    pub fn ratio_of_water_grid_tiles(&self, map: &ResMut<ParticleMap>) -> f32 {
+        let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
+        let mut count = 0;
+        let mut no_count = 0;
+        for x in top_left_x..=bottom_right_x {
+            for y in bottom_right_y..=top_left_y {
+                if map.get(x, y) == ParticleData::Water {
+                    count+=1;
+                }
+                else {
+                    no_count+=1;
+                }
+            }   
+        }
+        count as f32 / (count + no_count) as f32
+    }
+    // return the grid position of the top left and bottom right corners of the hitbox
+    // (top_left_x, top_left_y, bottom_right_x, bottom_right_y) 
+    pub fn get_grid_tiles_to_check(&self) -> (i32, i32, i32, i32) { //
+        let top_left_grid_pos = convert_to_grid_position(self.offset.x - self.width / 2.0, self.offset.y + self.height / 2.0);
+        let bottom_right_grid_pos = convert_to_grid_position(self.offset.x + self.width / 2.0, self.offset.y - self.height / 2.0);
+        (top_left_grid_pos.0, top_left_grid_pos.1, bottom_right_grid_pos.0, bottom_right_grid_pos.1)
     }
 }

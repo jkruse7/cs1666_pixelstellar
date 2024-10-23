@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::gameplay::player;
+use crate::{add_water, gameplay::{enemy, player}};
 
 use super::{
     gravity::{
@@ -16,13 +16,14 @@ use super::{
 // TODO: remove bedrock from having to be iterated over on outer loop
 // TODO: add visual representation of particles
 
-const PARTICLE_SIZE: f32 = 4.;
+pub const PARTICLE_SIZE: f32 = 4.;
 enum MatterState {
     LIQUID,
     GAS, 
     SOLID,
 }
 
+#[derive(PartialEq, Eq, Debug)]
 pub enum ELEMENT {
     WATER, BEDROCK,
 }
@@ -112,11 +113,18 @@ impl Particle {
 
         ));
     }
+    
+    pub fn teleport_to(&mut self, new_position: Vec3){
+        self.transform.translation = new_position;
+    }
 
     pub fn move_and_handle_collisions(
         time: Res<Time>,
-        mut parts: Query<(Entity, &mut Particle, &mut Hitbox, &mut Transform), Without<player::Player>>,
-        mut player_hitboxes: Query<(&Hitbox, &player::Player)>, //player
+        mut parts: Query<(Entity, &mut Particle, &mut Hitbox, &mut Transform), (Without<player::Player>, Without<enemy::Enemy>)>,
+        player_hitboxes: Query<(&Hitbox, &player::Player)>,
+        enemy_hitboxes: Query<(&Hitbox, &enemy::Enemy)>,
+        mut map: ResMut<crate::ParticleMap>,
+        mut commands: Commands,
     ) {
         let deltat = time.delta_seconds();
 
@@ -137,7 +145,7 @@ impl Particle {
         }
 
         // Second pass: check for collisions and finalize movement
-        for (entity, velocity, proposed_offset) in proposed_movements.iter() {
+        for (entity, velocity, proposed_offset ) in proposed_movements.iter() {
             let mut collides = false;
 
             // Check for collisions with other particles
@@ -145,7 +153,7 @@ impl Particle {
                 if *entity == other_entity {
                     continue; // Skip self
                 }
-                info!("Checking collision between {:?} and hb offset{:?}", entity, other_hitbox.offset);
+                //info!("Checking collision between {:?} and hb offset{:?}", entity, other_hitbox.offset);
                 // If proposed movement collides with another hitbox, adjust velocity
                 if Hitbox::new(PARTICLE_SIZE,PARTICLE_SIZE, *proposed_offset).collides_with(&other_hitbox) {
                     collides = true;
@@ -160,6 +168,21 @@ impl Particle {
                 }
             }
 
+            // Check for collisions with enemy
+            for (enemy_hitbox, _enemy) in enemy_hitboxes.iter() {
+                if Hitbox::new(PARTICLE_SIZE,PARTICLE_SIZE, *proposed_offset).collides_with(&enemy_hitbox) {
+                    collides = true;
+                    break;
+                }
+            }
+
+            // Check to make sure the particle is going to go where a air tile is
+            let proposed_hb = Hitbox::new(PARTICLE_SIZE,PARTICLE_SIZE, *proposed_offset);
+            if(!proposed_hb.are_all_grid_tiles_air(&map)) {
+                collides = true;
+            }
+
+
             // Finalize movement based on collision check
             // Find the particle and its hit
             if !collides {
@@ -170,17 +193,24 @@ impl Particle {
                     }
                 }
             } else {
-                info!("Collision detected for entity {:?}", entity);
+                //info!("Collision detected for entity {:?}", entity);
                 // Handle collision (right now just stop the particle)
                 for (ent, mut part, hb, tr) in parts.iter_mut() {
-                    if ent == *entity {
-                        part.velocity = Vec2::ZERO; 
+                    //if particle is water, despawn
+                    if (ent == *entity && part.element == ELEMENT::WATER) {
+                        let (x,y) = crate::particle::systems::convert_to_grid_position(hb.offset.x, hb.offset.y);
+                        add_water(x, y, &mut map, &mut commands);
+                        commands.entity(*entity).despawn();
                     }
+
                 }
             }
         }
     }
 }
+
+
+
 pub fn test_particle_spawn(
     mut commands: Commands,
 ) {
@@ -199,7 +229,7 @@ pub fn test_particle_spawn(
         ELEMENT::WATER,
         true,
         true,
-        Vec2::new(240., 100.),
+        Vec2::new(0., 0.),
         Transform::from_translation(Vec3::new(0., -100., 0.)),
     );
     Particle::spawn_particle(&mut commands, particle);
@@ -212,6 +242,6 @@ pub fn test_particle_spawn(
         Vec2::new(0., 0.),
         Transform::from_translation(Vec3::new(0., -120., 0.)),
     );
-    info!("bedrock hb offset: {:?}", bedrock.hitbox.offset);
+    //info!("bedrock hb offset: {:?}", bedrock.hitbox.offset);
     Particle::spawn_particle(&mut commands, bedrock);
 }

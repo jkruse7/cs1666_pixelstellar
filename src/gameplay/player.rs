@@ -1,18 +1,26 @@
-use bevy::prelude::*;
+use bevy::{math::vec2, prelude::*};
+use bevy::window::PrimaryWindow;
 
+use crate::engine::particles::Particle;
+use crate::gameplay::blaster;
+use crate::{ParticleMap, PARTICLE_SIZE};
 use crate::{
     engine::{
         hitbox::Hitbox,
         gravity::Gravity,
     },
+    ui::camera::MainCamera,
     gameplay::enemy::Enemy,
     LEVEL_H,
     LEVEL_W,
-    WIN_W,
-    WIN_H,
 };
 
 
+
+use super::blaster::{Blaster, BlasterVector, BlasterLastFiredTime}; 
+
+const BLASTER_OFFSET_X: f32 = -5.;
+const BLASTER_OFFSET_Y: f32 = -15.;
 const TILE_SIZE: u32 = 100;
 const MAX_FLIGHT_SPEED: f32 = 250.;
 const PLAYER_SPEED: f32 = 250.;
@@ -91,7 +99,7 @@ pub fn initialize(
         SpriteBundle {
             texture: player_sheet_handle,
             transform: Transform {
-                translation: Vec3::new(0., -(WIN_H / 2.) + ((TILE_SIZE as f32) * 1.5), 900.),
+                translation: Vec3::new(0., 100.0, 900.),
                 ..default()
             },
             sprite: Sprite {
@@ -110,7 +118,7 @@ pub fn initialize(
         Velocity::new(),
         Health::new(100.0),
         Gravity::new(),
-        Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
+        Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, Vec2::new(0., 100.)),
         Player,
     ));
 }
@@ -121,9 +129,12 @@ pub fn move_player(
     mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut Health), (With<Player>)>,
     mut hitboxes: Query<(&Hitbox), Without<Player>>,
     mut enemy_hitboxes: Query<(&Hitbox), (With<Enemy>, Without<Player>)>,
+    mut blaster_transform: Query<(&mut Transform), (With<Blaster>, Without<Enemy>, Without<Player>)>,
+    map: ResMut<crate::ParticleMap>,
 ) {
     let (mut pt, mut pv, mut ps, mut hb, mut player_health) = player.single_mut();
     let mut deltav_x = 0.;
+    let mut bt = blaster_transform.single_mut();
 
     if input.pressed(KeyCode::KeyA) {
         deltav_x -= 1.;
@@ -142,12 +153,18 @@ pub fn move_player(
             pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED, PLAYER_SPEED);
         }
         else {
-            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED * 0.3, PLAYER_SPEED * 0.3);
+            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED * 0.5, PLAYER_SPEED * 0.5);
         }
     } else if pv.velocity.x.abs() > acc_x {
         pv.velocity.x -= pv.velocity.x.signum() * acc_x;
     } else {
         pv.velocity.x = 0.;
+    }
+
+    //Account for player in water
+    let ratio_of_water_particles = hb.ratio_of_water_grid_tiles(&map);
+    if ratio_of_water_particles > 0.0 {
+        pv.velocity.x = pv.velocity.x * (1. - 0.7 * ratio_of_water_particles.powf(0.5));
     }
 
     let change = pv.velocity * deltat;
@@ -156,16 +173,18 @@ pub fn move_player(
 
     
     if new_hb.player_enemy_collision(&enemy_hitboxes){
-        info!("updating!");
         player_health.current -=1.;
     }
-    if new_pos.x >= -(WIN_W / 2.) + (TILE_SIZE as f32) / 2.
-        && new_pos.x <= LEVEL_W - (WIN_W / 2. + (TILE_SIZE as f32) / 2.)
+    if new_pos.x >= -(LEVEL_W / 2.) + (TILE_SIZE as f32) / 2.
+        && new_pos.x <= LEVEL_W - (LEVEL_W / 2. + (TILE_SIZE as f32) / 2.)
         && !new_hb.all_player_collisions(&hitboxes)
     {
         pt.translation = new_pos;
         *hb = new_hb;
+        bt.translation.x = pt.translation.x + BLASTER_OFFSET_X;
+        bt.translation.y = pt.translation.y + BLASTER_OFFSET_Y;
     }
+    //info!("{}", pt.translation);
 
 }
 
@@ -173,32 +192,46 @@ pub fn flight(
     time: Res<Time>, 
     input: Res<ButtonInput<KeyCode>>, 
     mut player: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox), With<Player>>, 
-    mut hitboxes: Query<(&Hitbox), Without<Player>>
+    mut hitboxes: Query<(&Hitbox), Without<Player>>,
+    mut blaster_transform: Query<(&mut Transform), (With<Blaster>, Without<Enemy>, Without<Player>)>,
+    map: ResMut<crate::ParticleMap>,
 ) {
     let (mut pt, mut pv, mut pg, mut hb) = player.single_mut();
-
+    let mut bt = blaster_transform.single_mut();
     let deltat = time.delta_seconds();
     let acc_y = ACCEL_RATE_Y * deltat;
 
     if input.pressed(KeyCode::Space) {
-        pg.reset_g();
-        pv.velocity.y = f32::min(MAX_FLIGHT_SPEED, pv.velocity.y + (1. * acc_y))
-    }else {
+        if (pt.translation.y <= (LEVEL_H / 2.) - (SPRITE_HEIGHT as f32) / 2.) {
+            pg.reset_g();
+            pv.velocity.y = f32::min(MAX_FLIGHT_SPEED, pv.velocity.y + (1. * acc_y))
+        }
+        else {
+            pg.reset_g();
+            pv.velocity.y = 0.0;
+        }
+    } else {
         pg.update_g(&pv.velocity.y, &deltat);
         pv.velocity.y = pg.get_g();
     }
-
+    //Account for player in water
+    let ratio_of_water_particles = hb.ratio_of_water_grid_tiles(&map);
+    if ratio_of_water_particles > 0.0 {
+        pv.velocity.y = pv.velocity.y * (1. - 0.7 * ratio_of_water_particles.powf(0.5));
+    }
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
     //Bound player to within level height
 
-    if new_pos.y >= -(WIN_H / 2.) + (TILE_SIZE as f32) / 2.
-        && new_pos.y <= WIN_H - (TILE_SIZE as f32) / 2.
+    if new_pos.y >= -(LEVEL_H / 2.) + (TILE_SIZE as f32) / 2.
+        && new_pos.y <= (LEVEL_H / 2.) - (SPRITE_HEIGHT as f32) / 2.
         && !new_hb.all_player_collisions(&hitboxes)
     {
         pt.translation = new_pos;
         *hb = new_hb;
+        bt.translation.x = pt.translation.x + BLASTER_OFFSET_X;
+        bt.translation.y = pt.translation.y + BLASTER_OFFSET_Y;
     }  
     
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
