@@ -1,25 +1,18 @@
-use bevy::{
-    prelude::*,
-    window::PresentMode,
-    ecs::query,
-};
+use bevy::prelude::*;
 
 use crate::particle::components::ParticleData;
 use crate::particle::systems::*;
 
-use crate::ParticleMap;
 use crate::{
-    gameplay::{
-        player::Player,
-        enemy::Enemy,
-    },
-    world::tiles::tiles,
+    particle::resources::ParticleMap,
+    player::components::Player,
+    enemy::components::Enemy,
 };
 
 
 
-#[derive(Component)]
-pub struct DoNotSearchCollide;
+//#[derive(Component)]
+//pub struct DoNotSearchCollide;
 
 #[derive(Component, Clone, Debug)]
 pub struct Hitbox {
@@ -70,19 +63,7 @@ impl Hitbox {
         }
         false
     }
-    pub fn tile_collision(&self, tile: &tiles) -> bool {
-        self.collides_with(&tile.hitbox)
-    }
-
-    pub fn all_tile_collisions(&self, tiles: &Query<&tiles>) -> bool {
-        for tile in tiles.iter() {
-            if self.tile_collision(tile) {
-                return true;
-            }
-        }
-        false
-    }
-    pub fn contains(&self, position: &Vec2) -> bool {
+    /*pub fn contains(&self, position: &Vec2) -> bool {
         // 假设 hitbox 以中心为原点
         let half_width = self.width / 2.0;
         let half_height = self.height / 2.0;
@@ -102,7 +83,7 @@ impl Hitbox {
             }   
         }
         true
-    }
+    }*/
 
     pub fn are_any_grid_tiles_water(&self, map: &ResMut<ParticleMap>) -> bool {
         let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();

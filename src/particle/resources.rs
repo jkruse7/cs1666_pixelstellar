@@ -6,11 +6,11 @@ pub const PARTICLE_SIZE: f32 = 4.;
 pub const MIN_X: i32 = ((-LEVEL_W / 2.) / PARTICLE_SIZE) as i32;
 pub const MAX_X: i32 = ((LEVEL_W / 2.) / PARTICLE_SIZE) as i32;
 pub const MIN_Y: i32 = ((-LEVEL_H / 2.) / PARTICLE_SIZE) as i32;
-pub const MAX_Y: i32 = ((LEVEL_H / 2.) / PARTICLE_SIZE) as i32;
+//pub const MAX_Y: i32 = ((LEVEL_H / 2.) / PARTICLE_SIZE) as i32;
 
 #[derive(Resource)]
 pub struct ParticleMap {
-    particle_map: HashMap<(i32, i32), ParticleData>,
+    pub particle_map: HashMap<(i32, i32), ParticleData>,
 }
 
 impl ParticleMap {

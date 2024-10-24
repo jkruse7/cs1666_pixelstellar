@@ -12,7 +12,7 @@ let mut frequency = start_frequency;
 let mut noise_sum = 0.;
 let mut amplitude_sum = 0.;
 
-for octave in 0..octaves {
+for _ in 0..octaves {
 noise_sum += get_1d_pn_value(x, amplitude, frequency, &permutation_table);
 amplitude_sum += amplitude;
 amplitude *= persistance;
@@ -31,7 +31,7 @@ let mut frequency = start_frequency;
 let mut noise_sum = 0.;
 let mut amplitude_sum = 0.;
 
-for octave in 0..octaves {
+for _ in 0..octaves {
 noise_sum += get_2d_pn_value(x, y, amplitude, frequency, &permutation_table);
 amplitude_sum += amplitude;
 amplitude *= persistance;

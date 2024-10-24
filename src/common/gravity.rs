@@ -15,11 +15,6 @@ impl Gravity {
             current_g: 0.,
         }
     }
-    pub fn new_with_g(g: f32) -> Self {
-        Self {
-            current_g: g,
-        }
-    }
 
     pub fn update_g(&mut self, curr_velocity: &f32, deltat: &f32) {
         //self.current_G = GRAVITY;

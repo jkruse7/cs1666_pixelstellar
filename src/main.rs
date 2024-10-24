@@ -1,40 +1,34 @@
-// rust and bevy imports
 use bevy::{prelude::*, window::PresentMode};
 
-// module declarations and imports
-mod engine;
-mod gameplay;
-mod ui;
-mod world;
+mod common;
+
+mod enemy;
 mod particle;
+mod player;
 
-use crate::particle::resources::*;
-use crate::particle::systems::*;
 
-// constants
+// Game constants
 const TITLE: &str = "Pixelstellar";
 const WIN_W: f32 = 1280.;
 const WIN_H: f32 = 720.;
 const LEVEL_W: f32 = WIN_W * 3.0;
 const LEVEL_H: f32 = WIN_H * 2.0;
+
+
 fn main() {
     App::new()
+        // Resources which will be accessible throughout the game
         .insert_resource(ClearColor(Color::srgb_u8(0, 0, 0)))
-        //.add_systems(Startup, setup_camera)
-        .add_systems(Startup, ui::camera::initialize)
-        .add_systems(Startup, ui::background::initialize)
-        .add_systems(Startup, gameplay::player::initialize)
-        .add_systems(Startup, gameplay::blaster::initialize)
-        .add_systems(Startup, ui::health::setup_health_bar)
 
-        .add_systems(Update, gameplay::player::move_player)
-        .add_systems(Update, gameplay::player::flight.after(gameplay::player::move_player))
-        .add_systems(Update, gameplay::player::animate_player.after(gameplay::player::move_player))
-        .add_systems(Update, ui::camera::move_camera.after(gameplay::player::move_player))
-        .add_systems(Update, gameplay::blaster::update_blaster_aim)
-        .add_systems(Update, gameplay::blaster::shoot_blaster.after(gameplay::blaster::update_blaster_aim))
-        .add_systems(Update, engine::particles::Particle::move_and_handle_collisions.after(gameplay::player::flight))
-        .add_systems(Update, ui::health::update_health_bar)
+        // UI Plugins
+        .add_plugins(common::ui::camera::CameraPlugin)
+        .add_plugins(common::ui::background::BackgroundPlugin)
+        .add_plugins(common::ui::health_bar::HealthBarPlugin)
+
+        // Entity Plugins
+        .add_plugins(particle::systems::ParticlePlugin)
+        .add_plugins(enemy::systems::EnemyPlugin)
+        .add_plugins(player::systems::PlayerPlugin)
 
 
         .add_plugins(DefaultPlugins.set(WindowPlugin {
@@ -46,12 +40,5 @@ fn main() {
             }),
             ..default()
         }))
-        .add_plugins(SpawnParticles)
-        .add_plugins(UpdateParticles)
-        .add_plugins(gameplay::enemy::EnemyPlugin)
         .run();
-}
-
-fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
 }

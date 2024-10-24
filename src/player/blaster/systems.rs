@@ -1,41 +1,13 @@
 use bevy::prelude::*;
 use crate::{
-    engine::{
-        gravity::Gravity, hitbox::Hitbox, particles::Particle
-    }, gameplay::enemy::Enemy, LEVEL_H, LEVEL_W, WIN_H, WIN_W
+    //common::hitbox::Hitbox, 
+    //particle::resources::*,
+    enemy::components::Enemy, 
+    player::components::Player,
+    WIN_H
 };
+use super::components::*;
 
-use super::player::Player;
-
-//blaster or gun
-#[derive(Component)]
-pub struct Blaster;
-
-#[derive(Component)] //direction blaster is facing
-pub struct BlasterVector {
-    pub vector: Vec2,
-}
-
-impl BlasterVector {
-    pub fn new() -> Self {
-        Self {
-            vector: Vec2::splat(0.),
-        }
-    }
-}
-
-#[derive(Component)]
-pub struct BlasterLastFiredTime{
-    pub last_fired: f64,
-}
-
-impl BlasterLastFiredTime {
-    pub fn new() -> Self {
-        Self {
-            last_fired: 0.,
-        }
-    }
-}
 
 pub fn initialize(
     mut commands: Commands,
@@ -72,7 +44,7 @@ pub fn initialize(
 
 
 pub fn update_blaster_aim( //this gets window cursor position, not world position (https://bevy-cheatbook.github.io/cookbook/cursor2world.html)
-    q_camera: Query<(&Camera, &GlobalTransform), With<crate::ui::camera::MainCamera>>,
+    q_camera: Query<(&Camera, &GlobalTransform), With<crate::common::ui::camera::MainCamera>>,
     q_windows: Query<&Window, With<bevy::window::PrimaryWindow>>,
     q_player: Query<&mut Transform, With<Player>>, 
     mut q_blaster_transform: Query<(&mut Transform, &mut BlasterVector, &mut Sprite), (With<Blaster>, Without<Enemy>, Without<Player>)>,
@@ -82,7 +54,7 @@ pub fn update_blaster_aim( //this gets window cursor position, not world positio
     let (mut blaster_transform, mut blaster_vector, mut blaster_sprite) = q_blaster_transform.single_mut();
     let player_transform = q_player.single();
     let mut cursor_pos = Vec2::new(0., 0.);
-    let update_aim_vec = get_game_coords(&mut cursor_pos, q_windows, q_camera);
+    let update_aim_vec = true;//get_game_coords(&mut cursor_pos, q_windows, q_camera);
     // info! ("Cursor pos: {}/{}", cursor_pos.x, cursor_pos.y);
     if update_aim_vec {
         let player_pos = player_transform.translation;
@@ -98,10 +70,10 @@ pub fn update_blaster_aim( //this gets window cursor position, not world positio
     }
 }
 
-pub fn shoot_blaster(
+/*pub fn shoot_blaster(
     time: Res<Time>,
     buttons: Res<ButtonInput<MouseButton>>,
-    mut commands: Commands,
+    //mut commands: Commands,
     mut q_blaster: Query<(&Transform, &BlasterVector, &mut BlasterLastFiredTime), (With<Blaster>, Without<Enemy>, Without<Player>)>,
     map: ResMut<crate::ParticleMap>,
 ) { //check 
@@ -110,25 +82,25 @@ pub fn shoot_blaster(
     if buttons.pressed(MouseButton::Left) && time_since_last_fired > 0.05 {
         blaster_last_fired_time.last_fired = time.elapsed_seconds_f64();
         let proposed_pos = blaster_transform.translation + blaster_vector.vector.extend(0.0) * 40.0;
-        let proposed_hb = Hitbox::new(crate::engine::particles::PARTICLE_SIZE as f32, crate::engine::particles::PARTICLE_SIZE as f32, proposed_pos.xy());
+        let proposed_hb = Hitbox::new(PARTICLE_SIZE as f32, PARTICLE_SIZE as f32, proposed_pos.xy());
         if proposed_hb.are_all_grid_tiles_air(&map) {
             let proposed_velocity = blaster_vector.vector * 1500.0;
             let particle = Particle::new(
                 true,
-                crate::engine::particles::ELEMENT::WATER,
+                crate::common::particles::ELEMENT::WATER,
                 true,
                 true,
                 proposed_velocity,
                 Transform::from_translation(Vec3::new(proposed_pos.x, proposed_pos.y, 0.)),
             );
-            crate::engine::particles::Particle::spawn_particle(&mut commands, particle);
+            crate::common::particles::Particle::spawn_particle(&mut commands, particle);
         }
     }   
-}
+}*/
 fn get_game_coords( //gets window cursor pos and converts to world position
-    mut coords: &mut Vec2,
+    coords: &mut Vec2,
     q_window: Query<&Window, With<bevy::window::PrimaryWindow>>,
-    q_camera: Query<(&Camera, &GlobalTransform), With<crate::ui::camera::MainCamera>>,
+    q_camera: Query<(&Camera, &GlobalTransform), With<crate::common::ui::camera::MainCamera>>,
 ) -> bool {
 
     // get the camera info and transform

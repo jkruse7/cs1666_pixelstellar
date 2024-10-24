@@ -1,20 +1,18 @@
 use bevy::prelude::*;
-
 use crate::{
-    gameplay::player::Player,
-    LEVEL_H,
-    LEVEL_W,
-    WIN_H,
-    WIN_W,
+    player::components::*,
+    LEVEL_H, LEVEL_W,
+    WIN_H, WIN_W,
 };
-
-#[derive(Component)]
-pub struct MainCamera;
 
 const THRESHOLD_X: f32 = 160.;
 const THRESHOLD_Y: f32 = 90.;
 
-pub fn initialize(mut commands: Commands){
+#[derive(Component)]
+pub struct MainCamera;
+
+pub fn initialize_camera(mut commands: Commands){
+    info!("sss");
     commands.spawn((Camera2dBundle::default(), MainCamera));
 }
 
@@ -27,11 +25,9 @@ pub fn move_camera(
     let x_bound = LEVEL_W / 2. - WIN_W / 2.;
     let y_bound = LEVEL_H / 2. - WIN_H / 2.;
     
-
     let mut ct = camera.single_mut();
     let x_diff = pt.translation - ct.translation;
 
-    //info!("player: {}, new: {}, {} (bounds: {}, {})", pt.translation, pt.translation.x.clamp(-x_bound, x_bound) - THRESHOLD_X,  pt.translation.y.clamp(-y_bound, y_bound) - THRESHOLD_Y, x_bound, y_bound);
     if x_diff.x > THRESHOLD_X{ ct.translation.x = pt.translation.x.clamp(-x_bound - THRESHOLD_X, x_bound + THRESHOLD_X) - THRESHOLD_X; }
     if x_diff.x < -THRESHOLD_X { ct.translation.x = pt.translation.x.clamp(-x_bound - THRESHOLD_X, x_bound + THRESHOLD_X) + THRESHOLD_X; }
     if x_diff.y > THRESHOLD_Y{ ct.translation.y = pt.translation.y.clamp(-y_bound - THRESHOLD_Y, y_bound + THRESHOLD_Y) - THRESHOLD_Y; }
@@ -39,7 +35,7 @@ pub fn move_camera(
 
 }
 
-
+// Useful for debugging, prints bevy coordinates at the mouse location.
 pub fn mouse_coordinates(
     window_query: Query<&Window>,
     camera_query: Query<(&Camera, &GlobalTransform), With<Camera>>,
@@ -51,6 +47,15 @@ pub fn mouse_coordinates(
             .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
             .map(|ray| ray.origin.truncate())
     {
-        //info!("World coords: {}/{}", world_position.x, world_position.y);
+        info!("World coords: {}/{}", world_position.x, world_position.y);
+    }
+}
+
+pub struct CameraPlugin;
+impl Plugin for CameraPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, initialize_camera);
+        //app.add_systems(Update, mouse_coordinates);
+        app.add_systems(Update, move_camera.after(crate::player::systems::move_player));
     }
 }

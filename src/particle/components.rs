@@ -1,23 +1,23 @@
 use bevy::prelude::*;
 use rand::Rng;
 
-use crate::{engine::hitbox::Hitbox, LEVEL_H};
+use crate::{common::hitbox::Hitbox, LEVEL_H};
 
-use super::resources::PARTICLE_SIZE;
+use crate::particle::resources::PARTICLE_SIZE;
 
 // basic particle components
 // physics if you need to you can add velocity and hitbox to this
 #[derive(Component, Debug)]
 pub struct ParticlePosition {
-    pub x: i32,
-    pub y: i32,
+    pub grid_x: i32,
+    pub grid_y: i32,
 }
 
 impl ParticlePosition {
-    fn new(x: i32, y: i32) -> Self {
+    fn new(grid_x: i32, grid_y: i32) -> Self {
         Self {
-            x: x,
-            y: y,
+            grid_x: grid_x,
+            grid_y: grid_y,
         }
     }
 }
@@ -27,7 +27,6 @@ pub enum ParticleData {
     Air,
     BedRock,
     Water,
-    Sand,
     Dirt,
     Stone,
     // TODO: add more particle types
@@ -143,19 +142,8 @@ impl WaterParticle {
     }
 }
 
-#[derive(Component)]
-struct ParticleTypeSand;
 
-#[derive(Bundle)]
-struct SandParticle {
 
-}
-
-impl SandParticle {
-    // fn new() -> Self {
-        
-    // }
-}
 #[derive(Component)]
 pub struct ParticleElementDirt;
 

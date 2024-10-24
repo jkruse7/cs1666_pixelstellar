@@ -1,89 +1,18 @@
-use bevy::{math::vec2, prelude::*};
-use bevy::window::PrimaryWindow;
-
-use crate::engine::particles::Particle;
-use crate::gameplay::blaster;
-use crate::{ParticleMap, PARTICLE_SIZE};
+use bevy::prelude::*;
+use super::{components::*, resources::*, blaster::components::*};
 use crate::{
-    engine::{
+    common::{
         hitbox::Hitbox,
         gravity::Gravity,
     },
-    ui::camera::MainCamera,
-    gameplay::enemy::Enemy,
+    particle::resources::ParticleMap,
+    enemy::components::Enemy,
     LEVEL_H,
     LEVEL_W,
 };
 
 
 
-use super::blaster::{Blaster, BlasterVector, BlasterLastFiredTime}; 
-
-const BLASTER_OFFSET_X: f32 = -5.;
-const BLASTER_OFFSET_Y: f32 = -15.;
-const TILE_SIZE: u32 = 100;
-const MAX_FLIGHT_SPEED: f32 = 250.;
-const PLAYER_SPEED: f32 = 250.;
-const ACCEL_RATE_X: f32 = 5000.;
-const ACCEL_RATE_Y: f32 = 10800.;
-const ANIM_TIME: f32 = 0.2;
-
-//Julianne 10/8: These will be used for hitbox sizes.
-const SPRITE_HEIGHT: u32 = 50;
-const SPRITE_WIDTH: u32 = 30;
-
-#[derive(Component)]
-pub struct Player;
-
-#[derive(Component, Deref, DerefMut)]
-pub struct AnimationTimer(Timer);
-
-#[derive(Component, Deref, DerefMut)]
-pub struct AnimationFrameCount(usize);
-
-#[derive(Component)]
-pub struct Velocity {
-    velocity: Vec2,
-}
-
-impl Velocity {
-    fn new() -> Self {
-        Self {
-            velocity: Vec2::splat(0.),
-        }
-    }
-}
-
-impl From<Vec2> for Velocity {
-    fn from(velocity: Vec2) -> Self {
-        Self { velocity }
-    }
-}
-
-// #[derive(Component)]
-// pub struct Health {
-//     hp: i32,
-// }
-
-// impl Health {
-//     fn new() -> Self {
-//         Self {
-//             hp: 100,
-//         }
-//     }
-// }
-
-#[derive(Component)]
-pub struct Health {
-    pub max: f32,
-    pub current: f32,
-}
-
-impl Health {
-    pub fn new(max: f32) -> Self {
-        Self { max, current: max }
-    }
-}
 
 
 pub fn initialize(
@@ -92,7 +21,8 @@ pub fn initialize(
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
 ){
     let player_sheet_handle = asset_server.load("walking.png");
-    let player_layout = TextureAtlasLayout::from_grid(UVec2::splat(TILE_SIZE), 4, 1, None, None);
+    //               used to be tilesize. removed TILE_SIZE and now at 100, but change as needed  \/
+    let player_layout = TextureAtlasLayout::from_grid(UVec2::splat(100), 4, 1, None, None);
     let player_layout_len = player_layout.textures.len();
     let player_layout_handle = texture_atlases.add(player_layout);
     commands.spawn((
@@ -126,11 +56,11 @@ pub fn initialize(
 pub fn move_player(
     time: Res<Time>,
     input: Res<ButtonInput<KeyCode>>,
-    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut Health), (With<Player>)>,
-    mut hitboxes: Query<(&Hitbox), Without<Player>>,
-    mut enemy_hitboxes: Query<(&Hitbox), (With<Enemy>, Without<Player>)>,
-    mut blaster_transform: Query<(&mut Transform), (With<Blaster>, Without<Enemy>, Without<Player>)>,
-    map: ResMut<crate::ParticleMap>,
+    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut Health), With<Player>>,
+    hitboxes: Query<&Hitbox, Without<Player>>,
+    enemy_hitboxes: Query<&Hitbox, (With<Enemy>, Without<Player>)>,
+    mut blaster_transform: Query<&mut Transform, (With<Blaster>, Without<Enemy>, Without<Player>)>,
+    map: ResMut<ParticleMap>,
 ) {
     let (mut pt, mut pv, mut ps, mut hb, mut player_health) = player.single_mut();
     let mut deltav_x = 0.;
@@ -175,8 +105,8 @@ pub fn move_player(
     if new_hb.player_enemy_collision(&enemy_hitboxes){
         player_health.current -=1.;
     }
-    if new_pos.x >= -(LEVEL_W / 2.) + (TILE_SIZE as f32) / 2.
-        && new_pos.x <= LEVEL_W - (LEVEL_W / 2. + (TILE_SIZE as f32) / 2.)
+    if new_pos.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.
+        && new_pos.x <= LEVEL_W - (LEVEL_W / 2. + (SPRITE_WIDTH as f32) / 2.)
         && !new_hb.all_player_collisions(&hitboxes)
     {
         pt.translation = new_pos;
@@ -192,9 +122,9 @@ pub fn flight(
     time: Res<Time>, 
     input: Res<ButtonInput<KeyCode>>, 
     mut player: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox), With<Player>>, 
-    mut hitboxes: Query<(&Hitbox), Without<Player>>,
-    mut blaster_transform: Query<(&mut Transform), (With<Blaster>, Without<Enemy>, Without<Player>)>,
-    map: ResMut<crate::ParticleMap>,
+    hitboxes: Query<&Hitbox, Without<Player>>,
+    mut blaster_transform: Query<&mut Transform, (With<Blaster>, Without<Enemy>, Without<Player>)>,
+    map: ResMut<ParticleMap>,
 ) {
     let (mut pt, mut pv, mut pg, mut hb) = player.single_mut();
     let mut bt = blaster_transform.single_mut();
@@ -202,7 +132,7 @@ pub fn flight(
     let acc_y = ACCEL_RATE_Y * deltat;
 
     if input.pressed(KeyCode::Space) {
-        if (pt.translation.y <= (LEVEL_H / 2.) - (SPRITE_HEIGHT as f32) / 2.) {
+        if pt.translation.y <= (LEVEL_H / 2.) - (SPRITE_HEIGHT as f32) / 2. {
             pg.reset_g();
             pv.velocity.y = f32::min(MAX_FLIGHT_SPEED, pv.velocity.y + (1. * acc_y))
         }
@@ -224,7 +154,7 @@ pub fn flight(
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
     //Bound player to within level height
 
-    if new_pos.y >= -(LEVEL_H / 2.) + (TILE_SIZE as f32) / 2.
+    if new_pos.y >= -(LEVEL_H / 2.) + (SPRITE_HEIGHT as f32) / 2.
         && new_pos.y <= (LEVEL_H / 2.) - (SPRITE_HEIGHT as f32) / 2.
         && !new_hb.all_player_collisions(&hitboxes)
     {
@@ -236,7 +166,7 @@ pub fn flight(
     
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
     // Velocity is zero when player hits the ground
-    if pt.translation.y <= -(LEVEL_H / 2.) + (TILE_SIZE as f32) ||
+    if pt.translation.y <= -(LEVEL_H / 2.) + (SPRITE_HEIGHT as f32) ||
         new_hb.all_player_collisions(&hitboxes) 
     {
         pv.velocity.y = 0.;
@@ -267,3 +197,24 @@ pub fn animate_player(
          }
     }
 }
+
+
+pub struct PlayerPlugin;
+impl Plugin for PlayerPlugin {
+    fn build(&self, app: &mut App) {
+        // Startup events
+        app.add_systems(Startup, initialize);
+        app.add_systems(Startup, super::blaster::systems::initialize);
+
+
+        app.add_systems(Update, move_player);
+        
+        app.add_systems(Update, flight.after(super::systems::move_player));
+        app.add_systems(Update, animate_player.after(super::systems::move_player));
+        app.add_systems(Update, super::blaster::systems::update_blaster_aim);
+        //app.add_systems(Update, super::blaster::systems::shoot_blaster.after(super::blaster::systems::update_blaster_aim));
+
+
+    }
+} 
+
