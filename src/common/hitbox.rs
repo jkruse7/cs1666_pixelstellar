@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 
-use crate::particle::components::ParticleData;
-use crate::particle::systems::*;
+use crate::entities::particle::components::ParticleData;
+use crate::entities::particle::systems::*;
 
 use crate::{
-    particle::resources::ParticleMap,
-    player::components::Player,
-    enemy::components::Enemy,
+    entities::particle::resources::ParticleMap,
+    entities::player::components::Player,
+    entities::enemy::components::Enemy,
 };
 
 

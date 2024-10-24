@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use bevy::utils::HashMap;
-use crate::{particle::components::*, LEVEL_W, LEVEL_H};
+use crate::{entities::particle::components::*, LEVEL_W, LEVEL_H};
 
 pub const PARTICLE_SIZE: f32 = 4.;
 pub const MIN_X: i32 = ((-LEVEL_W / 2.) / PARTICLE_SIZE) as i32;

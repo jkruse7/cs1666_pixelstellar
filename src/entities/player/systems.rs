@@ -5,8 +5,8 @@ use crate::{
         hitbox::Hitbox,
         gravity::Gravity,
     },
-    particle::resources::ParticleMap,
-    enemy::components::Enemy,
+    entities::particle::resources::ParticleMap,
+    entities::enemy::components::Enemy,
     LEVEL_H,
     LEVEL_W,
 };

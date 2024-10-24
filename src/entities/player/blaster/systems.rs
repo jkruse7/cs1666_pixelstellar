@@ -2,8 +2,8 @@ use bevy::prelude::*;
 use crate::{
     //common::hitbox::Hitbox, 
     //particle::resources::*,
-    enemy::components::Enemy, 
-    player::components::Player,
+    entities::enemy::components::Enemy, 
+    entities::player::components::Player,
     WIN_H
 };
 use super::components::*;

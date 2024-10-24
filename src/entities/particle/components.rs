@@ -3,7 +3,7 @@ use rand::Rng;
 
 use crate::{common::hitbox::Hitbox, LEVEL_H};
 
-use crate::particle::resources::PARTICLE_SIZE;
+use crate::entities::particle::resources::PARTICLE_SIZE;
 
 // basic particle components
 // physics if you need to you can add velocity and hitbox to this

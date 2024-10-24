@@ -1,10 +1,7 @@
 use bevy::{prelude::*, window::PresentMode};
 
 mod common;
-
-mod enemy;
-mod particle;
-mod player;
+mod entities;
 
 
 // Game constants
@@ -26,9 +23,9 @@ fn main() {
         .add_plugins(common::ui::health_bar::HealthBarPlugin)
 
         // Entity Plugins
-        .add_plugins(particle::systems::ParticlePlugin)
-        .add_plugins(enemy::systems::EnemyPlugin)
-        .add_plugins(player::systems::PlayerPlugin)
+        .add_plugins(entities::particle::systems::ParticlePlugin)
+        .add_plugins(entities::enemy::systems::EnemyPlugin)
+        .add_plugins(entities::player::systems::PlayerPlugin)
 
 
         .add_plugins(DefaultPlugins.set(WindowPlugin {

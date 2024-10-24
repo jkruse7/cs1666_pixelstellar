@@ -1,12 +1,14 @@
 use bevy::prelude::*;
 use crate::{
-    particle::resources::ParticleMap,
     common::{
         hitbox::Hitbox,
         gravity::Gravity,
     },
-    player::{
-        components::{AnimationTimer, AnimationFrameCount, Player, Health}
+    entities::{
+        particle::resources::ParticleMap,
+        player::{
+            components::{AnimationTimer, AnimationFrameCount, Player, Health}
+        },
     },
     LEVEL_H,
     LEVEL_W,

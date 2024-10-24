@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use crate::{
-    player::components::*,
+    entities::player::components::*,
     LEVEL_H, LEVEL_W,
     WIN_H, WIN_W,
 };
@@ -56,6 +56,6 @@ impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, initialize_camera);
         //app.add_systems(Update, mouse_coordinates);
-        app.add_systems(Update, move_camera.after(crate::player::systems::move_player));
+        app.add_systems(Update, move_camera.after(crate::entities::player::systems::move_player));
     }
 }
