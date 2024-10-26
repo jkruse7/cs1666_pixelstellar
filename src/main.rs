@@ -1,3 +1,6 @@
+#![allow(unused_variables)]
+
+
 use bevy::{prelude::*, window::PresentMode};
 
 mod common;
