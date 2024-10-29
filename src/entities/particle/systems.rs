@@ -71,7 +71,34 @@ fn draw_rain(
 fn update_water(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
-    mut particles: Query<(&mut Transform, &mut ParticlePosition, &ParticleElement), With<ParticleElementWater>>,
+    mut particles: Query<(&mut Transform, &mut ParticlePosition, &ParticleElement), With<ParticleTagWater>>,
+) {
+    for (mut transform, mut position, data) in &mut particles {
+        let (x, y) = (position.grid_x, position.grid_y);
+        if map.get_element_at((x, y-1)) == ParticleElement::Air {
+            map.delete_at(&mut commands, (x, y));
+            map.insert_at::<WaterParticle>(&mut commands, (x, y-1));
+        } else if map.get_element_at((x-1, y-1)) == ParticleElement::Air {
+            map.delete_at(&mut commands, (x, y));
+            map.insert_at::<WaterParticle>(&mut commands, (x-1, y-1));
+            // check particle to bottom right
+        } else if map.get_element_at((x+1, y-1)) == ParticleElement::Air {
+            map.delete_at(&mut commands, (x, y));
+            map.insert_at::<WaterParticle>(&mut commands, (x+1, y-1));
+        } else if map.get_element_at((x-1, y)) == ParticleElement::Air {
+            map.delete_at(&mut commands, (x, y));
+            map.insert_at::<WaterParticle>(&mut commands, (x-1, y));
+        }
+        else if map.get_element_at((x+1, y)) == ParticleElement::Air {
+            map.delete_at(&mut commands, (x, y));
+            map.insert_at::<WaterParticle>(&mut commands, (x+1, y));
+        }
+    }
+}
+fn update_gas(
+    mut map: ResMut<ParticleMap>,
+    mut commands: Commands,
+    mut particles: Query<(&mut Transform, &mut ParticlePosition, &ParticleElement), With<ParticleTagGas>>,
 ) {
     for (mut transform, mut position, data) in &mut particles {
         let (x, y) = (position.grid_x, position.grid_y);
