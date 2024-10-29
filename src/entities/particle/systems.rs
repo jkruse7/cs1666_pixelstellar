@@ -38,18 +38,14 @@ fn draw_solid(
                     continue;
                 }
 
-            let current_particle: ParticleData = select_particle((y + 90) as f32, noise, noise_dirt, noise_stone);
-            if current_particle == ParticleData::BedRock {
+            let current_particle: ParticleElement = select_particle((y + 90) as f32, noise, noise_dirt, noise_stone);
+            if current_particle == ParticleElement::BedRock {
                 // place data in map
-                map.insert(x, y, ParticleData::BedRock);
-                // place particle on screen
-                commands.spawn(BedRockParticle::new(x, y));
-            } else if current_particle == ParticleData::Dirt {
-                map.insert(x, y, ParticleData::Dirt);
-                commands.spawn(DirtParticle::new(x, y));
-            } else if current_particle == ParticleData::Stone {
-                map.insert(x, y, ParticleData::Stone);
-                commands.spawn(StoneParticle::new(x, y));
+                map.insert_at::<BedRockParticle>(&mut commands, (x, y));
+            } else if current_particle == ParticleElement::Dirt {
+                map.insert_at::<DirtParticle>(&mut commands, (x, y));
+            } else if current_particle == ParticleElement::Stone {
+                map.insert_at::<StoneParticle>(&mut commands, (x, y));
             }
         }
     }
@@ -64,58 +60,38 @@ fn draw_rain(
         let mut rng = rand::thread_rng();
         let x = rng.gen_range(-50..=50);
         let y = rng.gen_range(100..200);
-        if map.get(x, y) == ParticleData::Air {
-            map.insert(x, y, ParticleData::Water);
-            commands.spawn(WaterParticle::new(x, y));
+        if map.get_element_at((x, y)) == ParticleElement::Air {
+            map.insert_at::<WaterParticle>(&mut commands, (x, y));
         }
     }
 }
 
 
 
-// use this as an example for cellular automation
 fn update_water(
     mut map: ResMut<ParticleMap>,
-    mut particles: Query<(&mut Transform, &mut ParticlePosition, &ParticleData), With<ParticleElementWater>>,
+    mut commands: Commands,
+    mut particles: Query<(&mut Transform, &mut ParticlePosition, &ParticleElement), With<ParticleElementWater>>,
 ) {
-    // loop through all of the queried water particles
     for (mut transform, mut position, data) in &mut particles {
-        // if there is nothing below, fall down 1
-        if map.get(position.grid_x, position.grid_y - 1) == ParticleData::Air {
-            // move the particle data on the map down 1
-            map.move_data((position.grid_x, position.grid_y), (position.grid_x, position.grid_y - 1), data);
-            // update the particle's position
-            position.grid_y -= 1;
-            // move the particle on the screen
-            transform.translation.x = position.grid_x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
-            transform.translation.y = position.grid_y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
-            // check particle to bottom left
-        } else if map.get(position.grid_x - 1, position.grid_y - 1) == ParticleData::Air {
-            map.move_data((position.grid_x, position.grid_y), (position.grid_x - 1, position.grid_y - 1), data);
-            position.grid_x -= 1;
-            position.grid_y -= 1;
-            transform.translation.x = position.grid_x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
-            transform.translation.y = position.grid_y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+        let (x, y) = (position.grid_x, position.grid_y);
+        if map.get_element_at((x, y-1)) == ParticleElement::Air {
+            map.delete_at(&mut commands, (x, y));
+            map.insert_at::<WaterParticle>(&mut commands, (x, y-1));
+        } else if map.get_element_at((x-1, y-1)) == ParticleElement::Air {
+            map.delete_at(&mut commands, (x, y));
+            map.insert_at::<WaterParticle>(&mut commands, (x-1, y-1));
             // check particle to bottom right
-        } else if map.get(position.grid_x + 1, position.grid_y - 1) == ParticleData::Air {
-            map.move_data((position.grid_x, position.grid_y), (position.grid_x + 1, position.grid_y - 1), data);
-            position.grid_x += 1;
-            position.grid_y -= 1;
-            transform.translation.x = position.grid_x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
-            transform.translation.y = position.grid_y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+        } else if map.get_element_at((x+1, y-1)) == ParticleElement::Air {
+            map.delete_at(&mut commands, (x, y));
+            map.insert_at::<WaterParticle>(&mut commands, (x+1, y-1));
+        } else if map.get_element_at((x-1, y)) == ParticleElement::Air {
+            map.delete_at(&mut commands, (x, y));
+            map.insert_at::<WaterParticle>(&mut commands, (x-1, y));
         }
-        // check to the left as far as can go
-        else if map.get(position.grid_x - 1, position.grid_y) == ParticleData::Air {
-            map.move_data((position.grid_x, position.grid_y), (position.grid_x - 1, position.grid_y), data);
-            position.grid_x -= 1;
-            transform.translation.x = position.grid_x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
-            transform.translation.y = position.grid_y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
-        }
-        else if map.get(position.grid_x + 1, position.grid_y) == ParticleData::Air {
-            map.move_data((position.grid_x, position.grid_y), (position.grid_x + 1, position.grid_y), data);
-            position.grid_x += 1;
-            transform.translation.x = position.grid_x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
-            transform.translation.y = position.grid_y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.;
+        else if map.get_element_at((x+1, y)) == ParticleElement::Air {
+            map.delete_at(&mut commands, (x, y));
+            map.insert_at::<WaterParticle>(&mut commands, (x+1, y));
         }
     }
 }
@@ -135,16 +111,54 @@ pub fn convert_to_grid_position(x: f32, y: f32) -> (i32, i32) {
     }
 }*/
 
-fn select_particle(y: f32, noise: f32, dirt_height: f32, stone_height: f32) -> ParticleData {
+fn select_particle(y: f32, noise: f32, dirt_height: f32, stone_height: f32) -> ParticleElement {
     if y >= stone_height {
-        ParticleData::Stone
+        ParticleElement::Stone
     } else if y >= dirt_height{
-        ParticleData::Dirt
+        ParticleElement::Dirt
     } else {
-        ParticleData::BedRock
+        ParticleElement::BedRock
     }
 }
 
+pub fn build(
+    mut map: ResMut<ParticleMap>,
+    mut commands: Commands,
+    window_query: Query<&Window>,
+    camera_query: Query<(&Camera, &GlobalTransform), With<Camera>>,
+    buttons: Res<ButtonInput<MouseButton>>,
+) {
+    let window = window_query.single();
+    let (camera, camera_transform) = camera_query.single();
+
+    let (l, r) = (buttons.pressed(MouseButton::Left), buttons.pressed(MouseButton::Right));
+
+    if l || r{
+        if let Some(world_position) = 
+            window.cursor_position()
+                .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+                .map(|ray| ray.origin.truncate())
+        {
+            let size = 1.;
+            let mut y: f32 = -size * PARTICLE_SIZE;
+            while y < size * PARTICLE_SIZE + 0.1{
+                let mut x: f32 = -size * PARTICLE_SIZE;
+                while x < size * PARTICLE_SIZE + 0.1{
+                    let position = (((world_position.x+x) / PARTICLE_SIZE) as i32, ((world_position.y+y) / PARTICLE_SIZE) as i32);
+                    info!("x, y: {}/{}", x, y);
+                    if l {
+                        map.delete_at(&mut commands, (((world_position.x+x) / PARTICLE_SIZE) as i32, ((world_position.y+y) / PARTICLE_SIZE) as i32));
+                    }
+                    if r && map.get_element_at((position.0, position.1)) == ParticleElement::Air{
+                        map.insert_at::<DirtParticle>(&mut commands, (position.0, position.1));
+                    }
+                    x += PARTICLE_SIZE;
+                }
+                y += PARTICLE_SIZE;
+            }
+        }
+    }
+}
 
 
 // once your automata system is complete,
@@ -160,6 +174,6 @@ impl Plugin for ParticlePlugin {
         app.add_systems(Update, draw_rain);
         app.add_systems(Update, update_water);
         
-        
+        app.add_systems(Update, build);
     }
 } 
