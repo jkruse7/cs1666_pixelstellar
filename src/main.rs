@@ -11,13 +11,19 @@ const WIN_H: f32 = 720.;
 const LEVEL_W: f32 = WIN_W * 3.0;
 const LEVEL_H: f32 = WIN_H * 2.0;
 
+#[derive(States, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
+enum GameState {
+    #[default]
+    MainMenu,
+    Level1,
+}
 
 fn main() {
     App::new()
         // Resources which will be accessible throughout the game
         .insert_resource(ClearColor(Color::srgb_u8(0, 0, 0)))
-
         // UI Plugins
+        .add_plugins(common::menu::MenuPlugin)
         .add_plugins(common::ui::camera::CameraPlugin)
         .add_plugins(common::ui::background::BackgroundPlugin)
         .add_plugins(common::ui::health_bar::HealthBarPlugin)
@@ -26,7 +32,9 @@ fn main() {
         .add_plugins(entities::particle::systems::ParticlePlugin)
         .add_plugins(entities::enemy::systems::EnemyPlugin)
         .add_plugins(entities::player::systems::PlayerPlugin)
-
+        
+        .add_systems(OnEnter(GameState::MainMenu), log_state_change)
+        .add_systems(OnEnter(GameState::Level1), log_state_change)
 
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
@@ -37,5 +45,10 @@ fn main() {
             }),
             ..default()
         }))
+        .init_state::<GameState>()
         .run();
+}
+
+fn log_state_change(state: Res<State<GameState>>) {
+    info!("Just moved to {:?}!", state.get());
 }

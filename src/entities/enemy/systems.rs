@@ -13,6 +13,7 @@ use crate::{
     LEVEL_H,
     LEVEL_W,
     WIN_W,
+    GameState,
 };
 use super::{
     components::*,
@@ -254,10 +255,10 @@ pub fn check_enemy_death(
 pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, initialize)
-        .add_systems(Update, enemy_gravity.after(track_player))
-        .add_systems(Update, track_player)
-        .add_systems(Update, animate_enemy.after(track_player))
-        .add_systems(Update, check_enemy_death);
+        app.add_systems(OnEnter(GameState::Level1), initialize)
+        .add_systems(Update, enemy_gravity.after(track_player).run_if(in_state(GameState::Level1)))
+        .add_systems(Update, track_player.run_if(in_state(GameState::Level1)))
+        .add_systems(Update, animate_enemy.after(track_player).run_if(in_state(GameState::Level1)))
+        .add_systems(Update, check_enemy_death.run_if(in_state(GameState::Level1)));
     }
 }

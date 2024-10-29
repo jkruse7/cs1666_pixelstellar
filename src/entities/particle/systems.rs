@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use rand::Rng;
+use crate::GameState;
 use super::{components::*, resources::*};
 use crate::common::
         perlin_noise::{
@@ -154,11 +155,11 @@ impl Plugin for ParticlePlugin {
     fn build(&self, app: &mut App) {
         // Startup placements
         app.insert_resource(ParticleMap::new());
-        app.add_systems(Startup, draw_solid);
+        app.add_systems(OnEnter(GameState::Level1), draw_solid);
 
         // Updates i.e. all automata goes here
-        app.add_systems(Update, draw_rain);
-        app.add_systems(Update, update_water);
+        app.add_systems(Update, draw_rain.run_if(in_state(GameState::Level1)));
+        app.add_systems(Update, update_water.run_if(in_state(GameState::Level1)));
         
         
     }

@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use crate::entities::player::components::*; 
+use crate::GameState;
 
 #[derive(Component)]
 pub struct HealthBar;
@@ -53,7 +54,7 @@ pub fn update_health_bar(
 pub struct HealthBarPlugin;
 impl Plugin for HealthBarPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, initialize_health_bar);
-        app.add_systems(Update, update_health_bar);
+        app.add_systems(OnEnter(GameState::Level1), initialize_health_bar);
+        app.add_systems(Update, update_health_bar.run_if(in_state(GameState::Level1)));
     }
 }
