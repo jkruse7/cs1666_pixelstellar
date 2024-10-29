@@ -1,21 +1,15 @@
-use bevy::prelude::*;
+use bevy::{prelude::*};
 use super::{components::*, resources::*, blaster::components::*};
 use crate::{
     common::{
-        hitbox::Hitbox,
-        gravity::Gravity,
+        gravity::Gravity, hitbox::{self, Hitbox}
     },
-    entities::particle::resources::ParticleMap,
-    entities::enemy::components::Enemy,
+    entities::{enemy::components::Enemy, particle::resources::ParticleMap},
     LEVEL_H,
     LEVEL_W,
 };
 
-
-
-
-
-pub fn initialize(
+pub fn initialize_player(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
@@ -49,34 +43,59 @@ pub fn initialize(
         Health::new(100.0),
         Gravity::new(),
         Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, Vec2::new(0., 100.)),
+        JetPack::new(1.,0.5),
         Player,
     ));
 }
 
-pub fn move_player(
+pub fn movee(
     time: Res<Time>,
     input: Res<ButtonInput<KeyCode>>,
-    mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut Health), With<Player>>,
-    hitboxes: Query<&Hitbox, Without<Player>>,
-    enemy_hitboxes: Query<&Hitbox, (With<Enemy>, Without<Player>)>,
-    mut blaster_transform: Query<&mut Transform, (With<Blaster>, Without<Enemy>, Without<Player>)>,
+    mut player: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Sprite, &mut Hitbox, &mut JetPack), With<Player>>,
+    world_hitboxes: Query<&Hitbox, (Without<Enemy>, Without<Player>)>,
     map: ResMut<ParticleMap>,
-) {
-    let (mut pt, mut pv, mut ps, mut hb, mut player_health) = player.single_mut();
-    let mut deltav_x = 0.;
-    let mut bt = blaster_transform.single_mut();
+){
+    let deltat = time.delta_seconds();
 
+    let (mut pt, mut pv, mut pg, mut ps, mut hb, mut jp) = player.single_mut();
+
+    let mut deltav_x = 0.;
+    let acc_y = ACCEL_RATE_Y * deltat;
+    let acc_x = ACCEL_RATE_X * deltat;
+
+
+    // Check inputs
     if input.pressed(KeyCode::KeyA) {
-        deltav_x -= 1.;
+        if (pt.translation.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.){
+            deltav_x -= 1.;
+        }
         ps.flip_x = true;
     }
-
     if input.pressed(KeyCode::KeyD) {
-        deltav_x += 1.;
+        if pt.translation.x <= LEVEL_W - (LEVEL_W / 2. + (SPRITE_WIDTH as f32) / 2.){
+            deltav_x += 1.;
+        }
         ps.flip_x = false;
     }
-    let deltat = time.delta_seconds();
-    let acc_x = ACCEL_RATE_X * deltat;
+    if input.pressed(KeyCode::Space) && !jp.disabled {
+        pg.reset_g();
+        jp.fly();
+        if pt.translation.y <= (LEVEL_H / 2.) - (SPRITE_HEIGHT as f32) / 2. {
+            pv.velocity.y = f32::min(MAX_FLIGHT_SPEED, pv.velocity.y + (1. * acc_y))
+        } else {
+            pv.velocity.y = 0.0;
+        }
+    } else {
+        jp.recharge();
+        // if at world floor  or  if colliding with a hitbox
+        if pt.translation.y <= -(LEVEL_H / 2.) + (SPRITE_HEIGHT as f32){
+            pv.velocity.y = 0.;
+        } else {
+            pg.update_g(&pv.velocity.y, &deltat);
+            pv.velocity.y = pg.get_g();
+        }
+    }
+
 
     if deltav_x != 0. {
         if pv.velocity.y >= 0. {
@@ -91,87 +110,49 @@ pub fn move_player(
         pv.velocity.x = 0.;
     }
 
-    //Account for player in water
     let ratio_of_water_particles = hb.ratio_of_water_grid_tiles(&map);
     if ratio_of_water_particles > 0.0 {
-        pv.velocity.x = pv.velocity.x * (1. - 0.7 * ratio_of_water_particles.powf(0.5));
+        pv.velocity = pv.velocity * Vec2::splat(1. - 0.7 * ratio_of_water_particles.powf(0.5));
     }
+    
 
+
+    // Get future position
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
 
-    
-    if new_hb.player_enemy_collision(&enemy_hitboxes){
-        player_health.current -=1.;
-    }
-    if new_pos.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.
-        && new_pos.x <= LEVEL_W - (LEVEL_W / 2. + (SPRITE_WIDTH as f32) / 2.)
-        && !new_hb.all_player_collisions(&hitboxes)
-    {
+    // i hate hitboxes
+    if !new_hb.on_top_of_all(&world_hitboxes){
         pt.translation = new_pos;
         *hb = new_hb;
-        bt.translation.x = pt.translation.x + BLASTER_OFFSET_X;
-        bt.translation.y = pt.translation.y + BLASTER_OFFSET_Y;
+        pv.velocity.y = 0.;
+
     }
-    //info!("{}", pt.translation);
+
+    // If position is 
+    /*let step = new_hb.player_step(&world_hitboxes);
+    info!(step);
+    if step >= 0. {
+        pt.translation = new_pos;
+        pt.translation.y += step;
+        *hb = new_hb;
+        hb.offset.y += step;
+    } */
 
 }
 
-pub fn flight(
-    time: Res<Time>, 
-    input: Res<ButtonInput<KeyCode>>, 
-    mut player: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox), With<Player>>, 
-    hitboxes: Query<&Hitbox, Without<Player>>,
-    mut blaster_transform: Query<&mut Transform, (With<Blaster>, Without<Enemy>, Without<Player>)>,
-    map: ResMut<ParticleMap>,
-) {
-    let (mut pt, mut pv, mut pg, mut hb) = player.single_mut();
-    let mut bt = blaster_transform.single_mut();
-    let deltat = time.delta_seconds();
-    let acc_y = ACCEL_RATE_Y * deltat;
-
-    if input.pressed(KeyCode::Space) {
-        if pt.translation.y <= (LEVEL_H / 2.) - (SPRITE_HEIGHT as f32) / 2. {
-            pg.reset_g();
-            pv.velocity.y = f32::min(MAX_FLIGHT_SPEED, pv.velocity.y + (1. * acc_y))
+pub fn damage(
+    mut player: Query<(&Hitbox, &mut Health), (With<Player>, Without<Enemy>)>,
+    enemy:  Query<&Hitbox, (Without<Player>, With<Enemy>)>
+){
+    let (player_hitbox, mut player_health) = player.single_mut();
+    for enemy_hitbox in enemy.iter(){
+        if player_hitbox.collides_with(enemy_hitbox){
+            player_health.current -= 1.;
         }
-        else {
-            pg.reset_g();
-            pv.velocity.y = 0.0;
-        }
-    } else {
-        pg.update_g(&pv.velocity.y, &deltat);
-        pv.velocity.y = pg.get_g();
-    }
-    //Account for player in water
-    let ratio_of_water_particles = hb.ratio_of_water_grid_tiles(&map);
-    if ratio_of_water_particles > 0.0 {
-        pv.velocity.y = pv.velocity.y * (1. - 0.7 * ratio_of_water_particles.powf(0.5));
-    }
-    let change = pv.velocity * deltat;
-    let new_pos = pt.translation + change.extend(0.);
-    let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
-    //Bound player to within level height
 
-    if new_pos.y >= -(LEVEL_H / 2.) + (SPRITE_HEIGHT as f32) / 2.
-        && new_pos.y <= (LEVEL_H / 2.) - (SPRITE_HEIGHT as f32) / 2.
-        && !new_hb.all_player_collisions(&hitboxes)
-    {
-        pt.translation = new_pos;
-        *hb = new_hb;
-        bt.translation.x = pt.translation.x + BLASTER_OFFSET_X;
-        bt.translation.y = pt.translation.y + BLASTER_OFFSET_Y;
-    }  
-    
-    let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
-    // Velocity is zero when player hits the ground
-    if pt.translation.y <= -(LEVEL_H / 2.) + (SPRITE_HEIGHT as f32) ||
-        new_hb.all_player_collisions(&hitboxes) 
-    {
-        pv.velocity.y = 0.;
     }
-    //assumes the player is a square and pt.translation is the lower-left corner
 }
 
 pub fn animate_player(
@@ -203,15 +184,19 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         // Startup events
-        app.add_systems(Startup, initialize);
+        app.add_systems(Startup, initialize_player);
         app.add_systems(Startup, super::blaster::systems::initialize);
 
 
-        app.add_systems(Update, move_player);
+        app.add_systems(Update, movee);
         
-        app.add_systems(Update, flight.after(super::systems::move_player));
-        app.add_systems(Update, animate_player.after(super::systems::move_player));
+        //app.add_systems(Update, flight.after(super::systems::movee));
+        app.add_systems(Update, animate_player.after(movee));
+
+        app.add_systems(Update, damage.after(movee));
+        //Blaster stuff
         app.add_systems(Update, super::blaster::systems::update_blaster_aim);
+        app.add_systems(Update, super::blaster::systems::update_blaster_position.after(movee));
         //app.add_systems(Update, super::blaster::systems::shoot_blaster.after(super::blaster::systems::update_blaster_aim));
 
 

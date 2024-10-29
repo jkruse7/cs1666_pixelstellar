@@ -44,3 +44,32 @@ impl Health {
         info!("Player took damage, current health: {}", self.current);
     }
 }
+
+
+// Capacity is between 0 and 100
+#[derive(Component)]
+pub struct JetPack {
+    pub recharge_rate: f32,
+    pub boost_rate: f32,
+    pub current: f32,
+    pub disabled: bool,
+    capacity: f32,
+}
+
+impl JetPack {
+    pub fn new(recharge_rate: f32, boost_rate: f32) -> Self {
+        Self { recharge_rate, boost_rate, disabled: false, current: 0., capacity: 100.}
+    }
+    pub fn recharge(&mut self){
+        self.current = f32::min(self.capacity, self.current + self.recharge_rate);
+        if self.current >= self.capacity{
+            self.disabled = false;
+        }
+    }
+    pub fn fly(&mut self){
+        self.current = f32::max(0., self.current - self.boost_rate);
+        if self.current < 0.5{
+            self.disabled = true;
+        }
+    }
+}

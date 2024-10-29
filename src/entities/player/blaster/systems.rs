@@ -2,11 +2,10 @@ use bevy::prelude::*;
 use crate::{
     //common::hitbox::Hitbox, 
     //particle::resources::*,
-    entities::enemy::components::Enemy, 
-    entities::player::components::Player,
+    entities::{enemy::components::Enemy, player::components::Player}, 
     WIN_H
 };
-use super::components::*;
+use super::{components::*, resources::BLASTER_OFFSET};
 
 
 pub fn initialize(
@@ -69,6 +68,18 @@ pub fn update_blaster_aim( //this gets window cursor position, not world positio
         }
     }
 }
+
+pub fn update_blaster_position(
+    mut blaster: Query<&mut Transform, (With<Blaster>, Without<Player>, Without<Enemy>)>,
+        player:  Query<&Transform,     (Without<Blaster>, With<Player>, Without<Enemy>)>
+){
+    let mut blaster_transform = blaster.single_mut();
+    let player_transform = player.single();
+
+    blaster_transform.translation = player_transform.translation + BLASTER_OFFSET.extend(0.);
+
+}
+
 
 /*pub fn shoot_blaster(
     time: Res<Time>,

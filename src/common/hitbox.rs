@@ -9,6 +9,7 @@ use crate::{
     entities::enemy::components::Enemy,
 };
 
+const STEP_HEIGHT: f32 = 5.;
 
 
 //#[derive(Component)]
@@ -37,15 +38,53 @@ impl Hitbox {
         let other_tr = other.offset + Vec2::new(other.width,other.height)/2.0;
         self_tr.x > other_bl.x && self_bl.x < other_tr.x && self_tr.y > other_bl.y && self_bl.y < other_tr.y
     }
-    pub fn all_player_collisions(&self, hitboxes: &Query<&Hitbox, Without<Player>>)  -> bool {
+    pub fn on_top_of(&self, other: &Hitbox) -> bool{
+        // im within x
+        if (other.offset.x - (self.width/2.) <= self.offset.x + (self.width/2.)
+            && other.offset.x + (self.width/2.) >= self.offset.x - (self.width/2.)){
+            // if top of particle is less than or equal to bottom of player
+            if (other.offset.y + (other.height / 2.) <= self.offset.y - (self.height/2.)){
+                return true;
+            }
+        }
+        return false;
+    }
+    pub fn on_top_of_all(&self, hitboxes: &Query<&Hitbox, (Without<Enemy>, Without<Player>)>) -> bool{
         for hitbox in hitboxes.iter() {
-            if self.collides_with(hitbox) {
-                //info!("Collision detected between {:?} and {:?}", self, hitbox);
+            if self.on_top_of(hitbox) {
                 return true;
             }
         }
         false
     }
+    pub fn player_step(&self, hitboxes: &Query<&Hitbox,(Without<Enemy>, Without<Player>)>)  -> f32 {
+        for hitbox in hitboxes.iter() {
+            // if you collide with a particle
+            if self.collides_with(hitbox){
+                // ... and the top of the particle hitbox is less than 
+                let other_top_y = hitbox.offset.y + (hitbox.height / 2.);
+                let self_bottom_y = self.offset.y - (self.height / 2.);
+                info!("Other: {}, me: {}",
+                    other_top_y, self_bottom_y);
+                let offset = other_top_y - self_bottom_y;
+                if offset < STEP_HEIGHT{
+                    return offset
+                } else {
+                    return -1.
+                }
+            }
+        }
+        0.
+    }
+    pub fn all_player_collisions(&self, hitboxes: &Query<&Hitbox, (Without<Enemy>, Without<Player>)>)  -> bool {
+        for hitbox in hitboxes.iter() {
+            if self.collides_with(hitbox) {
+                return true;
+            }
+        }
+        false
+    }
+
     pub fn player_enemy_collision(&self, hitboxes: &Query<&Hitbox, (With<Enemy>, Without<Player>)>)  -> bool {
         for hitbox in hitboxes.iter() {
             if self.collides_with(hitbox) {
