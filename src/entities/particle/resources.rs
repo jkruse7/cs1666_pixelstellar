@@ -28,6 +28,9 @@ impl ParticleMap {
 
 
     pub fn insert_at<P: NewParticle + Bundle>(&mut self, commands: &mut Commands, pos: (i32, i32)) {
+        if self.get_element_at(pos) != ParticleElement::Air{
+            self.delete_at(commands, pos);
+        }
         let particle_instance = P::new(pos.0, pos.1);
         let entity = commands.spawn(particle_instance).id();
         let element = P::ELEMENT;
@@ -43,6 +46,44 @@ impl ParticleMap {
             self.particle_map.remove(&pos);
         }
     }
+    
+    pub fn ray(&mut self, commands: &mut Commands, start: (i32, i32), end: (i32, i32)) -> Option<(i32, i32)> {
+        let (mut x0, mut y0) = start;
+        let (x1, y1) = end;
+    
+        let dx = (x1 - x0).abs();
+        let dy = (y1 - y0).abs();
+        let sx = if x0 < x1 { 1 } else { -1 };
+        let sy = if y0 < y1 { 1 } else { -1 };
+        let mut err = dx - dy;
+    
+        while (x0, y0) != (x1, y1) {
+            let element = self.get_element_at((x0, y0));
+            if element != ParticleElement::Air { return Some((x0, y0)) }
+    
+            // Bresenham's line algorithm step
+            let e2 = 2 * err;
+            if e2 > -dy {
+                err -= dy;
+                x0 += sx;
+            }
+            if e2 < dx {
+                err += dx;
+                y0 += sy;
+            }
+        }
+    
+        if self.get_element_at((x1, y1)) != ParticleElement::Air {
+            Some((x1, y1))
+        } else {
+            None
+        }
+    }
+
+
+    /*pub fn ray(&mut self){
+        ;
+    }*/
 
     /*
     pub fn get(&self, pos: (i32, i32)) -> ParticleElement {
