@@ -73,6 +73,9 @@ impl ParticleMap {
             }
         }
     
+        // you can return None if theres nothing between (x0,y0)->(x1,y1)
+        // or just return the position (x1,y1) if there was nothing in between p0 and p1
+        //Some(x1, y1)
         if self.get_element_at((x1, y1)) != ParticleElement::Air {
             Some((x1, y1))
         } else {

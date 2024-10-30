@@ -142,6 +142,43 @@ fn update_gas(
             6 => {if map.get_element_at((x-move_r, y)) == ParticleElement::Air {map.delete_at(&mut commands, (x, y)); map.insert_at::<GasParticle>(&mut commands, (x-move_r, y))}},
             7 => {if map.get_element_at((x, y-move_r)) == ParticleElement::Air {map.delete_at(&mut commands, (x, y)); map.insert_at::<GasParticle>(&mut commands, (x, y-move_r))}},
             8 => {if rng.gen_range(0..50) == 0 {map.delete_at(&mut commands, (x, y))}},
+            /* trying to use ray trace to stop gas escaping small walls
+            
+            0 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x+move_r, y+move_r)){
+                    map.delete_at(&mut commands, (x, y));
+                    map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
+                }},
+            1 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x+move_r, y-move_r)){
+                map.delete_at(&mut commands, (x, y)); 
+                map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
+            }},
+            2 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x-move_r, y+move_r)){
+                map.delete_at(&mut commands, (x, y)); 
+                map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
+            }},
+            3 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x-move_r, y-move_r)){
+                map.delete_at(&mut commands, (x, y)); 
+                map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
+            }},
+            4 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x+move_r, y)){
+                map.delete_at(&mut commands, (x, y)); 
+                map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
+            }},
+            5 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x, y+move_r)){
+                map.delete_at(&mut commands, (x, y)); 
+                map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
+            }},
+            6 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x-move_r, y)){
+                map.delete_at(&mut commands, (x, y)); 
+                map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
+            }},
+            7 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x, y-move_r)){
+                map.delete_at(&mut commands, (x, y)); 
+                map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
+            }},
+            8 => {if rng.gen_range(0..50) == 0 {
+                map.delete_at(&mut commands, (x, y))
+            }},*/
             _ => {}
         }
     }
@@ -248,7 +285,7 @@ impl Plugin for ParticlePlugin {
         app.add_systems(Update, update_water);
         app.add_systems(Update, update_gas);
         
-        //app.add_systems(Update, build_or_destroy);
         app.add_systems(Update, paint_with_ray.after(update_water));
+        //app.add_systems(Update, build_or_destroy.after(update_water));
     }
 } 
