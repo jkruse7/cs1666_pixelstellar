@@ -3,6 +3,10 @@ use bevy::utils::HashMap;
 use crate::{entities::particle::components::*, LEVEL_W, LEVEL_H};
 
 pub const PARTICLE_SIZE: f32 = 4.;
+
+pub const REPLACE: bool = true;
+pub const CHECK: bool = false;
+
 pub const MIN_X: i32 = ((-LEVEL_W / 2.) / PARTICLE_SIZE) as i32;
 pub const MAX_X: i32 = ((LEVEL_W / 2.) / PARTICLE_SIZE) as i32;
 pub const MIN_Y: i32 = ((-LEVEL_H / 2.) / PARTICLE_SIZE) as i32;
@@ -27,19 +31,31 @@ impl ParticleMap {
     }
 
 
-    pub fn insert_at<P: NewParticle + Bundle>(&mut self, commands: &mut Commands, pos: (i32, i32)) {
-        if self.get_element_at(pos) != ParticleElement::Air{
-            self.delete_at(commands, pos);
+    /* Usage: particle_map.insert_at::<WaterParticle>(REPLACE, &mut commands, (x, y));
+            replace: if true (or REPLACE), will insert particle, replacing what was there before
+                     if false (or CHECK), will check if particle is air before inserting.
+                        if it is air, will insert, otherwise will not do the insert
+        RETURNS TRUE IF REPLACED.
+        RETURNS FALSE IF DIDN'T PLACE
+    */
+    pub fn insert_at<P: NewParticle + Bundle>(&mut self, replace: bool, commands: &mut Commands, pos: (i32, i32)) -> bool{
+        let is_air_at_pos = self.get_element_at(pos) == ParticleElement::Air;
+    
+        if replace || is_air_at_pos {
+            if !is_air_at_pos && replace {    self.delete_at(commands, pos);    }
+            let particle_instance = P::new(pos.0, pos.1);
+            let entity = commands.spawn(particle_instance).id();
+            let element = P::ELEMENT;
+            self.particle_map.insert(pos, (entity, element));
+            return true
         }
-        let particle_instance = P::new(pos.0, pos.1);
-        let entity = commands.spawn(particle_instance).id();
-        let element = P::ELEMENT;
-        self.particle_map.insert(pos, (entity, element));
-        //let particle_type = ParticleType::from_element(P::ELEMENT);
-
-        //self.particle_map.insert((x, y),);
+        false
     }
 
+    /* Usage: particle_map.delete(&mut commands, (x,y));
+            Will delete the particle from a pos if there is something there.
+            if its air it doesnt do anything since no particle exists there.
+     */
     pub fn delete_at(&mut self, commands: &mut Commands, pos: (i32, i32)){
         if let Some(old_entity) = self.particle_map.get(&pos).map(|(entity, _)| *entity) {
             commands.entity(old_entity).despawn();

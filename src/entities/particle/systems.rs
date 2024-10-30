@@ -45,11 +45,11 @@ fn draw_solid(
             let current_particle: ParticleElement = select_particle((y + 90) as f32, noise, noise_dirt, noise_stone);
             if current_particle == ParticleElement::BedRock {
                 // place data in map
-                map.insert_at::<BedRockParticle>(&mut commands, (x, y));
+                map.insert_at::<BedRockParticle>(REPLACE, &mut commands, (x, y));
             } else if current_particle == ParticleElement::Dirt {
-                map.insert_at::<StoneParticle>(&mut commands, (x, y));
+                map.insert_at::<StoneParticle>(REPLACE, &mut commands, (x, y));
             } else if current_particle == ParticleElement::Stone {
-                map.insert_at::<DirtParticle>(&mut commands, (x, y));
+                map.insert_at::<DirtParticle>(REPLACE, &mut commands, (x, y));
             }
         }
     }
@@ -65,7 +65,7 @@ fn draw_rain(
         let x = rng.gen_range(-50..=50);
         let y = rng.gen_range(100..200);
         if map.get_element_at((x, y)) == ParticleElement::Air {
-            map.insert_at::<WaterParticle>(&mut commands, (x, y));
+            map.insert_at::<WaterParticle>(CHECK, &mut commands, (x, y));
         }
     }
 }
@@ -79,22 +79,16 @@ fn update_water(
 ) {
     for mut position in &mut particles {
         let (x, y) = (position.grid_x, position.grid_y);
-        if map.get_element_at((x, y-1)) == ParticleElement::Air {
+        if map.insert_at::<WaterParticle>(CHECK, &mut commands, (x, y-1)) {
             map.delete_at(&mut commands, (x, y));
-            map.insert_at::<WaterParticle>(&mut commands, (x, y-1));
-        } else if map.get_element_at((x-1, y-1)) == ParticleElement::Air {
+        } else if map.insert_at::<WaterParticle>(CHECK, &mut commands, (x-1, y-1)) {
             map.delete_at(&mut commands, (x, y));
-            map.insert_at::<WaterParticle>(&mut commands, (x-1, y-1));
-        } else if map.get_element_at((x+1, y-1)) == ParticleElement::Air {
+        } else if map.insert_at::<WaterParticle>(CHECK,&mut commands, (x+1, y-1)){
             map.delete_at(&mut commands, (x, y));
-            map.insert_at::<WaterParticle>(&mut commands, (x+1, y-1));
-        } else if map.get_element_at((x-1, y)) == ParticleElement::Air {
+        } else if map.insert_at::<WaterParticle>(CHECK, &mut commands, (x-1, y)) {
             map.delete_at(&mut commands, (x, y));
-            map.insert_at::<WaterParticle>(&mut commands, (x-1, y));
-        }
-        else if map.get_element_at((x+1, y)) == ParticleElement::Air {
+        } else if map.insert_at::<WaterParticle>(CHECK, &mut commands, (x+1, y)) {
             map.delete_at(&mut commands, (x, y));
-            map.insert_at::<WaterParticle>(&mut commands, (x+1, y));
         }
     }
 }
@@ -105,80 +99,62 @@ fn update_gas(
 ) {
     for mut position in &mut particles {
         let (mut x, mut y) = (position.grid_x, position.grid_y);
-        if map.get_element_at((x, y+1)) == ParticleElement::Air {
+        if map.insert_at::<GasParticle>(CHECK, &mut commands, (x, y+1)){
             map.delete_at(&mut commands, (x, y));
-            map.insert_at::<GasParticle>(&mut commands, (x, y+1));
             y += 1;
-        } else if map.get_element_at((x-1, y+1)) == ParticleElement::Air {
+        } else if map.insert_at::<GasParticle>(CHECK, &mut commands, (x-1, y+1)){
             map.delete_at(&mut commands, (x, y));
-            map.insert_at::<GasParticle>(&mut commands, (x-1, y+1));
-            x -= 1;
-            y += 1;
-        } else if map.get_element_at((x+1, y+1)) == ParticleElement::Air {
+            x -= 1;   y += 1;
+        } else if map.insert_at::<GasParticle>(CHECK, &mut commands, (x+1, y+1)){
             map.delete_at(&mut commands, (x, y));
-            map.insert_at::<GasParticle>(&mut commands, (x+1, y+1));
             x += 1;
             y += 1;
-        } else if map.get_element_at((x-1, y)) == ParticleElement::Air {
+        } else if map.insert_at::<GasParticle>(CHECK, &mut commands, (x-1, y)) {
             map.delete_at(&mut commands, (x, y));
-            map.insert_at::<GasParticle>(&mut commands, (x-1, y));
             x -= 1;
         }
-        else if map.get_element_at((x+1, y)) == ParticleElement::Air {
+        else if map.insert_at::<GasParticle>(CHECK, &mut commands, (x+1, y)) {
             map.delete_at(&mut commands, (x, y));
-            map.insert_at::<GasParticle>(&mut commands, (x+1, y));
             x += 1;
         }
         let mut rng = rand::thread_rng();
         let dir = rng.gen_range(0..16);
         let move_r = 2;
+        let decay_rate = 50;
         match dir {
-            0 => {if map.get_element_at((x+move_r, y+move_r)) == ParticleElement::Air {map.delete_at(&mut commands, (x, y)); map.insert_at::<GasParticle>(&mut commands, (x+move_r, y+move_r))}},
-            1 => {if map.get_element_at((x+move_r, y-move_r)) == ParticleElement::Air {map.delete_at(&mut commands, (x, y)); map.insert_at::<GasParticle>(&mut commands, (x+move_r, y-move_r))}},
-            2 => {if map.get_element_at((x-move_r, y+move_r)) == ParticleElement::Air {map.delete_at(&mut commands, (x, y)); map.insert_at::<GasParticle>(&mut commands, (x-move_r, y+move_r))}},
-            3 => {if map.get_element_at((x-move_r, y-move_r)) == ParticleElement::Air {map.delete_at(&mut commands, (x, y)); map.insert_at::<GasParticle>(&mut commands, (x-move_r, y-move_r))}},
-            4 => {if map.get_element_at((x+move_r, y)) == ParticleElement::Air {map.delete_at(&mut commands, (x, y)); map.insert_at::<GasParticle>(&mut commands, (x+move_r, y))}},
-            5 => {if map.get_element_at((x, y+move_r)) == ParticleElement::Air {map.delete_at(&mut commands, (x, y)); map.insert_at::<GasParticle>(&mut commands, (x, y+move_r))}},
-            6 => {if map.get_element_at((x-move_r, y)) == ParticleElement::Air {map.delete_at(&mut commands, (x, y)); map.insert_at::<GasParticle>(&mut commands, (x-move_r, y))}},
-            7 => {if map.get_element_at((x, y-move_r)) == ParticleElement::Air {map.delete_at(&mut commands, (x, y)); map.insert_at::<GasParticle>(&mut commands, (x, y-move_r))}},
-            8 => {if rng.gen_range(0..50) == 0 {map.delete_at(&mut commands, (x, y))}},
+            0 => {if map.insert_at::<GasParticle>(CHECK, &mut commands, (x+move_r, y+move_r)){
+                map.delete_at(&mut commands, (x, y));
+            }},
+            1 => {if map.insert_at::<GasParticle>(CHECK, &mut commands, (x+move_r, y-move_r)){
+                map.delete_at(&mut commands, (x, y)); 
+            }},
+            2 => {if map.insert_at::<GasParticle>(CHECK, &mut commands, (x-move_r, y+move_r)){
+                map.delete_at(&mut commands, (x, y)); 
+            }},
+            3 => {if map.insert_at::<GasParticle>(CHECK, &mut commands, (x-move_r, y-move_r)){
+                map.delete_at(&mut commands, (x, y)); 
+            }},
+            4 => {if map.insert_at::<GasParticle>(CHECK, &mut commands, (x+move_r, y)){
+                map.delete_at(&mut commands, (x, y)); 
+            }},
+            5 => {if map.insert_at::<GasParticle>(CHECK, &mut commands, (x, y+move_r)){
+                map.delete_at(&mut commands, (x, y)); 
+            }},
+            6 => {if map.insert_at::<GasParticle>(CHECK, &mut commands, (x-move_r, y)){
+                map.delete_at(&mut commands, (x, y));
+            }},
+            7 => { if map.insert_at::<GasParticle>(CHECK, &mut commands, (x, y-move_r)){
+                map.delete_at(&mut commands, (x, y));
+            }},
+            //           set this \/ to 0 and the gas will slowly decay
+            8 => {if rng.gen_range(1..decay_rate) == 0 {map.delete_at(&mut commands, (x, y))}},
             /* trying to use ray trace to stop gas escaping small walls
             
             0 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x+move_r, y+move_r)){
                     map.delete_at(&mut commands, (x, y));
                     map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
                 }},
-            1 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x+move_r, y-move_r)){
-                map.delete_at(&mut commands, (x, y)); 
-                map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
-            }},
-            2 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x-move_r, y+move_r)){
-                map.delete_at(&mut commands, (x, y)); 
-                map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
-            }},
-            3 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x-move_r, y-move_r)){
-                map.delete_at(&mut commands, (x, y)); 
-                map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
-            }},
-            4 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x+move_r, y)){
-                map.delete_at(&mut commands, (x, y)); 
-                map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
-            }},
-            5 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x, y+move_r)){
-                map.delete_at(&mut commands, (x, y)); 
-                map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
-            }},
-            6 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x-move_r, y)){
-                map.delete_at(&mut commands, (x, y)); 
-                map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
-            }},
-            7 => {if let Some((new_x,new_y)) = map.ray(&mut commands, (x, y), (x, y-move_r)){
-                map.delete_at(&mut commands, (x, y)); 
-                map.insert_at::<GasParticle>(&mut commands, (new_x, new_y));
-            }},
-            8 => {if rng.gen_range(0..50) == 0 {
-                map.delete_at(&mut commands, (x, y))
-            }},*/
+            */
             _ => {}
         }
     }
@@ -229,8 +205,8 @@ pub fn build_or_destroy(
                     if l {
                         map.delete_at(&mut commands, (((world_position.x+x) / PARTICLE_SIZE) as i32, ((world_position.y+y) / PARTICLE_SIZE) as i32));
                     }
-                    if r && map.get_element_at((position.0, position.1)) == ParticleElement::Air{
-                        map.insert_at::<GasParticle>(&mut commands, (position.0, position.1));
+                    if r{
+                        map.insert_at::<GasParticle>(REPLACE, &mut commands, (position.0, position.1));
                     }
                     x += PARTICLE_SIZE;
                 }
@@ -264,7 +240,7 @@ pub fn paint_with_ray(
             let p = map.ray(&mut commands, (convert_to_grid_position(pt.translation.x , pt.translation.y)), (convert_to_grid_position(world_position.x, world_position.y)));
             if let Some(position_of_part) = p {
                 info!("{:?}", position_of_part);
-                map.insert_at::<BedRockParticle>(&mut commands, position_of_part);
+                map.insert_at::<BedRockParticle>(REPLACE, &mut commands, position_of_part);
             }
         }
     }
@@ -285,7 +261,7 @@ impl Plugin for ParticlePlugin {
         app.add_systems(Update, update_water);
         app.add_systems(Update, update_gas);
         
-        app.add_systems(Update, paint_with_ray.after(update_water));
-        //app.add_systems(Update, build_or_destroy.after(update_water));
+        //app.add_systems(Update, paint_with_ray.after(update_water));
+        app.add_systems(Update, build_or_destroy.after(update_water));
     }
 } 
