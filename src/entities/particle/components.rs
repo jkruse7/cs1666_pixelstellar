@@ -7,12 +7,12 @@ use crate::entities::particle::resources::PARTICLE_SIZE;
 
 
 #[derive(Component, Debug)]
-pub struct ParticlePosition {
+pub struct ParticlePosVel {
     pub grid_x: i32,
     pub grid_y: i32,
     pub velocity: Vec2,
 }
-impl ParticlePosition {
+impl ParticlePosVel {
     fn new(grid_x: i32, grid_y: i32, velocity: Vec2) -> Self {
         Self {
             grid_x: grid_x,
@@ -40,7 +40,7 @@ pub trait NewParticle {
 
 #[derive(Bundle, Debug)]
 pub struct Particle {
-    position: ParticlePosition,
+    position: ParticlePosVel,
     data: ParticleElement,
     hitbox: Hitbox,
 }
@@ -90,7 +90,7 @@ impl NewParticle for BedRockParticle {
                 ..default()
             },
             particle: Particle {
-                position: ParticlePosition::new(x, y, vel),
+                position: ParticlePosVel::new(x, y, vel),
                 data: ParticleElement::BedRock,
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
             },
@@ -117,7 +117,7 @@ impl NewParticle for WaterParticle {
         Self {
             sprite: SpriteBundle {
                 sprite: Sprite {
-                    color: Color::srgba_u8(r, g, b, 128),
+                    color: Color::srgba_u8(r, g, b, 250),
                     custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
                     ..default()
                 },
@@ -132,7 +132,7 @@ impl NewParticle for WaterParticle {
                 ..default()
             },
             particle: Particle {
-                position: ParticlePosition::new(x, y, vel),
+                position: ParticlePosVel::new(x, y, vel),
                 data: ParticleElement::Water,
                 // correct hitbox:
                 // hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
@@ -177,7 +177,7 @@ impl NewParticle for GasParticle {
                 ..default()
             },
             particle: Particle {
-                position: ParticlePosition::new(x, y, vel),
+                position: ParticlePosVel::new(x, y, vel),
                 data: ParticleElement::Gas,
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
             },
@@ -221,7 +221,7 @@ impl NewParticle for DirtParticle {
                 ..default()
             },
             particle: Particle {
-                position: ParticlePosition::new(x, y, vel),
+                position: ParticlePosVel::new(x, y, vel),
                 data: ParticleElement::Dirt,
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
             },
@@ -266,7 +266,7 @@ impl NewParticle for StoneParticle {
                 ..default()
             },
             particle: Particle {
-                position: ParticlePosition::new(x, y, vel),
+                position: ParticlePosVel::new(x, y, vel),
                 data: ParticleElement::Stone,
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
             },

@@ -204,7 +204,7 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         // Startup events
         app.add_systems(Startup, initialize);
-        app.add_systems(Startup, super::blaster::systems::initialize);
+        app.add_systems(Startup, super::blaster::systems::initialize.after(initialize));
 
 
         app.add_systems(Update, move_player);
@@ -212,6 +212,7 @@ impl Plugin for PlayerPlugin {
         app.add_systems(Update, flight.after(super::systems::move_player));
         app.add_systems(Update, animate_player.after(super::systems::move_player));
         app.add_systems(Update, super::blaster::systems::update_blaster_aim);
+        app.add_systems(Update, super::blaster::systems::shoot_blaster);
         //app.add_systems(Update, super::blaster::systems::shoot_blaster.after(super::blaster::systems::update_blaster_aim));
 
 

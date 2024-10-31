@@ -7,6 +7,8 @@ use crate::common::
             generate_permutation_array, get_1d_octaves, get_2d_octaves,
         };
 
+use crate::entities::player::blaster::{components::*, resources::*};
+use crate::entities::enemy::components::*;
 use crate::entities::player::components::Player;
 
 // for both physics and procedural
@@ -28,7 +30,7 @@ fn draw_solid(
         let mut noise = get_1d_octaves(x as f32, 0.05, 3, 0.5, 1.2, 0., 180., &perm1);
         noise = noise.floor();
 
-        let mut noise_dirt = get_1d_octaves(x as f32, 0.003, 1, 0.5, 1.2, 0., 20., &perm2);
+        let mut noise_dirt = get_1d_octaves(x as f32, 0.012, 1, 0.5, 1.2, 0., 20., &perm2);
         noise_dirt = noise_dirt.floor();
 
         let mut noise_stone = get_1d_octaves(x as f32, 0.015, 2, 0.5, 1.2, 30., 40., &perm2);
@@ -77,19 +79,21 @@ fn update_water(
     mut map: ResMut<ParticleMap>,
     time: Res<Time>, 
     mut commands: Commands,
-    mut particles: Query<&mut ParticlePosition, With<ParticleTagWater>>,
+    mut particles: Query<&mut ParticlePosVel, With<ParticleTagWater>>,
 ) {
-    let deltat = time.delta_seconds();
+    let deltat = time.delta_seconds() ;
     for mut position in &mut particles {
         if position.velocity.x != 0. && position.velocity.y != 0.{
             let new_pos = ((position.grid_x as f32 + position.velocity.x) as i32, (position.grid_y as f32 + position.velocity.y) as i32);
-            info!("old: {} -> {}", position.velocity.y, Gravity::update_gravity(&position.velocity.y, &deltat));
             position.velocity.y = Gravity::update_gravity(&position.velocity.y, &deltat);
-            info!("new: {}", position.velocity.y);
-            if map.insert_at_with_velocity::<WaterParticle>(CHECK, &mut commands, new_pos, Vec2::new(position.velocity.x, position.velocity.y)){
+
+            let p = map.ray(&mut commands, (position.grid_x, position.grid_y), new_pos);
+            if let Some(position_of_part) = p {
+                if position_of_part != new_pos{
+                    position.velocity = Vec2::splat(0.);
+                }
                 map.delete_at(&mut commands, (position.grid_x, position.grid_y));
-            } else {
-                position.velocity = Vec2::splat(0.);
+                map.insert_at_with_velocity::<WaterParticle>(CHECK, &mut commands, position_of_part, Vec2::new(position.velocity.x, position.velocity.y));
             }
         } else {
             let (x, y) = (position.grid_x, position.grid_y);
@@ -110,7 +114,7 @@ fn update_water(
 fn update_gas(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
-    mut particles: Query<&mut ParticlePosition, With<ParticleTagGas>>,
+    mut particles: Query<&mut ParticlePosVel, With<ParticleTagGas>>,
 ) {
     for mut position in &mut particles {
         let (mut x, mut y) = (position.grid_x, position.grid_y);
@@ -202,7 +206,6 @@ pub fn build_or_destroy(
 ) {
     let window = window_query.single();
     let (camera, camera_transform) = camera_query.single();
-
     let (l, r) = (buttons.pressed(MouseButton::Left), buttons.pressed(MouseButton::Right));
 
     if l || r{
@@ -213,12 +216,7 @@ pub fn build_or_destroy(
         {
             let size = 1.;
             let mut y: f32 = -size * PARTICLE_SIZE;
-
-
-            let mut rng = rand::thread_rng();
-
-            map.insert_at_with_velocity::<WaterParticle>(REPLACE, &mut commands, (((world_position.x) / PARTICLE_SIZE) as i32, ((world_position.y) / PARTICLE_SIZE) as i32), Vec2::new(rng.gen_range(-3..=3) as f32,rng.gen_range(-3..=3) as f32));
-            /*while y < size * PARTICLE_SIZE + 0.1{
+            while y < size * PARTICLE_SIZE + 0.1{
                 let mut x: f32 = -size * PARTICLE_SIZE;
                 while x < size * PARTICLE_SIZE + 0.1{
                     let position = (((world_position.x+x) / PARTICLE_SIZE) as i32, ((world_position.y+y) / PARTICLE_SIZE) as i32);
@@ -226,12 +224,12 @@ pub fn build_or_destroy(
                         map.delete_at(&mut commands, (((world_position.x+x) / PARTICLE_SIZE) as i32, ((world_position.y+y) / PARTICLE_SIZE) as i32));
                     }
                     if r{
-                        map.insert_at_with_velocity::<WaterParticle>(REPLACE, &mut commands, (position.0, position.1), Vec2::new(rng.gen_range(-3..=3) as f32,rng.gen_range(-3..=3) as f32));
+                        map.insert_at::<GasParticle>(REPLACE, &mut commands, (position.0, position.1));
                     }
                     x += PARTICLE_SIZE;
                 }
                 y += PARTICLE_SIZE;
-            }*/
+            }
         }
     }
 }
@@ -259,7 +257,6 @@ pub fn paint_with_ray(
             
             let p = map.ray(&mut commands, (convert_to_grid_position(pt.translation.x , pt.translation.y)), (convert_to_grid_position(world_position.x, world_position.y)));
             if let Some(position_of_part) = p {
-                info!("{:?}", position_of_part);
                 map.insert_at::<BedRockParticle>(REPLACE, &mut commands, position_of_part);
             }
         }
@@ -278,7 +275,7 @@ impl Plugin for ParticlePlugin {
 
         // Updates i.e. all automata goes here
         //app.add_systems(Update, draw_rain);
-        app.add_systems(Update, update_water);
+        app.add_systems(Update, update_water.after(crate::entities::player::blaster::systems::shoot_blaster));
         app.add_systems(Update, update_gas);
         
         //app.add_systems(Update, paint_with_ray.after(update_water));

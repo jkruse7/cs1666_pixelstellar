@@ -51,6 +51,7 @@ impl ParticleMap {
         }
         false
     }
+    
     pub fn insert_at_with_velocity<P: NewParticle + Bundle>(&mut self, replace: bool, commands: &mut Commands, pos: (i32, i32), vel: Vec2) -> bool{
         let is_air_at_pos = self.get_element_at(pos) == ParticleElement::Air;
     
@@ -85,11 +86,18 @@ impl ParticleMap {
         let sx = if x0 < x1 { 1 } else { -1 };
         let sy = if y0 < y1 { 1 } else { -1 };
         let mut err = dx - dy;
-    
+        
+        let mut previous = (x0, y0);
         while (x0, y0) != (x1, y1) {
             let element = self.get_element_at((x0, y0));
-            if element != ParticleElement::Air { return Some((x0, y0)) }
+            if element != ParticleElement::Air && element != ParticleElement::Water { 
+                // returns right before
+                return Some(previous)
+                // returns the particle it hit first
+                //return Some((x0, y0)) 
+            }
     
+            previous = (x0, y0);
             // Bresenham's line algorithm step
             let e2 = 2 * err;
             if e2 > -dy {
@@ -104,12 +112,12 @@ impl ParticleMap {
     
         // you can return None if theres nothing between (x0,y0)->(x1,y1)
         // or just return the position (x1,y1) if there was nothing in between p0 and p1
-        //Some(x1, y1)
-        if self.get_element_at((x1, y1)) != ParticleElement::Air {
+        Some((x1, y1))
+        /*if self.get_element_at((x1, y1)) != ParticleElement::Air {
             Some((x1, y1))
         } else {
             None
-        }
+        }*/
     }
 
 
