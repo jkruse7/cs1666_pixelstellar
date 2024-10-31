@@ -125,7 +125,7 @@ impl NewParticle for WaterParticle {
                     translation: Vec3::new(
                         x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
                         y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
-                        901.0,
+                        904.0,
                     ),
                     ..default()
                 },
