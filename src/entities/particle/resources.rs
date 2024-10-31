@@ -43,7 +43,20 @@ impl ParticleMap {
     
         if replace || is_air_at_pos {
             if !is_air_at_pos && replace {    self.delete_at(commands, pos);    }
-            let particle_instance = P::new(pos.0, pos.1);
+            let particle_instance = P::new(pos.0, pos.1, Vec2::splat(0.));
+            let entity = commands.spawn(particle_instance).id();
+            let element = P::ELEMENT;
+            self.particle_map.insert(pos, (entity, element));
+            return true
+        }
+        false
+    }
+    pub fn insert_at_with_velocity<P: NewParticle + Bundle>(&mut self, replace: bool, commands: &mut Commands, pos: (i32, i32), vel: Vec2) -> bool{
+        let is_air_at_pos = self.get_element_at(pos) == ParticleElement::Air;
+    
+        if replace || is_air_at_pos {
+            if !is_air_at_pos && replace {    self.delete_at(commands, pos);    }
+            let particle_instance = P::new(pos.0, pos.1, vel);
             let entity = commands.spawn(particle_instance).id();
             let element = P::ELEMENT;
             self.particle_map.insert(pos, (entity, element));

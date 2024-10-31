@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use rand::Rng;
+use crate::entities::enemy::components::Velocity;
 use crate::{common::hitbox::Hitbox, LEVEL_H};
 use crate::entities::particle::resources::PARTICLE_SIZE;
 
@@ -9,12 +10,14 @@ use crate::entities::particle::resources::PARTICLE_SIZE;
 pub struct ParticlePosition {
     pub grid_x: i32,
     pub grid_y: i32,
+    pub velocity: Vec2,
 }
 impl ParticlePosition {
-    fn new(grid_x: i32, grid_y: i32) -> Self {
+    fn new(grid_x: i32, grid_y: i32, velocity: Vec2) -> Self {
         Self {
             grid_x: grid_x,
             grid_y: grid_y,
+            velocity: velocity,
         }
     }
 }
@@ -31,7 +34,7 @@ pub enum ParticleElement {
 
 pub trait NewParticle {
     const ELEMENT: ParticleElement;
-    fn new(x: i32, y: i32) -> Self;
+    fn new(x: i32, y: i32, vel: Vec2) -> Self;
 }
 
 
@@ -66,7 +69,7 @@ pub struct BedRockParticle {
 }
 impl NewParticle for BedRockParticle {
     const ELEMENT: ParticleElement = ParticleElement::BedRock;
-    fn new(x: i32, y: i32) -> Self {
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
         let mut rng = rand::thread_rng();
         let black = rng.gen_range(0..=50) as u8;
         Self {
@@ -87,7 +90,7 @@ impl NewParticle for BedRockParticle {
                 ..default()
             },
             particle: Particle {
-                position: ParticlePosition::new(x, y),
+                position: ParticlePosition::new(x, y, vel),
                 data: ParticleElement::BedRock,
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
             },
@@ -108,7 +111,7 @@ pub struct WaterParticle {
 }
 impl NewParticle for WaterParticle {
     const ELEMENT: ParticleElement = ParticleElement::Water;
-    fn new(x: i32, y: i32) -> Self {
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
         let mut rng = rand::thread_rng();
         let (r,g,b) = (rng.gen_range(15..=30) as u8, rng.gen_range(129..=144) as u8, rng.gen_range(240..=255) as u8);
         Self {
@@ -129,7 +132,7 @@ impl NewParticle for WaterParticle {
                 ..default()
             },
             particle: Particle {
-                position: ParticlePosition::new(x, y),
+                position: ParticlePosition::new(x, y, vel),
                 data: ParticleElement::Water,
                 // correct hitbox:
                 // hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
@@ -153,7 +156,7 @@ pub struct GasParticle {
 }
 impl NewParticle for GasParticle {
     const ELEMENT: ParticleElement = ParticleElement::Gas;
-    fn new(x: i32, y: i32) -> Self {
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
         let mut rng = rand::thread_rng();
         let (r,g,b) = (rng.gen_range(15..=30) as u8, rng.gen_range(129..=144) as u8, rng.gen_range(15..=30) as u8);
         Self {
@@ -174,7 +177,7 @@ impl NewParticle for GasParticle {
                 ..default()
             },
             particle: Particle {
-                position: ParticlePosition::new(x, y),
+                position: ParticlePosition::new(x, y, vel),
                 data: ParticleElement::Gas,
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
             },
@@ -197,7 +200,7 @@ pub struct DirtParticle {
 }
 impl NewParticle for DirtParticle {
     const ELEMENT: ParticleElement = ParticleElement::Dirt;
-    fn new(x: i32, y: i32) -> Self {
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
         let mut rng = rand::thread_rng();
         let (r,g, b) = (rng.gen_range(118..=133) as u8, rng.gen_range(85..=90) as u8, rng.gen_range(43..=73) as u8);
         Self {
@@ -218,7 +221,7 @@ impl NewParticle for DirtParticle {
                 ..default()
             },
             particle: Particle {
-                position: ParticlePosition::new(x, y),
+                position: ParticlePosition::new(x, y, vel),
                 data: ParticleElement::Dirt,
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
             },
@@ -241,7 +244,7 @@ pub struct StoneParticle {
 }
 impl NewParticle for StoneParticle {
     const ELEMENT: ParticleElement = ParticleElement::Stone;
-    fn new(x: i32, y: i32) -> Self {
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
         // random color range
         let mut rng = rand::thread_rng();
         let gray = rng.gen_range(113..=128) as u8;
@@ -263,7 +266,7 @@ impl NewParticle for StoneParticle {
                 ..default()
             },
             particle: Particle {
-                position: ParticlePosition::new(x, y),
+                position: ParticlePosition::new(x, y, vel),
                 data: ParticleElement::Stone,
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
             },

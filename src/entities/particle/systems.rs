@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 use rand::Rng;
 use super::{components::*, resources::*};
+use crate::common::gravity::Gravity;
 use crate::common::
         perlin_noise::{
             generate_permutation_array, get_1d_octaves, get_2d_octaves,
@@ -74,21 +75,35 @@ fn draw_rain(
 
 fn update_water(
     mut map: ResMut<ParticleMap>,
+    time: Res<Time>, 
     mut commands: Commands,
     mut particles: Query<&mut ParticlePosition, With<ParticleTagWater>>,
 ) {
+    let deltat = time.delta_seconds();
     for mut position in &mut particles {
-        let (x, y) = (position.grid_x, position.grid_y);
-        if map.insert_at::<WaterParticle>(CHECK, &mut commands, (x, y-1)) {
-            map.delete_at(&mut commands, (x, y));
-        } else if map.insert_at::<WaterParticle>(CHECK, &mut commands, (x-1, y-1)) {
-            map.delete_at(&mut commands, (x, y));
-        } else if map.insert_at::<WaterParticle>(CHECK,&mut commands, (x+1, y-1)){
-            map.delete_at(&mut commands, (x, y));
-        } else if map.insert_at::<WaterParticle>(CHECK, &mut commands, (x-1, y)) {
-            map.delete_at(&mut commands, (x, y));
-        } else if map.insert_at::<WaterParticle>(CHECK, &mut commands, (x+1, y)) {
-            map.delete_at(&mut commands, (x, y));
+        if position.velocity.x != 0. && position.velocity.y != 0.{
+            let new_pos = ((position.grid_x as f32 + position.velocity.x) as i32, (position.grid_y as f32 + position.velocity.y) as i32);
+            info!("old: {} -> {}", position.velocity.y, Gravity::update_gravity(&position.velocity.y, &deltat));
+            position.velocity.y = Gravity::update_gravity(&position.velocity.y, &deltat);
+            info!("new: {}", position.velocity.y);
+            if map.insert_at_with_velocity::<WaterParticle>(CHECK, &mut commands, new_pos, Vec2::new(position.velocity.x, position.velocity.y)){
+                map.delete_at(&mut commands, (position.grid_x, position.grid_y));
+            } else {
+                position.velocity = Vec2::splat(0.);
+            }
+        } else {
+            let (x, y) = (position.grid_x, position.grid_y);
+            if map.insert_at::<WaterParticle>(CHECK, &mut commands, (x, y-1)) {
+                map.delete_at(&mut commands, (x, y));
+            } else if map.insert_at::<WaterParticle>(CHECK, &mut commands, (x-1, y-1)) {
+                map.delete_at(&mut commands, (x, y));
+            } else if map.insert_at::<WaterParticle>(CHECK,&mut commands, (x+1, y-1)){
+                map.delete_at(&mut commands, (x, y));
+            } else if map.insert_at::<WaterParticle>(CHECK, &mut commands, (x-1, y)) {
+                map.delete_at(&mut commands, (x, y));
+            } else if map.insert_at::<WaterParticle>(CHECK, &mut commands, (x+1, y)) {
+                map.delete_at(&mut commands, (x, y));
+            }
         }
     }
 }
@@ -198,7 +213,12 @@ pub fn build_or_destroy(
         {
             let size = 1.;
             let mut y: f32 = -size * PARTICLE_SIZE;
-            while y < size * PARTICLE_SIZE + 0.1{
+
+
+            let mut rng = rand::thread_rng();
+
+            map.insert_at_with_velocity::<WaterParticle>(REPLACE, &mut commands, (((world_position.x) / PARTICLE_SIZE) as i32, ((world_position.y) / PARTICLE_SIZE) as i32), Vec2::new(rng.gen_range(-3..=3) as f32,rng.gen_range(-3..=3) as f32));
+            /*while y < size * PARTICLE_SIZE + 0.1{
                 let mut x: f32 = -size * PARTICLE_SIZE;
                 while x < size * PARTICLE_SIZE + 0.1{
                     let position = (((world_position.x+x) / PARTICLE_SIZE) as i32, ((world_position.y+y) / PARTICLE_SIZE) as i32);
@@ -206,12 +226,12 @@ pub fn build_or_destroy(
                         map.delete_at(&mut commands, (((world_position.x+x) / PARTICLE_SIZE) as i32, ((world_position.y+y) / PARTICLE_SIZE) as i32));
                     }
                     if r{
-                        map.insert_at::<GasParticle>(REPLACE, &mut commands, (position.0, position.1));
+                        map.insert_at_with_velocity::<WaterParticle>(REPLACE, &mut commands, (position.0, position.1), Vec2::new(rng.gen_range(-3..=3) as f32,rng.gen_range(-3..=3) as f32));
                     }
                     x += PARTICLE_SIZE;
                 }
                 y += PARTICLE_SIZE;
-            }
+            }*/
         }
     }
 }
@@ -257,7 +277,7 @@ impl Plugin for ParticlePlugin {
         app.add_systems(Startup, draw_solid);
 
         // Updates i.e. all automata goes here
-        app.add_systems(Update, draw_rain);
+        //app.add_systems(Update, draw_rain);
         app.add_systems(Update, update_water);
         app.add_systems(Update, update_gas);
         
