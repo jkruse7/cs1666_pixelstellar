@@ -20,6 +20,9 @@ impl Gravity {
         //self.current_G = GRAVITY;
         self.current_g = f32::max(-TERMINAL_VELOCITY, curr_velocity - GRAVITY_FORCE * deltat);
     }
+    pub fn update_gravity(curr_velocity: &f32, deltat: &f32) -> f32{
+        f32::max(-TERMINAL_VELOCITY, curr_velocity - (GRAVITY_FORCE/70.) * deltat)
+    }
 
     pub fn get_g(&mut self) -> f32 {
         self.current_g

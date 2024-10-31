@@ -4,25 +4,28 @@ use crate::{
     //particle::resources::*,
     entities::enemy::components::Enemy, 
     entities::player::components::Player,
+    entities::particle::{components::*, resources::*, systems::convert_to_grid_position},
     WIN_H
 };
-use super::components::*;
+use super::{components::*, resources::{BLASTER_POWER, RECHARGE_RATE}};
 
 
 pub fn initialize(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
+    player: Query<&Transform, With<Player>>,
 ){ 
     let blaster_sheet_handle = asset_server.load("blaster.png");
     let blaster_layout = TextureAtlasLayout::from_grid(UVec2::new(19, 11), 1, 1, None, None);
     let blaster_layout_handle = texture_atlases.add(blaster_layout);
-
+    let pt = player.single();
+    
     commands.spawn((
         SpriteBundle {
             texture: blaster_sheet_handle,
             transform: Transform {
-                translation: Vec3::new(0., -(WIN_H / 2.) + ((100.0 as f32) * 1.5), 905.),
+                translation: Vec3::new(pt.translation.x, pt.translation.y, 901.),
                 ..default()
             },
             sprite: Sprite {
@@ -54,7 +57,8 @@ pub fn update_blaster_aim( //this gets window cursor position, not world positio
     let (mut blaster_transform, mut blaster_vector, mut blaster_sprite) = q_blaster_transform.single_mut();
     let player_transform = q_player.single();
     let mut cursor_pos = Vec2::new(0., 0.);
-    let update_aim_vec = true;//get_game_coords(&mut cursor_pos, q_windows, q_camera);
+    let update_aim_vec = get_game_coords(&mut cursor_pos, q_windows, q_camera);
+    info!("Cursor world position: {:?}", cursor_pos);
     // info! ("Cursor pos: {}/{}", cursor_pos.x, cursor_pos.y);
     if update_aim_vec {
         let player_pos = player_transform.translation;
@@ -70,33 +74,44 @@ pub fn update_blaster_aim( //this gets window cursor position, not world positio
     }
 }
 
-/*pub fn shoot_blaster(
+pub fn shoot_blaster(
+    mut map: ResMut<ParticleMap>,
     time: Res<Time>,
+    mut commands: Commands,
+    window_query: Query<&Window>,
+    camera_query: Query<(&Camera, &GlobalTransform), With<Camera>>,
     buttons: Res<ButtonInput<MouseButton>>,
-    //mut commands: Commands,
     mut q_blaster: Query<(&Transform, &BlasterVector, &mut BlasterLastFiredTime), (With<Blaster>, Without<Enemy>, Without<Player>)>,
-    map: ResMut<crate::ParticleMap>,
-) { //check 
+) {
+    let window = window_query.single();
+    let (camera, camera_transform) = camera_query.single();
     let (blaster_transform, blaster_vector, mut blaster_last_fired_time) = q_blaster.single_mut();
-    let time_since_last_fired = time.elapsed_seconds_f64() - blaster_last_fired_time.last_fired;
-    if buttons.pressed(MouseButton::Left) && time_since_last_fired > 0.05 {
-        blaster_last_fired_time.last_fired = time.elapsed_seconds_f64();
-        let proposed_pos = blaster_transform.translation + blaster_vector.vector.extend(0.0) * 40.0;
-        let proposed_hb = Hitbox::new(PARTICLE_SIZE as f32, PARTICLE_SIZE as f32, proposed_pos.xy());
-        if proposed_hb.are_all_grid_tiles_air(&map) {
-            let proposed_velocity = blaster_vector.vector * 1500.0;
-            let particle = Particle::new(
-                true,
-                crate::common::particles::ELEMENT::WATER,
-                true,
-                true,
-                proposed_velocity,
-                Transform::from_translation(Vec3::new(proposed_pos.x, proposed_pos.y, 0.)),
-            );
-            crate::common::particles::Particle::spawn_particle(&mut commands, particle);
+    let time_since_last_fired = (time.elapsed_seconds_f64() - blaster_last_fired_time.last_fired) as f32;
+
+    if buttons.pressed(MouseButton::Left){
+        if let Some(world_position) = 
+            window.cursor_position()
+                .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+                .map(|ray| ray.origin.truncate())
+        {
+            let size = 1.;
+            let mut y: f32 = -size * PARTICLE_SIZE;
+
+
+            let mut rng = rand::thread_rng();
+            if time_since_last_fired > RECHARGE_RATE{
+                blaster_last_fired_time.last_fired = time.elapsed_seconds_f64();
+                if let Some(cursor_position) = window.cursor_position() {
+                    if let Some(world_position) = camera.viewport_to_world(camera_transform, cursor_position) {
+                        let mut direction = (world_position.origin.truncate() - blaster_transform.translation.truncate()).normalize() * BLASTER_POWER;
+                        map.insert_at_with_velocity::<WaterParticle>(REPLACE, &mut commands, (convert_to_grid_position(blaster_transform.translation.x, blaster_transform.translation.y)), direction);
+                    }
+                }
+            }
         }
-    }   
-}*/
+    }
+}
+
 fn get_game_coords( //gets window cursor pos and converts to world position
     coords: &mut Vec2,
     q_window: Query<&Window, With<bevy::window::PrimaryWindow>>,
