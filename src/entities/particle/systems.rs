@@ -146,38 +146,33 @@ fn update_gas(
         let move_r = 2;
         let decay_rate = 50;
         if rng.gen_range(0..=1) == 0{
-                let radius: i32 = rng.gen_range(1..=12);
-                let mut done: bool = false;
-                let center_x = position.grid_x;
-                let center_y = position.grid_y;
-                let dx = rng.gen_range(-radius..radius);
-                // Iterate over all points on the circumference
-                    let dy_square = radius * radius - dx * dx;
-                    if dy_square >= 0 {
-                        // Only consider integer values for dy that satisfy the circle equation
-                        let dy = (dy_square as f32).sqrt().round() as i32;
-                
-                        // Check the four symmetry points on the circle
-                        let points = [
-                            (center_x + dx, center_y + dy),     // Right-up
-                            (center_x + dx, center_y - dy),     // Right-down
-                            (center_x - dx, center_y + dy),     // Left-up
-                            (center_x - dx, center_y - dy),     // Left-down
-                        ];
-                
-                        for &new_pos in &points {
-                            // Cast ray to each point on the circumference
-                            if let Some(position_of_part) = map.ray(&mut commands, (center_x, center_y), new_pos, &[ParticleElement::Gas]) {
-                                if map.get_element_at(position_of_part) == ParticleElement::Air{
-                                    // Remove particle from current position and place at new position with velocity
-                                    map.delete_at(&mut commands, (center_x, center_y));
-                                    map.insert_at::<GasParticle>(CHECK, &mut commands, position_of_part);
-                                    done = true;
-                                    break;
-                                }
-                            }
-                        }
+            let radius: i32 = rng.gen_range(1..=3);
+            let center_x = position.grid_x;
+            let center_y = position.grid_y;
+            
+            /*70% chance to pick an upward angle, 30% chance for any angle
+            let angle = if rng.gen_bool(0.5) {
+                // Bias towards an upward angle (between π/4 and 3π/4)
+                rng.gen_range(std::f32::consts::FRAC_PI_4..=3.0 * std::f32::consts::FRAC_PI_4)
+            } else {
+                // Otherwise, allow any angle (0 to 2π)
+                rng.gen_range(0.0..=2.0 * std::f32::consts::PI)
+            };*/
+            let angle = rng.gen_range(0.0..=2.0 * std::f32::consts::PI);
+            let dx = (radius as f32 * angle.cos()).round() as i32;
+            let dy = (radius as f32 * angle.sin()).round() as i32;
+            
+            // Calculate the new position based on the selected angle
+            let new_pos = (center_x + dx, center_y + dy);
+            
+            // Cast ray to the selected point on the circle
+            if let Some(position_of_part) = map.ray(&mut commands, (center_x, center_y), new_pos, &[ParticleElement::Gas]) {
+                if map.get_element_at(position_of_part) == ParticleElement::Air {
+                    // Remove particle from current position and place at new position
+                    map.delete_at(&mut commands, (center_x, center_y));
+                    map.insert_at::<GasParticle>(CHECK, &mut commands, position_of_part);
                 }
+            }
         }
     }
 }
