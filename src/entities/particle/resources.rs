@@ -77,7 +77,7 @@ impl ParticleMap {
         }
     }
     
-    pub fn ray(&mut self, commands: &mut Commands, start: (i32, i32), end: (i32, i32)) -> Option<(i32, i32)> {
+    pub fn ray(&mut self, commands: &mut Commands, start: (i32, i32), end: (i32, i32), ignore: &[ParticleElement]) -> Option<(i32, i32)> {
         let (mut x0, mut y0) = start;
         let (x1, y1) = end;
     
@@ -88,9 +88,15 @@ impl ParticleMap {
         let mut err = dx - dy;
         
         let mut previous = (x0, y0);
+
+        let e2 = 2 * err;
+        // Offset first position
+        if e2 > -dy { err -= dy; x0 += sx; }
+        if e2 < dx { err += dx; y0 += sy; }
+
         while (x0, y0) != (x1, y1) {
             let element = self.get_element_at((x0, y0));
-            if element != ParticleElement::Air && element != ParticleElement::Water { 
+            if element != ParticleElement::Air && !ignore.contains(&element){ 
                 // returns right before
                 return Some(previous)
                 // returns the particle it hit first

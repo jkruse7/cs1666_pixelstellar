@@ -58,7 +58,7 @@ pub fn update_blaster_aim( //this gets window cursor position, not world positio
     let player_transform = q_player.single();
     let mut cursor_pos = Vec2::new(0., 0.);
     let update_aim_vec = get_game_coords(&mut cursor_pos, q_windows, q_camera);
-    info!("Cursor world position: {:?}", cursor_pos);
+    //info!("Cursor world position: {:?}", cursor_pos);
     // info! ("Cursor pos: {}/{}", cursor_pos.x, cursor_pos.y);
     if update_aim_vec {
         let player_pos = player_transform.translation;
