@@ -279,6 +279,6 @@ impl Plugin for ParticlePlugin {
         app.add_systems(Update, update_gas);
         
         //app.add_systems(Update, paint_with_ray.after(update_water));
-        app.add_systems(Update, build_or_destroy.after(update_water));
+        //app.add_systems(Update, build_or_destroy.after(update_water));
     }
 } 

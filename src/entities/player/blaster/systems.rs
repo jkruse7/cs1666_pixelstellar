@@ -88,6 +88,7 @@ pub fn shoot_blaster(
     camera_query: Query<(&Camera, &GlobalTransform), With<Camera>>,
     buttons: Res<ButtonInput<MouseButton>>,
     mut q_blaster: Query<(&Transform, &BlasterVector, &mut BlasterLastFiredTime), (With<Blaster>, Without<Enemy>, Without<Player>)>,
+    blaster_selection: Res<BlasterSelection>,
 ) {
     let window = window_query.single();
     let (camera, camera_transform) = camera_query.single();
@@ -95,26 +96,69 @@ pub fn shoot_blaster(
     let time_since_last_fired = (time.elapsed_seconds_f64() - blaster_last_fired_time.last_fired) as f32;
 
     if buttons.pressed(MouseButton::Left){
-        if let Some(world_position) = 
-            window.cursor_position()
-                .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
-                .map(|ray| ray.origin.truncate())
-        {
-            let size = 1.;
-            let mut y: f32 = -size * PARTICLE_SIZE;
-
-
-            let mut rng = rand::thread_rng();
-            if time_since_last_fired > RECHARGE_RATE{
-                blaster_last_fired_time.last_fired = time.elapsed_seconds_f64();
-                if let Some(cursor_position) = window.cursor_position() {
-                    if let Some(world_position) = camera.viewport_to_world(camera_transform, cursor_position) {
-                        let mut direction = (world_position.origin.truncate() - blaster_transform.translation.truncate()).normalize() * BLASTER_POWER;
-                        map.insert_at_with_velocity::<WaterParticle>(REPLACE, &mut commands, (convert_to_grid_position(blaster_transform.translation.x, blaster_transform.translation.y)), direction);
+        match blaster_selection.selected {
+            BlasterType::Water => {
+                if let Some(world_position) = 
+                    window.cursor_position()
+                        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+                        .map(|ray| ray.origin.truncate())
+                    {
+                    let size = 1.;
+                    let mut y: f32 = -size * PARTICLE_SIZE;
+    
+                if time_since_last_fired > RECHARGE_RATE{
+                    blaster_last_fired_time.last_fired = time.elapsed_seconds_f64();
+                    if let Some(cursor_position) = window.cursor_position() {
+                        if let Some(world_position) = camera.viewport_to_world(camera_transform, cursor_position) {
+                            let mut direction = (world_position.origin.truncate() - blaster_transform.translation.truncate()).normalize() * BLASTER_POWER;
+                            map.insert_at_with_velocity::<WaterParticle>(false, &mut commands, (convert_to_grid_position(blaster_transform.translation.x, blaster_transform.translation.y)), direction);
+                        }
+                    }
+                }
+                }
+            }
+            BlasterType::Deleter => {
+                
+                if let Some(world_position) = 
+                    window.cursor_position()
+                        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+                        .map(|ray| ray.origin.truncate())
+                {
+                    let size = 1.;
+                    let mut y: f32 = -size * PARTICLE_SIZE;
+                    while y < size * PARTICLE_SIZE + 0.1{
+                        let mut x: f32 = -size * PARTICLE_SIZE;
+                        while x < size * PARTICLE_SIZE + 0.1{
+                            let position = (((world_position.x+x) / PARTICLE_SIZE) as i32, ((world_position.y+y) / PARTICLE_SIZE) as i32);
+                            map.delete_at(&mut commands, (((world_position.x+x) / PARTICLE_SIZE) as i32, ((world_position.y+y) / PARTICLE_SIZE) as i32));
+                            x += PARTICLE_SIZE;
+                        }
+                        y += PARTICLE_SIZE;
+                    }
+                }
+                
+            }
+            BlasterType::Gas => {
+                if let Some(world_position) = 
+                        window.cursor_position()
+                            .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+                            .map(|ray| ray.origin.truncate())
+                {
+                    let size = 1.;
+                    let mut y: f32 = -size * PARTICLE_SIZE;
+                    while y < size * PARTICLE_SIZE + 0.1{
+                        let mut x: f32 = -size * PARTICLE_SIZE;
+                        while x < size * PARTICLE_SIZE + 0.1{
+                            let position = (((world_position.x+x) / PARTICLE_SIZE) as i32, ((world_position.y+y) / PARTICLE_SIZE) as i32);
+                            map.insert_at::<GasParticle>(false, &mut commands, (position.0, position.1));
+                            x += PARTICLE_SIZE;
+                        }
+                        y += PARTICLE_SIZE;
                     }
                 }
             }
         }
+       
     }
 }
 
