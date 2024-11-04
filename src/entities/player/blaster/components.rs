@@ -1,10 +1,28 @@
 use bevy::prelude::*;
 
+#[derive(Copy, Clone)]
+pub enum BlasterType {
+    Water,
+    Deleter,
+    Gas
+}
 
-
-//blaster or gun
 #[derive(Component)]
 pub struct Blaster;
+
+#[derive(Component, Resource)]
+pub struct BlasterSelection {
+    pub selected: BlasterType,
+}
+
+impl BlasterSelection {
+    pub fn new(selection: BlasterType) -> Self {
+        Self {
+            selected: selection,
+        }
+    }
+}
+
 
 #[derive(Component)] //direction blaster is facing
 pub struct BlasterVector {
@@ -30,4 +48,9 @@ impl BlasterLastFiredTime {
             last_fired: 0.,
         }
     }
+}
+
+#[derive(Event)]
+pub struct ChangeBlasterEvent {
+    pub new_blaster_type: BlasterType,
 }
