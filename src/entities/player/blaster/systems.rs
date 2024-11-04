@@ -4,7 +4,7 @@ use crate::{
     //particle::resources::*,
     entities::enemy::components::Enemy, 
     entities::player::components::Player,
-    entities::particle::{components::*, resources::*, systems::convert_to_grid_position},
+    entities::particle::{components::*, resources::*},
     WIN_H
 };
 use super::{components::*, resources::{BLASTER_POWER, RECHARGE_RATE}};

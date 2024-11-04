@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 use crate::entities::particle::components::ParticleElement;
+use crate::entities::particle::resources::convert_to_grid_position;
 use crate::entities::particle::systems::*;
 
 use crate::{

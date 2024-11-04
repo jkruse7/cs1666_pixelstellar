@@ -1,23 +1,16 @@
 use bevy::prelude::*;
 use rand::Rng;
 use super::{components::*, resources::*};
-use crate::common::gravity::Gravity;
-use crate::common::
-        perlin_noise::{
-            generate_permutation_array, get_1d_octaves, get_2d_octaves,
-        };
-
-use crate::entities::player::blaster::{components::*, resources::*};
-use crate::entities::enemy::components::*;
+use crate::common::{gravity::Gravity, perlin_noise::{generate_permutation_array, get_1d_octaves, get_2d_octaves}};
 use crate::entities::player::components::Player;
-
-// for both physics and procedural
-// if you want to place a particle on the screen either on startup or from a key press or whatever,
-// follow these examples:
+use crate::{LEVEL_W, LEVEL_H};
 
 
 
-// example for a Startup system
+
+
+
+// Map placement type functions  --------------------------------------------------------------------------------
 fn draw_solid(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
@@ -58,7 +51,6 @@ fn draw_solid(
     }
 }
 
-// another example for an Update system
 fn draw_rain(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
@@ -72,6 +64,24 @@ fn draw_rain(
         }
     }
 }
+
+fn select_particle(y: f32, noise: f32, dirt_height: f32, stone_height: f32) -> ParticleElement {
+    if y >= stone_height {
+        ParticleElement::Stone
+    } else if y >= dirt_height{
+        ParticleElement::Dirt
+    } else {
+        ParticleElement::BedRock
+    }
+}
+
+
+
+
+
+
+
+// Update functions (cellular automata) make sure to update plugins at the bottom -------------------------------
 fn update_grass(
     mut map: ResMut<ParticleMap>,
     time: Res<Time>, 
@@ -95,8 +105,6 @@ fn update_grass(
         }
     }
 }
-
-
 
 fn update_water(
     mut map: ResMut<ParticleMap>,
@@ -135,42 +143,54 @@ fn update_water(
         }
     }
 }
+
 fn update_gas(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
     mut particles: Query<&mut ParticlePosVel, With<ParticleTagGas>>,
 ) {
     for mut position in &mut particles {
-
-
         let mut rng = rand::thread_rng();
         let move_r = 2;
         let decay_rate = 50;
-        if rng.gen_range(0..=1) == 0{
+        // This decay logic just says if the positions 10 away in each cardinal direction is air theres a small chance to despawn.
+        // just means that 
+        //               1 to disable or just comment out
+        if rng.gen_range(0..decay_rate) == 0 {
+            if map.get_element_at((position.grid_x+10, position.grid_y)) == ParticleElement::Air &&
+               map.get_element_at((position.grid_x, position.grid_y+10)) == ParticleElement::Air &&
+               map.get_element_at((position.grid_x-10, position.grid_y)) == ParticleElement::Air &&
+               map.get_element_at((position.grid_x, position.grid_y-10)) == ParticleElement::Air {
+                map.delete_at(&mut commands, (position.grid_x, position.grid_y));
+               }
+        } else if rng.gen_range(0..=1) == 0{
             let radius: i32 = rng.gen_range(1..=6);
             let center_x = position.grid_x;
             let center_y = position.grid_y;
             
+
+            // We can use this to give certain elements different densities. some may float very quickly, some may disperse more, etc.
             //70% chance to pick an upward angle, 30% chance for any angle
-            /*let angle = if rng.gen_bool(0.9) {
+            let angle = if rng.gen_bool(0.7) {
                 // Bias towards an upward angle (between π/4 and 3π/4)
-                info!("hell");
-                rng.gen_range(-3.0*std::f32::consts::FRAC_PI_4..=-std::f32::consts::FRAC_PI_4)
+                rng.gen_range(std::f32::consts::FRAC_PI_4..=3.0*std::f32::consts::FRAC_PI_4)
             } else {
-                // Otherwise, allow any angle (0 to 2π)
                 rng.gen_range(0.0..=2.0 * std::f32::consts::PI)
-            };*/
-            let angle = rng.gen_range(0.0..=2.0 * std::f32::consts::PI);
+            };
+            // or just be random.
+            //let angle = rng.gen_range(0.0..=2.0 * std::f32::consts::PI);
+
             let dx = (radius as f32 * angle.cos()).round() as i32;
             let dy = (radius as f32 * angle.sin()).round() as i32;
-            
-            // Calculate the new position based on the selected angle
             let new_pos = (center_x + dx, center_y + dy);
             
             if let Some(position_of_part) = map.ray(&mut commands, (center_x, center_y), new_pos, &[ParticleElement::Gas]) {
                 if map.get_element_at(position_of_part) == ParticleElement::Air {
                     map.delete_at(&mut commands, (center_x, center_y));
-                    map.insert_at::<GasParticle>(&mut commands, position_of_part, ListType::ReplaceOnlyAir);
+                    // Check that the new coordinates are within bounds before spawning
+                    if grid_coords_within_map(position_of_part) {
+                        map.insert_at::<GasParticle>(&mut commands, position_of_part, ListType::ReplaceOnlyAir);
+                    }
                 }
             }
         }
@@ -179,22 +199,12 @@ fn update_gas(
 
 
 
-pub fn convert_to_grid_position(x: f32, y: f32) -> (i32, i32) {
-    let x = (x / PARTICLE_SIZE).round() as i32;
-    let y = (y / PARTICLE_SIZE).round() as i32;
-    (x, y)
-}
 
-fn select_particle(y: f32, noise: f32, dirt_height: f32, stone_height: f32) -> ParticleElement {
-    if y >= stone_height {
-        ParticleElement::Stone
-    } else if y >= dirt_height{
-        ParticleElement::Dirt
-    } else {
-        ParticleElement::BedRock
-    }
-}
 
+
+
+
+// Player interaction functions -------------------------------------------------------------------------------
 pub fn build_or_destroy(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
@@ -232,8 +242,6 @@ pub fn build_or_destroy(
     }
 }
 
-
-
 pub fn paint_with_ray(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
@@ -253,7 +261,7 @@ pub fn paint_with_ray(
                 .map(|ray| ray.origin.truncate())
         {
             
-            let p = map.ray(&mut commands, (convert_to_grid_position(pt.translation.x , pt.translation.y)), (convert_to_grid_position(world_position.x, world_position.y)), &[ParticleElement::Water]);
+            let p = map.ray(&mut commands, convert_to_grid_position(pt.translation.x , pt.translation.y), convert_to_grid_position(world_position.x, world_position.y), &[ParticleElement::Water]);
             if let Some(position_of_part) = p {
                 map.insert_at::<BedRockParticle>(&mut commands, position_of_part, ListType::ReplaceAll);
             }
@@ -262,8 +270,10 @@ pub fn paint_with_ray(
 }
 
 
-// once your automata system is complete,
-// you can add it to this plugin and you don't have to touch main.rs
+
+
+
+
 pub struct ParticlePlugin;
 impl Plugin for ParticlePlugin {
     fn build(&self, app: &mut App) {
