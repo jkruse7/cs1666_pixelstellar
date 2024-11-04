@@ -4,8 +4,12 @@ use crate::{entities::particle::components::*, LEVEL_W, LEVEL_H};
 
 pub const PARTICLE_SIZE: f32 = 4.;
 
-pub const REPLACE: bool = true;
-pub const CHECK: bool = false;
+pub enum ListType {
+    ReplaceAll,
+    ReplaceOnlyAir,
+    Whitelist(Vec<ParticleElement>),  // Only replace specific particle types
+    Blacklist(Vec<ParticleElement>),  // Replace any particle except those specified
+}
 
 pub const MIN_X: i32 = ((-LEVEL_W / 2.) / PARTICLE_SIZE) as i32;
 pub const MAX_X: i32 = ((LEVEL_W / 2.) / PARTICLE_SIZE) as i32;
@@ -29,41 +33,50 @@ impl ParticleMap {
             .map(|(_, particle_element)| *particle_element)
             .unwrap_or(ParticleElement::Air)
     }
+    pub fn get_entity_at(&self, pos: (i32, i32)) -> Option<Entity> {
+        self.particle_map.get(&pos).map(|(entity, _)| *entity)
+    }
 
 
-    /* Usage: particle_map.insert_at::<WaterParticle>(REPLACE, &mut commands, (x, y));
-            replace: if true (or REPLACE), will insert particle, replacing what was there before
-                     if false (or CHECK), will check if particle is air before inserting.
-                        if it is air, will insert, otherwise will not do the insert
-        RETURNS TRUE IF REPLACED.
-        RETURNS FALSE IF DIDN'T PLACE
+    /* Usage: particle_map.insert_at::<WaterParticle>(&mut commands, (x, y), &[ParticleElement::Water]);
+        blacklist: this will replace everything EXCEPT ParticleElement::Water.
+                    i.e, blacklist is what can NOT to replace.
+                particle_map.insert_at::<WaterParticle>(&mut commands, (x, y), &[]);
+                    replace anything
     */
-    pub fn insert_at<P: NewParticle + Bundle>(&mut self, replace: bool, commands: &mut Commands, pos: (i32, i32)) -> bool{
-        let is_air_at_pos = self.get_element_at(pos) == ParticleElement::Air;
+
+
+    pub fn insert_at<P: NewParticle + Bundle>(&mut self, commands: &mut Commands, pos: (i32, i32), list_type: ListType) -> bool {
+        let element_at_pos = self.get_element_at(pos);
     
-        if replace || is_air_at_pos {
-            if !is_air_at_pos && replace {    self.delete_at(commands, pos);    }
+        
+        let should_replace = match list_type {
+            ListType::ReplaceAll => true,
+            ListType::ReplaceOnlyAir => element_at_pos == ParticleElement::Air,
+            ListType::Whitelist(ref whitelist) => whitelist.contains(&element_at_pos),
+            ListType::Blacklist(ref blacklist) => !blacklist.contains(&element_at_pos),
+        };
+    
+        if should_replace{
+            // If we need to replace a non-air element, delete it
+            if element_at_pos != ParticleElement::Air {
+                self.delete_at(commands, pos);
+            }
             let particle_instance = P::new(pos.0, pos.1, Vec2::splat(0.));
             let entity = commands.spawn(particle_instance).id();
             let element = P::ELEMENT;
             self.particle_map.insert(pos, (entity, element));
-            return true
+            return true;
         }
+        
         false
     }
+
     
-    pub fn insert_at_with_velocity<P: NewParticle + Bundle>(&mut self, replace: bool, commands: &mut Commands, pos: (i32, i32), vel: Vec2) -> bool{
-        let is_air_at_pos = self.get_element_at(pos) == ParticleElement::Air;
-    
-        if replace || is_air_at_pos {
-            if !is_air_at_pos && replace {    self.delete_at(commands, pos);    }
-            let particle_instance = P::new(pos.0, pos.1, vel);
-            let entity = commands.spawn(particle_instance).id();
-            let element = P::ELEMENT;
-            self.particle_map.insert(pos, (entity, element));
-            return true
+    pub fn give_velocity(&mut self, commands: &mut Commands, pos: (i32, i32), vel: Vec2) {
+        if let Some(entity) = self.get_entity_at(pos) {
+            commands.entity(entity).insert(ParticlePosVel { grid_x: pos.0, grid_y: pos.1, velocity: vel });
         }
-        false
     }
 
     /* Usage: particle_map.delete(&mut commands, (x,y));
