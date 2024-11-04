@@ -110,13 +110,13 @@ fn update_water(
             let new_pos = ((position.grid_x as f32 + position.velocity.x) as i32, (position.grid_y as f32 + position.velocity.y) as i32);
             position.velocity.y = Gravity::update_gravity(&position.velocity.y, &deltat);
 
-            let p = map.ray(&mut commands, (position.grid_x, position.grid_y), new_pos, &[ParticleElement::Air, ParticleElement::Water]);
+            let p = map.ray(&mut commands, (position.grid_x, position.grid_y), new_pos, &[ParticleElement::Air, ParticleElement::Water, ParticleElement::Gas]);
             if let Some(position_of_part) = p {
                 if position_of_part != new_pos{
                     position.velocity = Vec2::splat(0.);
                 }
                 map.delete_at(&mut commands, (position.grid_x, position.grid_y));
-                map.insert_at_with_velocity::<WaterParticle>(CHECK, &mut commands, position_of_part, Vec2::new(position.velocity.x, position.velocity.y));
+                map.insert_at_with_velocity::<WaterParticle>(REPLACE, &mut commands, position_of_part, Vec2::new(position.velocity.x, position.velocity.y));
             }
         } else {
             let (x, y) = (position.grid_x, position.grid_y);
@@ -144,7 +144,14 @@ fn update_gas(
 
         let mut rng = rand::thread_rng();
         let move_r = 2;
-        let decay_rate = 50;
+        let decay_rate = 60;
+        if rng.gen_range(0..decay_rate) == 0 &&
+            map.get_element_at((position.grid_x-10, position.grid_y)) == ParticleElement::Air &&
+            map.get_element_at((position.grid_x, position.grid_y-10)) == ParticleElement::Air &&
+            map.get_element_at((position.grid_x+10, position.grid_y)) == ParticleElement::Air &&
+            map.get_element_at((position.grid_x, position.grid_y+10)) == ParticleElement::Air {
+            map.delete_at(&mut commands, (position.grid_x, position.grid_y));
+        }
         if rng.gen_range(0..=1) == 0{
             let radius: i32 = rng.gen_range(1..=3);
             let center_x = position.grid_x;

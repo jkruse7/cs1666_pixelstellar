@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use crate::{
-    entities::player::components::*,
+    entities::{particle::{components::ParticleElement, resources::ParticleMap, systems::convert_to_grid_position}, player::components::*},
     LEVEL_H, LEVEL_W,
     WIN_H, WIN_W,
 };
@@ -51,11 +51,36 @@ pub fn mouse_coordinates(
     }
 }
 
+
+fn cycle_cursor_icon(
+    camera_query: Query<(&Camera, &GlobalTransform), With<Camera>>,
+    map: ResMut<ParticleMap>,
+    mut windows: Query<&mut Window>,
+    input: Res<ButtonInput<MouseButton>>,
+) {
+
+    let (camera, camera_transform) = camera_query.single();
+    let mut window_cursor = windows.single_mut();
+    if let Some(world_position) = 
+        window_cursor.cursor_position()
+            .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+            .map(|ray| ray.origin.truncate())
+    {
+        let (x, y) = convert_to_grid_position(world_position.x, world_position.y);
+        if map.get_element_at((x, y)) == ParticleElement::Air{
+            window_cursor.cursor.icon = CursorIcon::Crosshair;
+        } else {
+            window_cursor.cursor.icon = CursorIcon::Cell;
+        }
+    }
+}
+
 pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, initialize_camera);
         //app.add_systems(Update, mouse_coordinates);
         app.add_systems(Update, move_camera.after(crate::entities::player::systems::move_player));
+        app.add_systems(Update, cycle_cursor_icon);
     }
 }
