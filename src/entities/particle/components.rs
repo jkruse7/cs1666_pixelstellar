@@ -117,7 +117,7 @@ impl NewParticle for WaterParticle {
         Self {
             sprite: SpriteBundle {
                 sprite: Sprite {
-                    color: Color::srgba_u8(r, g, b, 250),
+                    color: Color::srgba_u8(r, g, b, 150),
                     custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
                     ..default()
                 },

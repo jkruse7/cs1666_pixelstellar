@@ -16,10 +16,16 @@ pub fn initialize(
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
     player: Query<&Transform, With<Player>>,
 ){ 
-    let blaster_sheet_handle = asset_server.load("blaster.png");
-    let blaster_layout = TextureAtlasLayout::from_grid(UVec2::new(19, 11), 1, 1, None, None);
+    let blaster_sheet_handle = asset_server.load("blasters.png");
+    let blaster_layout = TextureAtlasLayout::from_grid(UVec2::new(19, 11), 4, 1, None, None);
     let blaster_layout_handle = texture_atlases.add(blaster_layout);
     let pt = player.single();
+
+
+    commands.insert_resource(BlasterSelection {
+        selected: BlasterType::Water,
+    });
+
     
     commands.spawn((
         SpriteBundle {
@@ -135,4 +141,43 @@ fn get_game_coords( //gets window cursor pos and converts to world position
         return true;
     }
     false
+}
+
+fn change_blaster_sprite(
+    //mut q_blaster: Query<(&Blaster, &mut TextureAtlas), With<Blaster>>,
+    mut texture_atlas: &mut TextureAtlas,
+    blaster_selection: &ResMut<BlasterSelection>,
+) {
+    let blaster_type = &blaster_selection.selected;
+    texture_atlas.index = match blaster_type {
+        BlasterType::Water => 0,
+        BlasterType::Deleter => 1,
+        BlasterType::Gas => 2,
+    };    
+}
+
+pub fn handle_blaster_change_input(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut event_writer: EventWriter<ChangeBlasterEvent>,
+    blaster_selection: Res<BlasterSelection>,
+) {
+    if keyboard_input.just_pressed(KeyCode::Digit1) {
+        event_writer.send(ChangeBlasterEvent { new_blaster_type: BlasterType::Water });
+    } else if keyboard_input.just_pressed(KeyCode::Digit2) {
+        event_writer.send(ChangeBlasterEvent { new_blaster_type: BlasterType::Deleter });
+    } else if keyboard_input.just_pressed(KeyCode::Digit3) {
+        event_writer.send(ChangeBlasterEvent { new_blaster_type: BlasterType::Gas });
+    }
+}
+
+pub fn change_blaster_on_event(
+    mut q_blaster: Query<(&Blaster, &mut TextureAtlas), With<Blaster>>,
+    mut events: EventReader<ChangeBlasterEvent>,
+    mut blaster_selection: ResMut<BlasterSelection>,
+) {
+    let (_, mut texture_atlas) = q_blaster.single_mut();
+    for ev in events.read() {
+        blaster_selection.selected = ev.new_blaster_type;
+        change_blaster_sprite(&mut texture_atlas, &blaster_selection);
+    }
 }
