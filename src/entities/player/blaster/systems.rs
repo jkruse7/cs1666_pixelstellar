@@ -105,7 +105,7 @@ pub fn shoot_blaster(
                     if let Some(world_position) = camera.viewport_to_world(camera_transform, cursor_position) {
                         let mut direction = (world_position.origin.truncate() - blaster_transform.translation.truncate()).normalize() * BLASTER_POWER;
                         let position = (convert_to_grid_position(blaster_transform.translation.x, blaster_transform.translation.y));
-                        map.insert_at::<WaterParticle>(&mut commands, position, ListType::ReplaceOnlyAir);
+                        map.insert_at::<WaterParticle>(&mut commands, position, ListType::OnlyAir);
                         map.give_velocity(&mut commands, position, direction);
                     }
                 }

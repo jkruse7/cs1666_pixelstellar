@@ -5,8 +5,8 @@ use crate::{entities::particle::components::*, LEVEL_W, LEVEL_H};
 pub const PARTICLE_SIZE: f32 = 4.;
 
 pub enum ListType {
-    ReplaceAll,
-    ReplaceOnlyAir,
+    All,
+    OnlyAir,
     Whitelist(Vec<ParticleElement>),  // Only replace specific particle types
     Blacklist(Vec<ParticleElement>),  // Replace any particle except those specified
 }
@@ -58,13 +58,18 @@ impl ParticleMap {
         Replace if particleElement is NOT in list (blacklist). i.e. will replace everything except for air and stone:
             particle_map.insert_at::<WaterParticle>(&mut commands, (x, y), ListType::Blacklist(vec![ParticleElement::Air, ParticleElement::Stone]))
     */
-    pub fn insert_at<P: NewParticle + Bundle>(&mut self, commands: &mut Commands, pos: (i32, i32), list_type: ListType) -> bool {
+    pub fn insert_at<P: NewParticle + Bundle>(&mut self, commands: &mut Commands, pos: (i32, i32), list: ListType) -> bool {
+        // do not spawn particles if they are outside of map. will need to change later with chunks
+        if  (pos.0 < -(LEVEL_W/2.) as i32) || (pos.0 > (LEVEL_W/2.) as i32) ||
+            (pos.1 < -(LEVEL_H/2.) as i32) || (pos.1 > (LEVEL_H/2.) as i32){
+            return false
+        }
         let element_at_pos = self.get_element_at(pos);
     
         
-        let should_replace = match list_type {
-            ListType::ReplaceAll => true,
-            ListType::ReplaceOnlyAir => element_at_pos == ParticleElement::Air,
+        let should_replace = match list {
+            ListType::All => true,
+            ListType::OnlyAir => element_at_pos == ParticleElement::Air,
             ListType::Whitelist(ref whitelist) => whitelist.contains(&element_at_pos),
             ListType::Blacklist(ref blacklist) => !blacklist.contains(&element_at_pos),
         };
@@ -96,18 +101,24 @@ impl ParticleMap {
         }
     }
     
-    /* Returns the first position between start (x0, y0) and end (x1, y1) that is not in ignore. For example
+    /* Returns the first position between start (x0, y0) and end (x1, y1) that is defined by list. For example
 
           start          1            2            3             4            5            6           end
         y   +------------+------------+------------+-----------Stone----------+------------+------------+
 
-            ray(&mut commands, (0,y), (7,y), &[])                               will return (3, y).
-            ray(&mut commands, (0,y), (7,y), &[ParticleElement::Stone])         will return (7, y).
+            ray(&mut commands, (0,y), (7,y), ListType::OnlyAir)
+                will return (3, y).
+            ray(&mut commands, (0,y), (7,y), ListType::WhiteList(vec![ParticleElement::Air, ParticleElement::Stone])         
+                will return (7, y).
+                whitelist says you're allowed to move through Air and through Stone.
+                blacklist is opposite of course. so you can say
+            ray(&mut commands, (0,y), (7,y), ListType::Blacklist(vec![ParticleElement::Stone])
+                only if i hit a particle of type stone do i move towards it
 
             this makes it possible to move a particle from start to end, and getting the first position hit, move to that location.
             you can check that ray(...) != end_position if you just want to detect that nothing was hit
     */
-    pub fn ray(&mut self, commands: &mut Commands, start: (i32, i32), end: (i32, i32), ignore: &[ParticleElement]) -> Option<(i32, i32)> {
+    pub fn ray(&mut self, commands: &mut Commands, start: (i32, i32), end: (i32, i32), list: ListType) -> Option<(i32, i32)> {
         let (mut x0, mut y0) = start;
         let (x1, y1) = end;
     
@@ -126,11 +137,18 @@ impl ParticleMap {
 
         while (x0, y0) != (x1, y1) {
             let element = self.get_element_at((x0, y0));
-            if element != ParticleElement::Air && !ignore.contains(&element){ 
+            let should_hit = match list {
+                ListType::All => true, // Also includes air, i think this is entirely useless here
+                ListType::OnlyAir => element != ParticleElement::Air,
+                ListType::Whitelist(ref whitelist) => !whitelist.contains(&element), // What are you allowed to move through
+                ListType::Blacklist(ref blacklist) => blacklist.contains(&element), // What are you NOT allowed to move through
+            };
+    
+            if should_hit {
                 // returns the spot before a hit
-                return Some(previous)
+                return Some(previous);
                 // returns the location it hit first
-                //return Some((x0, y0)) 
+                // return Some((x0, y0));
             }
     
             previous = (x0, y0);
