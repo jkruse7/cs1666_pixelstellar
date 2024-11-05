@@ -4,7 +4,7 @@ use crate::{
     //particle::resources::*,
     entities::enemy::components::Enemy, 
     entities::player::components::Player,
-    entities::particle::{components::*, resources::*, systems::convert_to_grid_position},
+    entities::particle::{components::*, resources::*},
     WIN_H
 };
 use super::{components::*, resources::{BLASTER_POWER, RECHARGE_RATE}};
@@ -64,7 +64,7 @@ pub fn update_blaster_aim( //this gets window cursor position, not world positio
     let player_transform = q_player.single();
     let mut cursor_pos = Vec2::new(0., 0.);
     let update_aim_vec = get_game_coords(&mut cursor_pos, q_windows, q_camera);
-    info!("Cursor world position: {:?}", cursor_pos);
+    //info!("Cursor world position: {:?}", cursor_pos);
     // info! ("Cursor pos: {}/{}", cursor_pos.x, cursor_pos.y);
     if update_aim_vec {
         let player_pos = player_transform.translation;
@@ -111,7 +111,10 @@ pub fn shoot_blaster(
                     if let Some(cursor_position) = window.cursor_position() {
                         if let Some(world_position) = camera.viewport_to_world(camera_transform, cursor_position) {
                             let mut direction = (world_position.origin.truncate() - blaster_transform.translation.truncate()).normalize() * BLASTER_POWER;
-                            map.insert_at_with_velocity::<WaterParticle>(false, &mut commands, (convert_to_grid_position(blaster_transform.translation.x, blaster_transform.translation.y)), direction);
+                            
+                            let position = (convert_to_grid_position(blaster_transform.translation.x, blaster_transform.translation.y));
+                            map.insert_at::<WaterParticle>(&mut commands, position, ListType::OnlyAir);
+                            map.give_velocity(&mut commands, position, direction);  
                         }
                     }
                 }
@@ -150,7 +153,7 @@ pub fn shoot_blaster(
                         let mut x: f32 = -size * PARTICLE_SIZE;
                         while x < size * PARTICLE_SIZE + 0.1{
                             let position = (((world_position.x+x) / PARTICLE_SIZE) as i32, ((world_position.y+y) / PARTICLE_SIZE) as i32);
-                            map.insert_at::<GasParticle>(false, &mut commands, (position.0, position.1));
+                            map.insert_at::<GasParticle>(&mut commands, (position.0, position.1), ListType::OnlyAir);
                             x += PARTICLE_SIZE;
                         }
                         y += PARTICLE_SIZE;

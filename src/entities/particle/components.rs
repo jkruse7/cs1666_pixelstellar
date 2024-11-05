@@ -29,6 +29,7 @@ pub enum ParticleElement {
     Gas,
     Dirt,
     Stone,
+    Grass,
 }
 
 
@@ -271,6 +272,50 @@ impl NewParticle for StoneParticle {
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
             },
             tag: ParticleTagStone,
+        }
+    }
+}
+
+
+
+
+// Grass ------------------------------------------------------------------------
+#[derive(Component)]
+pub struct ParticleTagGrass;
+#[derive(Bundle)]
+pub struct GrassParticle {
+    sprite: SpriteBundle, 
+    particle: Particle, 
+    tag: ParticleTagGrass,
+}
+impl NewParticle for GrassParticle {
+    const ELEMENT: ParticleElement = ParticleElement::Grass;
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
+        let mut rng = rand::thread_rng();
+        let (r,g, b) = (rng.gen_range(118..=133) as u8, rng.gen_range(220..=230) as u8, rng.gen_range(43..=73) as u8);
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgb_u8(r, g, b),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        0.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosVel::new(x, y, vel),
+                data: ParticleElement::Grass,
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
+            },
+            tag: ParticleTagGrass,
         }
     }
 }

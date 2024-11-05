@@ -48,7 +48,7 @@ pub fn initialize(
         Velocity::new(),
         Health::new(100.0),
         Gravity::new(),
-        Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, Vec2::new(0., 100.)),
+        Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, Vec2::new(0., 110.)),
         Player,
     ));
 }
