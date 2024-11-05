@@ -16,10 +16,16 @@ pub fn initialize(
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
     player: Query<&Transform, With<Player>>,
 ){ 
-    let blaster_sheet_handle = asset_server.load("blaster.png");
-    let blaster_layout = TextureAtlasLayout::from_grid(UVec2::new(19, 11), 1, 1, None, None);
+    let blaster_sheet_handle = asset_server.load("blasters.png");
+    let blaster_layout = TextureAtlasLayout::from_grid(UVec2::new(19, 11), 4, 1, None, None);
     let blaster_layout_handle = texture_atlases.add(blaster_layout);
     let pt = player.single();
+
+
+    commands.insert_resource(BlasterSelection {
+        selected: BlasterType::Water,
+    });
+
     
     commands.spawn((
         SpriteBundle {
@@ -82,6 +88,7 @@ pub fn shoot_blaster(
     camera_query: Query<(&Camera, &GlobalTransform), With<Camera>>,
     buttons: Res<ButtonInput<MouseButton>>,
     mut q_blaster: Query<(&Transform, &BlasterVector, &mut BlasterLastFiredTime), (With<Blaster>, Without<Enemy>, Without<Player>)>,
+    blaster_selection: Res<BlasterSelection>,
 ) {
     let window = window_query.single();
     let (camera, camera_transform) = camera_query.single();
@@ -89,28 +96,72 @@ pub fn shoot_blaster(
     let time_since_last_fired = (time.elapsed_seconds_f64() - blaster_last_fired_time.last_fired) as f32;
 
     if buttons.pressed(MouseButton::Left){
-        if let Some(world_position) = 
-            window.cursor_position()
-                .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
-                .map(|ray| ray.origin.truncate())
-        {
-            let size = 1.;
-            let mut y: f32 = -size * PARTICLE_SIZE;
-
-
-            let mut rng = rand::thread_rng();
-            if time_since_last_fired > RECHARGE_RATE{
-                blaster_last_fired_time.last_fired = time.elapsed_seconds_f64();
-                if let Some(cursor_position) = window.cursor_position() {
-                    if let Some(world_position) = camera.viewport_to_world(camera_transform, cursor_position) {
-                        let mut direction = (world_position.origin.truncate() - blaster_transform.translation.truncate()).normalize() * BLASTER_POWER;
-                        let position = (convert_to_grid_position(blaster_transform.translation.x, blaster_transform.translation.y));
-                        map.insert_at::<WaterParticle>(&mut commands, position, ListType::OnlyAir);
-                        map.give_velocity(&mut commands, position, direction);
+        match blaster_selection.selected {
+            BlasterType::Water => {
+                if let Some(world_position) = 
+                    window.cursor_position()
+                        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+                        .map(|ray| ray.origin.truncate())
+                    {
+                    let size = 1.;
+                    let mut y: f32 = -size * PARTICLE_SIZE;
+    
+                if time_since_last_fired > RECHARGE_RATE{
+                    blaster_last_fired_time.last_fired = time.elapsed_seconds_f64();
+                    if let Some(cursor_position) = window.cursor_position() {
+                        if let Some(world_position) = camera.viewport_to_world(camera_transform, cursor_position) {
+                            let mut direction = (world_position.origin.truncate() - blaster_transform.translation.truncate()).normalize() * BLASTER_POWER;
+                            
+                            let position = (convert_to_grid_position(blaster_transform.translation.x, blaster_transform.translation.y));
+                            map.insert_at::<WaterParticle>(&mut commands, position, ListType::OnlyAir);
+                            map.give_velocity(&mut commands, position, direction);  
+                        }
+                    }
+                }
+                }
+            }
+            BlasterType::Deleter => {
+                
+                if let Some(world_position) = 
+                    window.cursor_position()
+                        .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+                        .map(|ray| ray.origin.truncate())
+                {
+                    let size = 1.;
+                    let mut y: f32 = -size * PARTICLE_SIZE;
+                    while y < size * PARTICLE_SIZE + 0.1{
+                        let mut x: f32 = -size * PARTICLE_SIZE;
+                        while x < size * PARTICLE_SIZE + 0.1{
+                            let position = (((world_position.x+x) / PARTICLE_SIZE) as i32, ((world_position.y+y) / PARTICLE_SIZE) as i32);
+                            map.delete_at(&mut commands, (((world_position.x+x) / PARTICLE_SIZE) as i32, ((world_position.y+y) / PARTICLE_SIZE) as i32));
+                            x += PARTICLE_SIZE;
+                        }
+                        y += PARTICLE_SIZE;
+                    }
+                }
+                
+            }
+            BlasterType::Gas => {
+                if let Some(world_position) = 
+                        window.cursor_position()
+                            .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+                            .map(|ray| ray.origin.truncate())
+                {
+                    let size = 1.;
+                    let mut y: f32 = -size * PARTICLE_SIZE;
+                    while y < size * PARTICLE_SIZE + 0.1{
+                        let mut x: f32 = -size * PARTICLE_SIZE;
+                        while x < size * PARTICLE_SIZE + 0.1{
+                            let position = (((world_position.x+x) / PARTICLE_SIZE) as i32, ((world_position.y+y) / PARTICLE_SIZE) as i32);
+                            map.insert_at::<GasParticle>(&mut commands, (position.0, position.1), ListType::OnlyAir);
+                            x += PARTICLE_SIZE;
+                        }
+                        y += PARTICLE_SIZE;
                     }
                 }
             }
         }
+       
     }
 }
 
@@ -137,4 +188,43 @@ fn get_game_coords( //gets window cursor pos and converts to world position
         return true;
     }
     false
+}
+
+fn change_blaster_sprite(
+    //mut q_blaster: Query<(&Blaster, &mut TextureAtlas), With<Blaster>>,
+    mut texture_atlas: &mut TextureAtlas,
+    blaster_selection: &ResMut<BlasterSelection>,
+) {
+    let blaster_type = &blaster_selection.selected;
+    texture_atlas.index = match blaster_type {
+        BlasterType::Water => 0,
+        BlasterType::Deleter => 1,
+        BlasterType::Gas => 2,
+    };    
+}
+
+pub fn handle_blaster_change_input(
+    keyboard_input: Res<ButtonInput<KeyCode>>,
+    mut event_writer: EventWriter<ChangeBlasterEvent>,
+    blaster_selection: Res<BlasterSelection>,
+) {
+    if keyboard_input.just_pressed(KeyCode::Digit1) {
+        event_writer.send(ChangeBlasterEvent { new_blaster_type: BlasterType::Water });
+    } else if keyboard_input.just_pressed(KeyCode::Digit2) {
+        event_writer.send(ChangeBlasterEvent { new_blaster_type: BlasterType::Deleter });
+    } else if keyboard_input.just_pressed(KeyCode::Digit3) {
+        event_writer.send(ChangeBlasterEvent { new_blaster_type: BlasterType::Gas });
+    }
+}
+
+pub fn change_blaster_on_event(
+    mut q_blaster: Query<(&Blaster, &mut TextureAtlas), With<Blaster>>,
+    mut events: EventReader<ChangeBlasterEvent>,
+    mut blaster_selection: ResMut<BlasterSelection>,
+) {
+    let (_, mut texture_atlas) = q_blaster.single_mut();
+    for ev in events.read() {
+        blaster_selection.selected = ev.new_blaster_type;
+        change_blaster_sprite(&mut texture_atlas, &blaster_selection);
+    }
 }

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use super::{components::*, resources::*, blaster::components::*};
+use super::{blaster::{self, components::*}, components::*, resources::*};
 use crate::{
     common::{
         hitbox::Hitbox,
@@ -208,17 +208,27 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         // Startup events
         app.add_systems(Startup, initialize);
-        app.add_systems(Startup, super::blaster::systems::initialize.after(initialize));
 
-
-        app.add_systems(Update, move_player);
-        
+        // Update events
+        app.add_systems(Update, move_player);   
         app.add_systems(Update, flight.after(super::systems::move_player));
         app.add_systems(Update, animate_player.after(super::systems::move_player));
+        
+        // Blaster systems
+        // Event
+        app.add_event::<super::blaster::components::ChangeBlasterEvent>();
+
+        // Startup events
+        app.add_systems(Startup, super::blaster::systems::initialize.after(initialize));
+        
+        // Update events
         app.add_systems(Update, super::blaster::systems::update_blaster_aim);
         app.add_systems(Update, super::blaster::systems::shoot_blaster);
-        //app.add_systems(Update, super::blaster::systems::shoot_blaster.after(super::blaster::systems::update_blaster_aim));
-
+        app.add_systems(Update, super::blaster::systems::handle_blaster_change_input);
+        app.add_systems(Update, super::blaster::systems::change_blaster_on_event);
+     //   app.add_system(super::blaster::systems::switch_blaster.system());
+      //  app.add_system(super::blaster::systems::handle_blaster_switch.system());
+        
 
     }
 } 
