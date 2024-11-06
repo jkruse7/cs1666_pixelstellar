@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use super::{components::*, resources::*, blaster::components::*};
+use super::{blaster::{self, components::*}, components::*, resources::*};
 use crate::{
     common::{
         hitbox::Hitbox,
@@ -49,7 +49,7 @@ pub fn initialize(
         Velocity::new(),
         Health::new(100.0),
         Gravity::new(),
-        Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, Vec2::new(0., 100.)),
+        Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, Vec2::new(0., 110.)),
         Player,
     ));
 }
@@ -68,13 +68,17 @@ pub fn move_player(
     let mut bt = blaster_transform.single_mut();
 
     if input.pressed(KeyCode::KeyA) {
-        deltav_x -= 1.;
-        ps.flip_x = true;
+        if (pt.translation.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.){
+            deltav_x -= 1.;
+            ps.flip_x = true;
+        }
     }
 
     if input.pressed(KeyCode::KeyD) {
-        deltav_x += 1.;
-        ps.flip_x = false;
+        if pt.translation.x <= LEVEL_W - (LEVEL_W / 2. + (SPRITE_WIDTH as f32) / 2.){
+            deltav_x += 1.;
+            ps.flip_x = false;
+        }
     }
     let deltat = time.delta_seconds();
     let acc_x = ACCEL_RATE_X * deltat;
@@ -204,6 +208,7 @@ pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         // Startup events
+<<<<<<< HEAD
         app.add_systems(OnEnter(GameState::Level1), initialize);
         app.add_systems(OnEnter(GameState::Level1), super::blaster::systems::initialize);
 
@@ -214,7 +219,24 @@ impl Plugin for PlayerPlugin {
         app.add_systems(Update, animate_player.after(super::systems::move_player).run_if(in_state(GameState::Level1)));
         app.add_systems(Update, super::blaster::systems::update_blaster_aim.run_if(in_state(GameState::Level1)));
         //app.add_systems(Update, super::blaster::systems::shoot_blaster.after(super::blaster::systems::update_blaster_aim));
+=======
+        app.add_systems(Startup, initialize);
+        // Blaster systems
+        // Event
+        app.add_event::<super::blaster::components::ChangeBlasterEvent>();
+>>>>>>> b1b14119116ab00ee830bde1a10b47ee8766160a
 
+        // Startup events
+        app.add_systems(Startup, super::blaster::systems::initialize.after(initialize));
+        
+        // Update events
+        app.add_systems(Update, super::blaster::systems::update_blaster_aim);
+        app.add_systems(Update, super::blaster::systems::shoot_blaster);
+        app.add_systems(Update, super::blaster::systems::handle_blaster_change_input);
+        app.add_systems(Update, super::blaster::systems::change_blaster_on_event);
+     //   app.add_system(super::blaster::systems::switch_blaster.system());
+      //  app.add_system(super::blaster::systems::handle_blaster_switch.system());
+        
 
     }
 } 

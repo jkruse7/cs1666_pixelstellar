@@ -1,3 +1,6 @@
+#![allow(unused_variables)]
+
+
 use bevy::{prelude::*, window::PresentMode};
 
 mod common;
@@ -11,12 +14,7 @@ const WIN_H: f32 = 720.;
 const LEVEL_W: f32 = WIN_W * 3.0;
 const LEVEL_H: f32 = WIN_H * 2.0;
 
-#[derive(States, Default, Debug, Clone, Copy, PartialEq, Eq, Hash)]
-enum GameState {
-    #[default]
-    MainMenu,
-    Level1,
-}
+
 
 fn main() {
     App::new()

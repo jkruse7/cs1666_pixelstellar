@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
-use crate::entities::particle::components::ParticleData;
+use crate::entities::particle::components::ParticleElement;
+use crate::entities::particle::resources::convert_to_grid_position;
 use crate::entities::particle::systems::*;
 
 use crate::{
@@ -89,7 +90,7 @@ impl Hitbox {
         let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
         for x in top_left_x..=bottom_right_x {
             for y in bottom_right_y..=top_left_y {
-                if map.get(x, y) == ParticleData::Water {
+                if map.get_element_at((x, y)) == ParticleElement::Water {
                     return true;
                 }
             }   
@@ -103,7 +104,7 @@ impl Hitbox {
         let mut no_count = 0;
         for x in top_left_x..=bottom_right_x {
             for y in bottom_right_y..=top_left_y {
-                if map.get(x, y) == ParticleData::Water {
+                if map.get_element_at((x, y)) == ParticleElement::Water {
                     count+=1;
                 }
                 else {
