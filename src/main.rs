@@ -5,6 +5,7 @@ use bevy::{prelude::*, window::PresentMode};
 
 mod common;
 mod entities;
+mod planets;
 
 
 // Game constants
@@ -29,6 +30,9 @@ fn main() {
         .add_plugins(entities::particle::systems::ParticlePlugin)
         .add_plugins(entities::enemy::systems::EnemyPlugin)
         .add_plugins(entities::player::systems::PlayerPlugin)
+
+        // Planet plugins
+        .add_plugins(planets::planet0::Planet0Plugin)
 
 
         .add_plugins(DefaultPlugins.set(WindowPlugin {
