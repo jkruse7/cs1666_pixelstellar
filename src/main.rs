@@ -2,7 +2,7 @@
 
 
 use bevy::{prelude::*, window::PresentMode};
-
+use crate::common::state;
 mod common;
 mod entities;
 
@@ -30,9 +30,7 @@ fn main() {
         .add_plugins(entities::particle::systems::ParticlePlugin)
         .add_plugins(entities::enemy::systems::EnemyPlugin)
         .add_plugins(entities::player::systems::PlayerPlugin)
-        
-        .add_systems(OnEnter(GameState::MainMenu), log_state_change)
-        .add_systems(OnEnter(GameState::Level1), log_state_change)
+        .add_plugins(common::death::DeathPlugin)
 
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {
@@ -43,10 +41,7 @@ fn main() {
             }),
             ..default()
         }))
-        .init_state::<GameState>()
+        .init_state::<state::AppState>()
+        .add_sub_state::<state::GamePhase>()
         .run();
-}
-
-fn log_state_change(state: Res<State<GameState>>) {
-    info!("Just moved to {:?}!", state.get());
 }

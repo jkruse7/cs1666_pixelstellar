@@ -3,7 +3,7 @@ use crate::{
     entities::player::components::*,
     LEVEL_H, LEVEL_W,
     WIN_H, WIN_W,
-    GameState,
+    common::state::AppState,
 };
 
 const THRESHOLD_X: f32 = 160.;
@@ -57,6 +57,6 @@ impl Plugin for CameraPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, initialize_camera);
         //app.add_systems(Update, mouse_coordinates);
-        app.add_systems(Update, move_camera.after(crate::entities::player::systems::move_player).run_if(in_state(GameState::Level1)));
+        app.add_systems(Update, move_camera.after(crate::entities::player::systems::move_player).run_if(in_state(AppState::InGame)));
     }
 }

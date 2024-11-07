@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 //use crate::engine::update_state::AppState;
-use crate::GameState;
+use crate::common::state::AppState;
 
 // 定义菜单按钮和操作
 #[derive(Component)]
@@ -225,13 +225,13 @@ fn button_system(
         (Changed<Interaction>, With<Button>),
     >,
     mut text_query: Query<&mut Text>,
-    mut next_state: ResMut<NextState<GameState>>,
+    mut next_state: ResMut<NextState<AppState>>,
 ) {
     for (interaction, mut color, mut border_color, children) in &mut interaction_query {
         let mut text = text_query.get_mut(children[0]).unwrap();
         match *interaction {
             Interaction::Pressed => {
-                next_state.set(GameState::Level1);
+                next_state.set(AppState::InGame);
             }
             Interaction::Hovered => {
                 text.sections[0].value = "Hover".to_string();
@@ -239,9 +239,9 @@ fn button_system(
                 border_color.0 = Color::WHITE;
             }
             Interaction::None => {
-                text.sections[0].value = "Button".to_string();
+                text.sections[0].value = "Test".to_string();
                 *color = NORMAL_BUTTON.into();
-                border_color.0 = Color::BLACK;
+                border_color.0 = Color::WHITE;
             }
         }
     }
@@ -304,10 +304,10 @@ pub fn despawn_menu(
 pub struct MenuPlugin;
 impl Plugin for MenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::MainMenu), setup)
-        .add_systems(Update, button_system.run_if(in_state(GameState::MainMenu)))
+        app.add_systems(OnEnter(AppState::Menu), setup)
+        .add_systems(Update, button_system.run_if(in_state(AppState::Menu)))
         .add_systems(
-            OnExit(GameState::MainMenu), despawn_menu);
+            OnExit(AppState::Menu), despawn_menu);
 
     }
 }

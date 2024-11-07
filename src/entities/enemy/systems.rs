@@ -3,6 +3,8 @@ use crate::{
     common::{
         hitbox::Hitbox,
         gravity::Gravity,
+        state::AppState,
+        death::Death,
     },
     entities::{
         particle::resources::ParticleMap,
@@ -13,7 +15,6 @@ use crate::{
     LEVEL_H,
     LEVEL_W,
     WIN_W,
-    GameState,
 };
 use super::{
     components::*,
@@ -165,7 +166,8 @@ pub fn track_player(
     mut player: Query<(&mut Transform, &mut Health), (With<Player>, Without<Enemy>)>,
     hitboxes: Query<&Hitbox, Without<Enemy>>, 
     mut player_hitbox: Query<&Hitbox, (With<Player>, Without<Enemy>)>,
-    mut camera: Query<&mut Transform, (Without<Player>, Without<Enemy>, With<Camera>)>
+    mut camera: Query<&mut Transform, (Without<Player>, Without<Enemy>, With<Camera>)>,
+    mut death_event: EventWriter<Death>,
 ){
     //get enemy, player and camera
     for (mut et, mut ev, mut es, mut ehb, mut timer, mut e_jump) in &mut enemy{
@@ -214,8 +216,13 @@ pub fn track_player(
     let mut no_jump = false;
     if player_hb.collides_with(&new_hb) {
         no_jump = true;
-        player_health.current -= 1.; 
+        player_health.current -= 1.;
         //info!("Player hit! Current health: {:?}", player_health.current); // 记录伤害
+        info!("we jurt {}", player_health.current);
+        if player_health.current == 0.{
+            info!("we have found death");
+            death_event.send(Death);
+        }
     }
     if new_pos.x >= -(WIN_W / 2.) + (SPRITE_WIDTH as f32) / 2.
         && new_pos.x <= LEVEL_W - (WIN_W / 2. + (SPRITE_WIDTH as f32) / 2.)
@@ -255,10 +262,10 @@ pub fn check_enemy_death(
 pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(GameState::Level1), initialize)
-        .add_systems(Update, enemy_gravity.after(track_player).run_if(in_state(GameState::Level1)))
-        .add_systems(Update, track_player.run_if(in_state(GameState::Level1)))
-        .add_systems(Update, animate_enemy.after(track_player).run_if(in_state(GameState::Level1)))
-        .add_systems(Update, check_enemy_death.run_if(in_state(GameState::Level1)));
+        app.add_systems(OnEnter(AppState::InGame), initialize)
+        .add_systems(Update, enemy_gravity.after(track_player).run_if(in_state(AppState::InGame)))
+        .add_systems(Update, track_player.run_if(in_state(AppState::InGame)))
+        .add_systems(Update, animate_enemy.after(track_player).run_if(in_state(AppState::InGame)))
+        .add_systems(Update, check_enemy_death.run_if(in_state(AppState::InGame)));
     }
 }

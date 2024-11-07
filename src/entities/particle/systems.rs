@@ -1,8 +1,7 @@
 use bevy::prelude::*;
 use rand::Rng;
-use crate::GameState;
 use super::{components::*, resources::*};
-use crate::common::{gravity::Gravity, perlin_noise::{generate_permutation_array, get_1d_octaves, get_2d_octaves}};
+use crate::common::{gravity::Gravity, perlin_noise::{generate_permutation_array, get_1d_octaves, get_2d_octaves}, state::GamePhase};
 use crate::entities::player::components::Player;
 use crate::{LEVEL_W, LEVEL_H};
 
@@ -289,15 +288,15 @@ impl Plugin for ParticlePlugin {
     fn build(&self, app: &mut App) {
         // Startup placements
         app.insert_resource(ParticleMap::new());
-        app.add_systems(Startup, draw_solid);
-        app.add_systems(Startup, update_grass.after(draw_solid));
+        app.add_systems(OnEnter(GamePhase::Level1), draw_solid);
+        app.add_systems(OnEnter(GamePhase::Level1), update_grass.after(draw_solid));
 
         // Updates i.e. all automata goes here
         //app.add_systems(Update, draw_rain);
-        app.add_systems(Update, update_water.after(crate::entities::player::blaster::systems::shoot_blaster));
-        app.add_systems(Update, update_gas);
+        app.add_systems(Update, update_water.after(crate::entities::player::blaster::systems::shoot_blaster).run_if(in_state(GamePhase::Level1)));
+        app.add_systems(Update, update_gas.run_if(in_state(GamePhase::Level1)));
         
         //app.add_systems(Update, paint_with_ray.after(update_water));
-        app.add_systems(Update, build_or_destroy.after(update_water));
+        app.add_systems(Update, build_or_destroy.after(update_water).run_if(in_state(GamePhase::Level1)));
     }
 } 
