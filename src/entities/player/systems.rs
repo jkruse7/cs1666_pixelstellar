@@ -51,6 +51,10 @@ pub fn initialize(
         Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, Vec2::new(0., 110.)),
         Player,
     ));
+
+    commands.insert_resource(PlayerRatioWaterParticles{
+        number: 0.0,
+    });
 }
 
 pub fn move_player(
@@ -84,10 +88,10 @@ pub fn move_player(
 
     if deltav_x != 0. {
         if pv.velocity.y >= 0. {
-            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED, PLAYER_SPEED);
+            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_MAX_SPEED, PLAYER_MAX_SPEED);
         }
         else {
-            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED * 0.5, PLAYER_SPEED * 0.5);
+            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_MAX_SPEED * 0.5, PLAYER_MAX_SPEED * 0.5);
         }
     } else if pv.velocity.x.abs() > acc_x {
         pv.velocity.x -= pv.velocity.x.signum() * acc_x;
@@ -129,6 +133,7 @@ pub fn flight(
     hitboxes: Query<&Hitbox, Without<Player>>,
     mut blaster_transform: Query<&mut Transform, (With<Blaster>, Without<Enemy>, Without<Player>)>,
     map: ResMut<ParticleMap>,
+    mut player_ratio_water_particles: ResMut<PlayerRatioWaterParticles>,
 ) {
     let (mut pt, mut pv, mut pg, mut hb) = player.single_mut();
     let mut bt = blaster_transform.single_mut();
@@ -176,6 +181,11 @@ pub fn flight(
         pv.velocity.y = 0.;
     }
     //assumes the player is a square and pt.translation is the lower-left corner
+
+    //update number of water particles the player is in
+
+    player_ratio_water_particles.number = water_splash(&mut player_ratio_water_particles, &hb, &map, &pv);
+
 }
 
 pub fn animate_player(
@@ -202,6 +212,22 @@ pub fn animate_player(
     }
 }
 
+fn water_splash(player_ratio_water_particles: &mut ResMut<PlayerRatioWaterParticles>, hb: &Hitbox, map: &ResMut<ParticleMap>, pv: &Velocity) -> f32 {
+    let new_ratio = hb.ratio_of_water_grid_tiles(&map);
+    if new_ratio / player_ratio_water_particles.number > SPLASH_THRESHOLD {
+        let num_water_particles_occupied = hb.number_of_water_grid_tiles_colliding(&map);
+        let num_water_particles_to_splash = ((new_ratio - player_ratio_water_particles.number) * num_water_particles_occupied as f32 * pv.velocity.length() / PLAYER_MAX_SPEED as f32) as i32;
+        info!("Number of water particles to splash: {}", num_water_particles_to_splash);
+
+        if num_water_particles_to_splash > 0 {
+            // Actually splash the water particles
+            let mut rng = rand::thread_rng();
+            
+        }
+    }
+
+    new_ratio
+}
 
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {

@@ -121,4 +121,17 @@ impl Hitbox {
         let bottom_right_grid_pos = convert_to_grid_position(self.offset.x + self.width / 2.0, self.offset.y - self.height / 2.0);
         (top_left_grid_pos.0, top_left_grid_pos.1, bottom_right_grid_pos.0, bottom_right_grid_pos.1)
     }
+
+    pub fn number_of_water_grid_tiles_colliding(&self, map: &ResMut<ParticleMap>) -> i32 {
+        let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
+        let mut count = 0;
+        for x in top_left_x..=bottom_right_x {
+            for y in bottom_right_y..=top_left_y {
+                if map.get_element_at((x, y)) == ParticleElement::Water {
+                    count+=1;
+                }
+            }   
+        }
+        count
+    }
 }
