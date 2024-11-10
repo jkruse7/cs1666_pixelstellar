@@ -2,7 +2,6 @@ use bevy::prelude::*;
 use bevy::utils::HashMap;
 use bevy::ecs::system::SystemId;
 
-
 use crate::entities::player::systems::initialize as player_initialize;
 use crate::entities::player::components::Player;
 use crate::entities::enemy::components::Enemy;
