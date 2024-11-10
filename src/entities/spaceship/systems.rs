@@ -8,10 +8,6 @@ use crate::{
         state::{AppState, GamePhase},
     },
     common::state::set_next_state,
-    entities::particle::resources::ParticleMap,
-    entities::enemy::components::Enemy,
-    entities::player::components::Player,
-    entities::particle::components::ParticleElement,
     LEVEL_H,
     LEVEL_W,
     WIN_W,
@@ -94,11 +90,10 @@ pub fn spaceship_gravity(
 fn found_spaceship_event_listener(
     mut ship_event: EventReader<FoundSpaceship>,
     //mut next_state: ResMut<NextState<GameState>>,
-    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
     state: Res<State<GamePhase>>,
-    mut next_phase: ResMut<NextState<GamePhase>>,
-    mut next_app_state: ResMut<NextState<AppState>>,
-
+    next_phase: ResMut<NextState<GamePhase>>,
+    next_app_state: ResMut<NextState<AppState>>,
+    
 ) {
     if !ship_event.is_empty() {
         info!("player found ship!");
@@ -108,10 +103,12 @@ fn found_spaceship_event_listener(
     }
 }
 
+
 pub struct SpaceshipPlugin;
 impl Plugin for SpaceshipPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(AppState::InGame), initialize)
+        .add_systems(OnEnter(GamePhase::Level2), initialize)
         //app.add_systems(PreUpdate,  initialize.run_if(state_changed::<GamePhase>))
         .add_systems(Update, spaceship_gravity.run_if(in_state(AppState::InGame)))
         .add_systems(Update, found_spaceship_event_listener.run_if(in_state(AppState::InGame)))

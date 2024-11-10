@@ -5,7 +5,6 @@ use crate::{
         hitbox::Hitbox,
         gravity::Gravity,
         state::{AppState, GamePhase},
-        death::Death,
     },
     entities::particle::resources::ParticleMap,
     entities::enemy::components::Enemy,
@@ -70,7 +69,7 @@ pub fn move_player(
     let mut spaceship_hb = spaceship_hitbox.single_mut();
 
     if input.pressed(KeyCode::KeyA) {
-        if (pt.translation.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.){
+        if pt.translation.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.{
             deltav_x -= 1.;
             ps.flip_x = true;
         }
@@ -213,9 +212,12 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         // Startup events
         app.add_systems(OnEnter(AppState::InGame), initialize);
+        app.add_systems(OnEnter(GamePhase::Level2), initialize);
        // app.add_systems(PreUpdate,  initialize.run_if(state_changed::<GamePhase>));
         app.add_event::<super::blaster::components::ChangeBlasterEvent>();
         app.add_systems(OnEnter(AppState::InGame), super::blaster::systems::initialize.after(initialize));
+        app.add_systems(OnEnter(GamePhase::Level2), super::blaster::systems::initialize.after(initialize));
+
 
         app.add_systems(Update, move_player.run_if(in_state(AppState::InGame)));
         

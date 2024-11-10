@@ -17,10 +17,8 @@ struct MyItemSystems(HashMap<String, SystemId>);
 fn death_event_listener(
     mut death_event: EventReader<Death>,
     //mut next_state: ResMut<NextState<GameState>>,
-    query: Query<(Entity), Or<(With<Player>, With<Enemy>)>>,
+    query: Query<Entity, Or<(With<Player>, With<Enemy>)>>,
     mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
     systems: Res<MyItemSystems>,
 
 
@@ -29,7 +27,7 @@ fn death_event_listener(
 
         info!("player died");
         // We need to reset the level. Re-initialize Player, Enemies, and Camera. The particles will stay the same
-        for (entity) in query.iter() {
+        for entity in query.iter() {
             commands.entity(entity).despawn();
         }
         commands.run_system(systems.0["player_init"]);

@@ -1,15 +1,11 @@
 use bevy::{
-    diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin},
     
-    app::{App, Startup,AppExit},
+    app::{App, Startup,},
     asset::AssetServer,
-    core_pipeline::core_2d::Camera2dBundle,
     ecs::system::{Commands, Res},
     sprite::SpriteBundle,
     utils::default,
-
-    DefaultPlugins,
-    window::{CursorGrabMode, PresentMode},
+    window::{CursorGrabMode},
     prelude::*,
 };
 
@@ -146,7 +142,7 @@ impl Plugin for EndCreditsPlugin {
         app.init_resource::<Counter>()
         .init_resource::<ImageAssets>()
         .add_systems(Update, (countdown, switch_image).run_if(in_state(AppState::EndCredits)))
-        .add_systems(Startup, (preload_assets))
+        .add_systems(Startup, preload_assets)
         .add_systems(
             Update,
             (change_title, toggle_cursor, cycle_cursor_icon).run_if(in_state(AppState::EndCredits)),

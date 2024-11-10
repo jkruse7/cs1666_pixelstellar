@@ -54,15 +54,12 @@ pub fn set_next_state(
 
 fn clear_level(
     mut commands: Commands,
-    query: Query<(Entity), Or<(With<Player>, With<Enemy>, With<Background>, With<ParticleElement>, With<HealthBar>, With<Blaster>, With<Spaceship>)>>,
-    systems: Res<MyItemSystems>,
+    query: Query<Entity, Or<(With<Player>, With<Enemy>, With<Background>, With<ParticleElement>, With<HealthBar>, With<Blaster>, With<Spaceship>)>>,
 
 ){
-    for (entity) in query.iter() {
+    for entity in query.iter() {
         commands.entity(entity).despawn();
     }
-    commands.run_system(systems.0["player_init"]);
-    commands.run_system(systems.0["enemy_init"]);
 }
 
 fn test(){
@@ -72,7 +69,7 @@ fn test(){
 pub struct StatePlugin;
 impl Plugin for StatePlugin {
     fn build(&self, app: &mut App) {
-        //app.add_systems(Update,  clear_level.run_if(state_changed::<GamePhase>));
+        app.add_systems(OnExit(GamePhase::Level1),  clear_level);
 
         let mut my_item_systems = MyItemSystems(HashMap::new());
 
