@@ -131,8 +131,8 @@ fn update_water(
                 map.give_velocity(&mut commands, position_of_part, Vec2::new(position.velocity.x, position.velocity.y), );
             }
         } else {
-            // rudimentary viscosity. needs some changes
-            let viscosity = rng.gen_range(0..=60) == 0;
+            let mut rng = rand::thread_rng();
+            let viscosity = rng.gen::<f64>() < WATER_VISCOSITY as f64;
                 let (x, y) = (position.grid_x, position.grid_y);
                 if map.insert_at::<WaterParticle>(&mut commands, (x, y-1), ListType::OnlyAir) {
                     map.delete_at(&mut commands, (x, y));
@@ -297,6 +297,6 @@ impl Plugin for ParticlePlugin {
         app.add_systems(Update, update_gas.run_if(in_state(GamePhase::Level1)));
         
         //app.add_systems(Update, paint_with_ray.after(update_water));
-        app.add_systems(Update, build_or_destroy.after(update_water).run_if(in_state(GamePhase::Level1)));
+        //app.add_systems(Update, build_or_destroy.after(update_water));
     }
 } 
