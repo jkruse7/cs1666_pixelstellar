@@ -26,6 +26,7 @@ fn death_event_listener(
 
 ) {
     if !death_event.is_empty() {
+
         info!("player died");
         // We need to reset the level. Re-initialize Player, Enemies, and Camera. The particles will stay the same
         for (entity) in query.iter() {

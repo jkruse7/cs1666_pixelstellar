@@ -21,6 +21,7 @@ fn main() {
         // Resources which will be accessible throughout the game
         .insert_resource(ClearColor(Color::srgb_u8(0, 0, 0)))
         // UI Plugins
+        .add_plugins(common::state::StatePlugin)
         .add_plugins(common::menu::MenuPlugin)
         .add_plugins(common::ui::camera::CameraPlugin)
         .add_plugins(common::ui::background::BackgroundPlugin)
@@ -31,6 +32,10 @@ fn main() {
         .add_plugins(entities::enemy::systems::EnemyPlugin)
         .add_plugins(entities::player::systems::PlayerPlugin)
         .add_plugins(common::death::DeathPlugin)
+        .add_plugins(entities::spaceship::systems::SpaceshipPlugin)
+        .add_plugins(common::win::WinPlugin)
+        .add_plugins(common::end_credits::EndCreditsPlugin)
+        
 
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {

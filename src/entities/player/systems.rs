@@ -4,11 +4,12 @@ use crate::{
     common::{
         hitbox::Hitbox,
         gravity::Gravity,
-        state::AppState,
+        state::{AppState, GamePhase},
         death::Death,
     },
     entities::particle::resources::ParticleMap,
     entities::enemy::components::Enemy,
+    entities::spaceship::components::{Spaceship, FoundSpaceship},
     LEVEL_H,
     LEVEL_W,
 };
@@ -58,14 +59,15 @@ pub fn move_player(
     input: Res<ButtonInput<KeyCode>>,
     mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut Health), With<Player>>,
     hitboxes: Query<&Hitbox, Without<Player>>,
-    enemy_hitboxes: Query<&Hitbox, (With<Enemy>, Without<Player>)>,
     mut blaster_transform: Query<&mut Transform, (With<Blaster>, Without<Enemy>, Without<Player>)>,
     map: ResMut<ParticleMap>,
-    mut death_event: EventWriter<Death>,
+    mut spaceship_hitbox: Query<&Hitbox, (With<Spaceship>, Without<Player>)>,
+    mut ship_event: EventWriter<FoundSpaceship>
 ) {
     let (mut pt, mut pv, mut ps, mut hb, mut player_health) = player.single_mut();
     let mut deltav_x = 0.;
     let mut bt = blaster_transform.single_mut();
+    let mut spaceship_hb = spaceship_hitbox.single_mut();
 
     if input.pressed(KeyCode::KeyA) {
         if (pt.translation.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.){
@@ -106,6 +108,9 @@ pub fn move_player(
     let new_pos = pt.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
 
+    if new_hb.collides_with(&spaceship_hb){
+        ship_event.send(FoundSpaceship);
+    }
     
     if new_pos.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.
         && new_pos.x <= LEVEL_W - (LEVEL_W / 2. + (SPRITE_WIDTH as f32) / 2.)
@@ -200,30 +205,15 @@ pub fn animate_player(
     }
 }
 
-pub fn check_player_health(
-    mut player: Query<(&mut Hitbox, &mut Health), With<Player>>,
-    enemy_hitboxes: Query<&Hitbox, (With<Enemy>, Without<Player>)>,
-    mut death_event: EventWriter<Death>,
-){
-    let (mut hb, mut player_health) = player.single_mut();
-    if hb.player_enemy_collision(&enemy_hitboxes){
-        player_health.current -= 1.;
-        //info!("Player hit! Current health: {:?}", player_health.current); // 记录伤害
-        info!("we jurt {}", player_health.current);
-        if player_health.current == 0.{
-            info!("we have found death");
-            death_event.send(Death);
-        }
 
-    }
-}
+
 
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         // Startup events
         app.add_systems(OnEnter(AppState::InGame), initialize);
-        
+       // app.add_systems(PreUpdate,  initialize.run_if(state_changed::<GamePhase>));
         app.add_event::<super::blaster::components::ChangeBlasterEvent>();
         app.add_systems(OnEnter(AppState::InGame), super::blaster::systems::initialize.after(initialize));
 
@@ -235,7 +225,6 @@ impl Plugin for PlayerPlugin {
         app.add_systems(Update, super::blaster::systems::shoot_blaster.run_if(in_state(AppState::InGame)));
         app.add_systems(Update, super::blaster::systems::handle_blaster_change_input.run_if(in_state(AppState::InGame)));
         app.add_systems(Update, super::blaster::systems::change_blaster_on_event.run_if(in_state(AppState::InGame)));
-        app.add_systems(Update, check_player_health.run_if(in_state(AppState::InGame)));
      //   app.add_system(super::blaster::systems::switch_blaster.system());
       //  app.add_system(super::blaster::systems::handle_blaster_switch.system());
         

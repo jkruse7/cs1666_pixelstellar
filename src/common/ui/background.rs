@@ -4,7 +4,7 @@ use crate::{LEVEL_H, LEVEL_W,};
 const BG_TILE_SIZE: u32 = 150;
 
 #[derive(Component)]
-struct Background;
+pub struct Background;
 
 pub fn initialize_background (
     mut commands: Commands,

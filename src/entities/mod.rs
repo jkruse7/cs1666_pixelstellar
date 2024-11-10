@@ -3,3 +3,4 @@
 pub mod enemy;
 pub mod particle;
 pub mod player;
+pub mod spaceship;

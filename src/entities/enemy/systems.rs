@@ -3,7 +3,7 @@ use crate::{
     common::{
         hitbox::Hitbox,
         gravity::Gravity,
-        state::AppState,
+        state::{AppState, GamePhase},
         death::Death,
     },
     entities::{
@@ -218,9 +218,7 @@ pub fn track_player(
         no_jump = true;
         player_health.current -= 1.;
         //info!("Player hit! Current health: {:?}", player_health.current); // 记录伤害
-        info!("we jurt {}", player_health.current);
         if player_health.current == 0.{
-            info!("we have found death");
             death_event.send(Death);
         }
     }
@@ -263,6 +261,7 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(AppState::InGame), initialize)
+        //app.add_systems(PreUpdate,  initialize.run_if(state_changed::<GamePhase>))
         .add_systems(Update, enemy_gravity.after(track_player).run_if(in_state(AppState::InGame)))
         .add_systems(Update, track_player.run_if(in_state(AppState::InGame)))
         .add_systems(Update, animate_enemy.after(track_player).run_if(in_state(AppState::InGame)))

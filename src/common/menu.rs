@@ -226,20 +226,27 @@ fn button_system(
     >,
     mut text_query: Query<&mut Text>,
     mut next_state: ResMut<NextState<AppState>>,
+    current_state: Res<State<AppState>>,
+
 ) {
     for (interaction, mut color, mut border_color, children) in &mut interaction_query {
         let mut text = text_query.get_mut(children[0]).unwrap();
         match *interaction {
             Interaction::Pressed => {
-                next_state.set(AppState::InGame);
+                if *current_state.get()==AppState::Menu{
+                    next_state.set(AppState::InGame);}
+                if *current_state.get()==AppState::WinScreen{
+                    next_state.set(AppState::EndCredits); }               
             }
             Interaction::Hovered => {
-                text.sections[0].value = "Hover".to_string();
                 *color = HOVERED_BUTTON.into();
                 border_color.0 = Color::WHITE;
             }
             Interaction::None => {
-                text.sections[0].value = "Test".to_string();
+                if *current_state.get()==AppState::Menu{
+                    text.sections[0].value = "Play".to_string();}
+                if *current_state.get()==AppState::WinScreen{
+                        text.sections[0].value = "Credits".to_string();}
                 *color = NORMAL_BUTTON.into();
                 border_color.0 = Color::WHITE;
             }
@@ -263,7 +270,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
             parent
                 .spawn((ButtonBundle {
                     style: Style {
-                        width: Val::Px(150.0),
+                        width: Val::Px(175.0),
                         height: Val::Px(65.0),
                         border: UiRect::all(Val::Px(5.0)),
                         // horizontally center child text
@@ -281,7 +288,7 @@ fn setup(mut commands: Commands, asset_server: Res<AssetServer>) {
                     parent.spawn((TextBundle::from_section(
                         "Button",
                         TextStyle {
-                            font: asset_server.load("fonts/FiraSans-Bold.ttf"),
+                            font: asset_server.load("fonts/Silkscreen-Bold.ttf"),
                             font_size: 40.0,
                             color: Color::srgb(0.9, 0.9, 0.9),
                         },
@@ -308,6 +315,10 @@ impl Plugin for MenuPlugin {
         .add_systems(Update, button_system.run_if(in_state(AppState::Menu)))
         .add_systems(
             OnExit(AppState::Menu), despawn_menu);
+        app.add_systems(OnEnter(AppState::WinScreen), setup)
+        .add_systems(Update, button_system.run_if(in_state(AppState::WinScreen)))
+        .add_systems(
+            OnExit(AppState::WinScreen), despawn_menu);
 
     }
 }

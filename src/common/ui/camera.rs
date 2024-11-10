@@ -51,6 +51,14 @@ pub fn mouse_coordinates(
         info!("World coords: {}/{}", world_position.x, world_position.y);
     }
 }
+pub fn reset_camera(
+    mut camera: Query<&mut Transform, (Without<Player>, With<Camera>)>
+){
+    let mut ct = camera.single_mut();
+    ct.translation.x = 0.;
+    ct.translation.y = 0.;
+
+}
 
 pub struct CameraPlugin;
 impl Plugin for CameraPlugin {
@@ -58,5 +66,6 @@ impl Plugin for CameraPlugin {
         app.add_systems(Startup, initialize_camera);
         //app.add_systems(Update, mouse_coordinates);
         app.add_systems(Update, move_camera.after(crate::entities::player::systems::move_player).run_if(in_state(AppState::InGame)));
+        app.add_systems(OnEnter(AppState::WinScreen), reset_camera);
     }
 }

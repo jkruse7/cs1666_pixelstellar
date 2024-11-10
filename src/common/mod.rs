@@ -5,3 +5,5 @@ pub mod ui;
 pub mod menu;
 pub mod state;
 pub mod death;
+pub mod win;
+pub mod end_credits;
