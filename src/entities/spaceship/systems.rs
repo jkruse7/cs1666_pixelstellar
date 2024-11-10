@@ -20,7 +20,7 @@ pub fn initialize(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
 ){
-    let ship_sheet_handle = asset_server.load("spaceship5.png");
+    let ship_sheet_handle = asset_server.load("spaceship_nobkg.png");
     let ship_layout = TextureAtlasLayout::from_grid(UVec2::splat(100), 1, 1, None, None);
     let ship_layout_handle = texture_atlases.add(ship_layout);
     commands.spawn((
