@@ -58,10 +58,11 @@ fn draw_rain(
 ) {
     for _ in 0..5{
         let mut rng = rand::thread_rng();
-        let x = rng.gen_range(-50..=50);
+        let x = rng.gen_range(-(LEVEL_W/2.)..=(LEVEL_W/2.)) as i32;
         let y = rng.gen_range(100..200);
         if map.get_element_at((x, y)) == ParticleElement::Air {
             map.insert_at::<WaterParticle>(&mut commands, (x, y), ListType::OnlyAir);
+            map.give_velocity(&mut commands, (x, y), Vec2::new(0.5, -rng.gen_range(1.0..=2.5)));
         }
     }
 }
@@ -292,7 +293,7 @@ impl Plugin for ParticlePlugin {
         app.add_systems(OnEnter(GamePhase::Level1), update_grass.after(draw_solid));
 
         // Updates i.e. all automata goes here
-        //app.add_systems(Update, draw_rain);
+        app.add_systems(Update, draw_rain);
         app.add_systems(Update, update_water.after(crate::entities::player::blaster::systems::shoot_blaster).run_if(in_state(GamePhase::Level1)));
         app.add_systems(Update, update_gas.run_if(in_state(GamePhase::Level1)));
         
