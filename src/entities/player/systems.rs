@@ -4,14 +4,14 @@ use crate::{
     common::{
         hitbox::Hitbox,
         gravity::Gravity,
+        state::{AppState, GamePhase},
     },
     entities::particle::resources::ParticleMap,
     entities::enemy::components::Enemy,
+    entities::spaceship::components::{Spaceship, FoundSpaceship},
     LEVEL_H,
     LEVEL_W,
 };
-
-
 
 
 
@@ -58,16 +58,18 @@ pub fn move_player(
     input: Res<ButtonInput<KeyCode>>,
     mut player: Query<(&mut Transform, &mut Velocity, &mut Sprite, &mut Hitbox, &mut Health), With<Player>>,
     hitboxes: Query<&Hitbox, Without<Player>>,
-    enemy_hitboxes: Query<&Hitbox, (With<Enemy>, Without<Player>)>,
     mut blaster_transform: Query<&mut Transform, (With<Blaster>, Without<Enemy>, Without<Player>)>,
     map: ResMut<ParticleMap>,
+    mut spaceship_hitbox: Query<&Hitbox, (With<Spaceship>, Without<Player>)>,
+    mut ship_event: EventWriter<FoundSpaceship>
 ) {
     let (mut pt, mut pv, mut ps, mut hb, mut player_health) = player.single_mut();
     let mut deltav_x = 0.;
     let mut bt = blaster_transform.single_mut();
+    let mut spaceship_hb = spaceship_hitbox.single_mut();
 
     if input.pressed(KeyCode::KeyA) {
-        if (pt.translation.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.){
+        if pt.translation.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.{
             deltav_x -= 1.;
             ps.flip_x = true;
         }
@@ -105,10 +107,10 @@ pub fn move_player(
     let new_pos = pt.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
 
-    
-    if new_hb.player_enemy_collision(&enemy_hitboxes){
-        player_health.current -=1.;
+    if new_hb.collides_with(&spaceship_hb){
+        ship_event.send(FoundSpaceship);
     }
+    
     if new_pos.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.
         && new_pos.x <= LEVEL_W - (LEVEL_W / 2. + (SPRITE_WIDTH as f32) / 2.)
         && !new_hb.all_player_collisions(&hitboxes)
@@ -203,29 +205,28 @@ pub fn animate_player(
 }
 
 
+
+
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         // Startup events
-        app.add_systems(Startup, initialize);
-
-        // Update events
-        app.add_systems(Update, move_player);   
-        app.add_systems(Update, flight.after(super::systems::move_player));
-        app.add_systems(Update, animate_player.after(super::systems::move_player));
-        
-        // Blaster systems
-        // Event
+        app.add_systems(OnEnter(AppState::InGame), initialize);
+        app.add_systems(OnEnter(GamePhase::Level2), initialize);
+       // app.add_systems(PreUpdate,  initialize.run_if(state_changed::<GamePhase>));
         app.add_event::<super::blaster::components::ChangeBlasterEvent>();
+        app.add_systems(OnEnter(AppState::InGame), super::blaster::systems::initialize.after(initialize));
+        app.add_systems(OnEnter(GamePhase::Level2), super::blaster::systems::initialize.after(initialize));
 
-        // Startup events
-        app.add_systems(Startup, super::blaster::systems::initialize.after(initialize));
+
+        app.add_systems(Update, move_player.run_if(in_state(AppState::InGame)));
         
-        // Update events
-        app.add_systems(Update, super::blaster::systems::update_blaster_aim);
-        app.add_systems(Update, super::blaster::systems::shoot_blaster);
-        app.add_systems(Update, super::blaster::systems::handle_blaster_change_input);
-        app.add_systems(Update, super::blaster::systems::change_blaster_on_event);
+        app.add_systems(Update, flight.after(super::systems::move_player).run_if(in_state(AppState::InGame)));
+        app.add_systems(Update, animate_player.after(super::systems::move_player).run_if(in_state(AppState::InGame)));
+        app.add_systems(Update, super::blaster::systems::update_blaster_aim.run_if(in_state(AppState::InGame)));
+        app.add_systems(Update, super::blaster::systems::shoot_blaster.run_if(in_state(AppState::InGame)));
+        app.add_systems(Update, super::blaster::systems::handle_blaster_change_input.run_if(in_state(AppState::InGame)));
+        app.add_systems(Update, super::blaster::systems::change_blaster_on_event.run_if(in_state(AppState::InGame)));
      //   app.add_system(super::blaster::systems::switch_blaster.system());
       //  app.add_system(super::blaster::systems::handle_blaster_switch.system());
         
