@@ -5,12 +5,13 @@ use bevy::prelude::*;
 use super::{blaster::{self, components::*}, components::*, resources::*};
 use crate::{
     common::{
-        hitbox::Hitbox,
-        gravity::Gravity,
+        gravity::Gravity, hitbox::Hitbox
     },
-    entities::particle::resources::ParticleMap,
-    entities::enemy::components::Enemy,
-    entities::particle::components::ParticleElement,
+    entities::{
+        enemy::components::Enemy, 
+        particle::{components::{ParticleElement, WaterParticle},
+        resources::*}
+    },
     LEVEL_H,
     LEVEL_W,
 };
@@ -235,71 +236,77 @@ fn water_splash(
             let center_x = (top_left_x + bottom_right_x) / 2;
             let mut row_offset = 0;
             let mut count = 0;
-            info!("Number of water particles to splash: {}", num_water_particles_to_splash);
+            // info!("Number of water particles to splash: {}", num_water_particles_to_splash);
 
-            let mut num_while_ran = 0;
-            while (num_while_ran == 0) {
-                info!("Coords: {}, {}, {}, {}", top_left_x, top_left_y, bottom_right_x, bottom_right_y);
-                let lower_x = min(bottom_right_x, top_left_x);
-                let upper_x = max(bottom_right_x, top_left_x);
-                let lower_y = min(bottom_right_y, top_left_y);
-                let upper_y = max(bottom_right_y, top_left_y);
-                for i in lower_x..upper_x{
-                    for j in lower_y..upper_y{
-                        if map.get_element_at((i, j)) == ParticleElement::Water {
-                            info!("Giving velocity");
-                            map.delete_at(&mut commands, (i,j));
-                            //map.give_velocity(&mut commands, (i, j), Vec2::new(0., 10000.)); 
-                            //map.insert_at(commands, pos, list)
-                            //map.insert_at::<WaterParticle>(&mut commands, (x, y), ListType::ReplaceOnlyAir)
+            // let mut num_while_ran = 0;
+            // while (num_while_ran == 0) {
+            //     info!("Coords: {}, {}, {}, {}", top_left_x, top_left_y, bottom_right_x, bottom_right_y);
+            //     let lower_x = min(bottom_right_x, top_left_x);
+            //     let upper_x = max(bottom_right_x, top_left_x);
+            //     let lower_y = min(bottom_right_y, top_left_y);
+            //     let upper_y = max(bottom_right_y, top_left_y);
+            //     for i in lower_x..upper_x{
+            //         for j in lower_y..upper_y{
+            //             if map.get_element_at((i, j)) == ParticleElement::Water {
+            //                 info!("Giving velocity");
+            //                 map.delete_at(&mut commands, (i,j));
+            //                 //map.give_velocity(&mut commands, (i, j), Vec2::new(0., 10000.)); 
+            //                 //map.insert_at(commands, pos, list)
+            //                 map.insert_at::<WaterParticle>(&mut commands, (i, j+5), ListType::OnlyAir);
                             
+
+            //                 count += 1;
+            //                 if count >= num_water_particles_to_splash {
+            //                     break;
+            //                 }
+            //             }
+            //         }
+            //     }
+            //     num_while_ran += 1;
+            // }
+            
+
+
+            loop {
+                let y = top_left_y - row_offset;
+
+                // Stop at bottom row
+                if y < bottom_right_y || count >= num_water_particles_to_splash {
+                    // info!("Count: {}", count);
+                    // info!("Breaking");
+                    break;
+                }
+
+                // Iterate from top center outwards (left and right)
+                for offset in 0..=(bottom_right_x - top_left_x) / 2 {
+                    let left_x = center_x.saturating_sub(offset);
+                    let right_x = center_x + offset;
+                    if left_x >= top_left_x {
+                        if map.get_element_at((left_x, y)) == ParticleElement::Water {
+                            //give velocity
+                            //map.give_velocity(&mut commands, (left_x, y), Vec2::new(0., 100.)); 
+                            map.delete_at(&mut commands, (left_x, y));
+                            map.insert_at::<WaterParticle>(&mut commands, (left_x, y+7), ListType::OnlyAir);
                             count += 1;
                             if count >= num_water_particles_to_splash {
                                 break;
                             }
                         }
                     }
+
+                    if right_x <= bottom_right_x && map.get_element_at((right_x, y)) == ParticleElement::Water {
+                        //map.give_velocity(&mut commands, (right_x, y), Vec2::new(0., 100.)); 
+                        map.delete_at(&mut commands, (right_x,y));
+                        map.insert_at::<WaterParticle>(&mut commands, (right_x, y+7), ListType::OnlyAir);
+                        count += 1;
+                        if count >= num_water_particles_to_splash {
+                            break;
+                        }
+                    }
                 }
-                num_while_ran += 1;
+
+                row_offset += 1;
             }
-            
-
-
-            // loop {
-            //     let y = top_left_y + row_offset;
-
-            //     // Stop at bottom row
-            //     if y > bottom_right_x  {
-            //         break;
-            //     }
-
-            //     // Iterate from top center outwards (left and right)
-            //     for offset in 0..=(bottom_right_x - top_left_x) / 2 {
-            //         let left_x = center_x.saturating_sub(offset);
-            //         let right_x = center_x + offset;
-
-            //         if left_x >= top_left_x && map.get_element_at((left_x, y)) == ParticleElement::Water {
-            //             //give velocity
-            //             info!("Giving velocity");
-            //             map.give_velocity(&mut commands, (left_x, y), Vec2::new(0., 100.)); 
-            //             count += 1;
-            //             if count >= num_water_particles_to_splash {
-            //                 break;
-            //             }
-            //         }
-
-            //         if right_x <= bottom_right_x && map.get_element_at((right_x, y)) == ParticleElement::Water {
-            //             info!("Giving velocity");
-            //             map.give_velocity(&mut commands, (right_x, y), Vec2::new(0., 100.)); 
-            //             count += 1;
-            //             if count >= num_water_particles_to_splash {
-            //                 break;
-            //             }
-            //         }
-            //     }
-
-            //     row_offset += 1;
-            // }
         }
     }
 
