@@ -105,9 +105,9 @@ pub struct Planet4Plugin;
 impl Plugin for Planet4Plugin {
     fn build(&self, app: &mut App) {
         // Startup placements
-        app.add_systems(OnEnter(GamePhase::Planet2), crate::common::ui::background::initialize_background);
-        app.add_systems(OnEnter(GamePhase::Planet2), generate_world);
-        app.add_systems(OnEnter(GamePhase::Planet2), update_grass.after(generate_world));
+        app.add_systems(OnEnter(GamePhase::Planet4), crate::common::ui::background::initialize_background);
+        app.add_systems(OnEnter(GamePhase::Planet4), generate_world);
+        app.add_systems(OnEnter(GamePhase::Planet4), update_grass.after(generate_world));
         app.add_systems(Update, draw_rain.run_if(in_state(GamePhase::Planet2)));
     }
 } 

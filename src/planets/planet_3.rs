@@ -84,8 +84,8 @@ pub struct Planet3Plugin;
 impl Plugin for Planet3Plugin {
     fn build(&self, app: &mut App) {
         // Startup placements
-        app.add_systems(OnEnter(GamePhase::Planet1), crate::common::ui::background::initialize_background);
-        app.add_systems(OnEnter(GamePhase::Planet1), generate_world);
-        app.add_systems(OnEnter(GamePhase::Planet1), update_grass.after(generate_world));
+        app.add_systems(OnEnter(GamePhase::Planet3), crate::common::ui::background::initialize_background);
+        app.add_systems(OnEnter(GamePhase::Planet3), generate_world);
+        app.add_systems(OnEnter(GamePhase::Planet3), update_grass.after(generate_world));
     }
 } 

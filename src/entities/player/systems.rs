@@ -214,10 +214,22 @@ impl Plugin for PlayerPlugin {
         // Startup events
         app.add_systems(OnEnter(AppState::InGame), initialize);
         app.add_systems(OnEnter(GamePhase::Planet2), initialize);
+        app.add_systems(OnEnter(GamePhase::Planet3), initialize);
+        app.add_systems(OnEnter(GamePhase::Planet4), initialize);
+        app.add_systems(OnEnter(GamePhase::Planet5), initialize);
+        app.add_systems(OnEnter(GamePhase::Planet6), initialize);
+        app.add_systems(OnEnter(GamePhase::Planet7), initialize);
+
        // app.add_systems(PreUpdate,  initialize.run_if(state_changed::<GamePhase>));
         app.add_event::<super::blaster::components::ChangeBlasterEvent>();
         app.add_systems(OnEnter(AppState::InGame), super::blaster::systems::initialize.after(initialize));
         app.add_systems(OnEnter(GamePhase::Planet2), super::blaster::systems::initialize.after(initialize));
+        app.add_systems(OnEnter(GamePhase::Planet3), super::blaster::systems::initialize.after(initialize));
+        app.add_systems(OnEnter(GamePhase::Planet4), super::blaster::systems::initialize.after(initialize));
+        app.add_systems(OnEnter(GamePhase::Planet5), super::blaster::systems::initialize.after(initialize));
+        app.add_systems(OnEnter(GamePhase::Planet6), super::blaster::systems::initialize.after(initialize));
+        app.add_systems(OnEnter(GamePhase::Planet7), super::blaster::systems::initialize.after(initialize));
+
 
 
         app.add_systems(Update, move_player.run_if(in_state(AppState::InGame)));

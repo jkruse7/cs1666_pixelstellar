@@ -84,8 +84,8 @@ pub struct Planet5Plugin;
 impl Plugin for Planet5Plugin {
     fn build(&self, app: &mut App) {
         // Startup placements
-        app.add_systems(OnEnter(GamePhase::Planet1), crate::common::ui::background::initialize_background);
-        app.add_systems(OnEnter(GamePhase::Planet1), generate_world);
-        app.add_systems(OnEnter(GamePhase::Planet1), update_grass.after(generate_world));
+        app.add_systems(OnEnter(GamePhase::Planet5), crate::common::ui::background::initialize_background);
+        app.add_systems(OnEnter(GamePhase::Planet5), generate_world);
+        app.add_systems(OnEnter(GamePhase::Planet5), update_grass.after(generate_world));
     }
 } 
