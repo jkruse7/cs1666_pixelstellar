@@ -16,6 +16,10 @@ pub fn initialize_background (
         GamePhase::Planet1 => 1,
         GamePhase::Planet2 => 2,
         GamePhase::Planet3 => 3,
+        GamePhase::Planet4 => 4,
+        GamePhase::Planet5 => 5,
+        GamePhase::Planet6 => 6,
+        GamePhase::Planet7 => 7,
         _ => 0,
     };
     let bg_sheet_handle = asset_server.load(format!("planet_{planet}/background.png"));
