@@ -15,6 +15,7 @@ pub fn initialize_background (
     let planet: i32 = match state.get() {
         GamePhase::Planet1 => 1,
         GamePhase::Planet2 => 2,
+        GamePhase::Planet3 => 3,
         _ => 0,
     };
     let bg_sheet_handle = asset_server.load(format!("planet_{planet}/background.png"));

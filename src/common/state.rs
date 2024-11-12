@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use crate::entities::particle::resources::ParticleMap;
 use crate::entities::player::{components::Player,
     blaster::components::Blaster};
     use crate::entities::enemy::components::Enemy;
@@ -22,12 +23,16 @@ use crate::entities::player::{components::Player,
     }
         
 
+
+// src/common/background -> add more
+
 #[derive(SubStates, Clone, PartialEq, Eq, Hash, Debug, Default)]
 #[source(AppState = AppState::InGame)]
 pub enum GamePhase {
     #[default]
     Planet1,
     Planet2,
+    Planet3,
     //Add other levels here
 }
 
@@ -39,29 +44,30 @@ pub fn set_next_state(
 ){
     match state.get() {
         GamePhase::Planet1 => next_phase.set(GamePhase::Planet2),
+        GamePhase::Planet2 => next_phase.set(GamePhase::Planet3),
         // add level transitions here
         //LAST LEVEL CHANGES THE APP STATE
-        GamePhase::Planet2 => next_app_state.set(AppState::WinScreen),
+        GamePhase::Planet3 => next_app_state.set(AppState::WinScreen),
     }
 }
 
 fn clear_level(
     mut commands: Commands,
+    mut map: ResMut<ParticleMap>,
     query: Query<Entity, Or<(With<Player>, With<Enemy>, With<Background>, With<ParticleElement>, With<HealthBar>, With<Blaster>, With<Spaceship>)>>,
 
 ){
     for entity in query.iter() {
         commands.entity(entity).despawn();
     }
+    map.reset();
 }
 
 pub struct StatePlugin; 
 impl Plugin for StatePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnExit(GamePhase::Planet1),  clear_level);
-
-        // Per planet:
-        app.add_systems(OnEnter(GamePhase::Planet2),  crate::common::ui::background::initialize_background);
+        app.add_systems(OnExit(GamePhase::Planet2),  clear_level);
 }
 }
 
