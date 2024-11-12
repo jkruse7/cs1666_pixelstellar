@@ -8,6 +8,7 @@ use crate::{
     entities::particle::resources::ParticleMap,
     entities::player::components::Player,
     entities::enemy::components::Enemy,
+    entities::spaceship::components::Spaceship,
 };
 
 
@@ -59,6 +60,14 @@ impl Hitbox {
         for hitbox in hitboxes.iter() {
             if self.collides_with(hitbox) {
                 //info!("Enemy Collision detected between {:?} and {:?}", self, hitbox);
+                return true;
+            }
+        }
+        false
+    }
+    pub fn all_ship_collisions(&self, hitboxes: &Query<&Hitbox, Without<Spaceship>>)  -> bool {
+        for hitbox in hitboxes.iter() {
+            if self.collides_with(hitbox) {
                 return true;
             }
         }
