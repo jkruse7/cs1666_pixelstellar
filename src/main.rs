@@ -39,6 +39,7 @@ fn main() {
 
         // Planet Plugins
         .add_plugins(planets::planet_1::Planet1Plugin)
+        .add_plugins(planets::planet_2::Planet2Plugin)
 
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {

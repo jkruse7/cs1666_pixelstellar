@@ -3,6 +3,12 @@ use rand::Rng;
 use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
+use crate::LEVEL_W;
+
+
+
+const RAIN_INTENSITY: i32 = 6;
+
 
 // Map placement type functions  --------------------------------------------------------------------------------
 fn generate_world(
@@ -36,11 +42,11 @@ fn generate_world(
             let current_particle: ParticleElement = select_particle((y + 90) as f32, noise, noise_dirt, noise_stone);
             if current_particle == ParticleElement::BedRock {
                 // place data in map
-                map.insert_at::<BedRockParticle>(&mut commands, (x, y), ListType::All);
+                map.insert_at::<StoneParticle>(&mut commands, (x, y), ListType::All);
             } else if current_particle == ParticleElement::Dirt {
                 map.insert_at::<StoneParticle>(&mut commands, (x, y), ListType::All);
             } else if current_particle == ParticleElement::Stone {
-                map.insert_at::<DirtParticle>(&mut commands, (x, y), ListType::All);
+                map.insert_at::<GrassParticle>(&mut commands, (x, y), ListType::All);
             }
         }
     }
@@ -49,12 +55,27 @@ fn select_particle(y: f32, noise: f32, dirt_height: f32, stone_height: f32) -> P
     if y >= stone_height {
         ParticleElement::Stone
     } else if y >= dirt_height{
-        ParticleElement::Dirt
+        ParticleElement::Stone
     } else {
-        ParticleElement::BedRock
+        ParticleElement::Grass
     }
 }
 
+
+
+fn draw_rain(
+    mut map: ResMut<ParticleMap>,
+    mut commands: Commands,
+) {
+    for _ in 0..RAIN_INTENSITY{
+        let mut rng = rand::thread_rng();
+        let x = rng.gen_range(-(LEVEL_W/2.)..=(LEVEL_W/2.)) as i32;
+        let y = rng.gen_range(100..200);
+        if map.get_element_at((x, y)) == ParticleElement::Air {
+            map.insert_at::<WaterParticle>(&mut commands, (x, y), ListType::OnlyAir);
+        }
+    }
+}
 fn update_grass(
     mut map: ResMut<ParticleMap>,
     time: Res<Time>, 
@@ -80,12 +101,13 @@ fn update_grass(
 }
 
 
-pub struct Planet1Plugin;
-impl Plugin for Planet1Plugin {
+pub struct Planet2Plugin;
+impl Plugin for Planet2Plugin {
     fn build(&self, app: &mut App) {
         // Startup placements
-        app.add_systems(OnEnter(GamePhase::Planet1), crate::common::ui::background::initialize_background);
-        app.add_systems(OnEnter(GamePhase::Planet1), generate_world);
-        app.add_systems(OnEnter(GamePhase::Planet1), update_grass.after(generate_world));
+        app.add_systems(OnEnter(GamePhase::Planet2), crate::common::ui::background::initialize_background);
+        app.add_systems(OnEnter(GamePhase::Planet2), generate_world);
+        app.add_systems(OnEnter(GamePhase::Planet2), update_grass.after(generate_world));
+        app.add_systems(Update, draw_rain.run_if(in_state(GamePhase::Planet2)));
     }
 } 
