@@ -5,6 +5,7 @@ use bevy::{prelude::*, window::PresentMode};
 use crate::common::state;
 mod common;
 mod entities;
+mod planets;
 
 
 // Game constants
@@ -26,7 +27,6 @@ fn main() {
 
         .add_plugins(common::ui::menu::MenuPlugin)
         .add_plugins(common::ui::camera::CameraPlugin)
-        .add_plugins(common::ui::background::BackgroundPlugin)
         .add_plugins(common::ui::health_bar::HealthBarPlugin)
         .add_plugins(common::ui::win::WinPlugin)
         .add_plugins(common::ui::end_credits::EndCreditsPlugin)
@@ -35,9 +35,10 @@ fn main() {
         .add_plugins(entities::particle::systems::ParticlePlugin)
         .add_plugins(entities::enemy::systems::EnemyPlugin)
         .add_plugins(entities::player::systems::PlayerPlugin)
-        
         .add_plugins(entities::spaceship::systems::SpaceshipPlugin)
 
+        // Planet Plugins
+        .add_plugins(planets::planet_1::Planet1Plugin)
 
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {

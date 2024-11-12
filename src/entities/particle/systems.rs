@@ -288,13 +288,13 @@ impl Plugin for ParticlePlugin {
     fn build(&self, app: &mut App) {
         // Startup placements
         app.insert_resource(ParticleMap::new());
-        app.add_systems(OnEnter(GamePhase::Level1), draw_solid);
-        app.add_systems(OnEnter(GamePhase::Level1), update_grass.after(draw_solid));
+        app.add_systems(OnEnter(GamePhase::Planet1), draw_solid);
+        app.add_systems(OnEnter(GamePhase::Planet1), update_grass.after(draw_solid));
 
         // Updates i.e. all automata goes here
         //app.add_systems(Update, draw_rain);
-        app.add_systems(Update, update_water.after(crate::entities::player::blaster::systems::shoot_blaster).run_if(in_state(GamePhase::Level1)));
-        app.add_systems(Update, update_gas.run_if(in_state(GamePhase::Level1)));
+        app.add_systems(Update, update_water.after(crate::entities::player::blaster::systems::shoot_blaster).run_if(in_state(GamePhase::Planet1)));
+        app.add_systems(Update, update_gas.run_if(in_state(GamePhase::Planet1)));
         
         //app.add_systems(Update, paint_with_ray.after(update_water));
         //app.add_systems(Update, build_or_destroy.after(update_water));

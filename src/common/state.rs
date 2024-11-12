@@ -26,8 +26,8 @@ use crate::entities::player::{components::Player,
 #[source(AppState = AppState::InGame)]
 pub enum GamePhase {
     #[default]
-    Level1,
-    Level2,
+    Planet1,
+    Planet2,
     //Add other levels here
 }
 
@@ -38,10 +38,10 @@ pub fn set_next_state(
 
 ){
     match state.get() {
-        GamePhase::Level1 => next_phase.set(GamePhase::Level2),
+        GamePhase::Planet1 => next_phase.set(GamePhase::Planet2),
         // add level transitions here
         //LAST LEVEL CHANGES THE APP STATE
-        GamePhase::Level2 => next_app_state.set(AppState::WinScreen),
+        GamePhase::Planet2 => next_app_state.set(AppState::WinScreen),
     }
 }
 
@@ -55,10 +55,13 @@ fn clear_level(
     }
 }
 
-pub struct StatePlugin;
+pub struct StatePlugin; 
 impl Plugin for StatePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnExit(GamePhase::Level1),  clear_level);
+        app.add_systems(OnExit(GamePhase::Planet1),  clear_level);
+
+        // Per planet:
+        app.add_systems(OnEnter(GamePhase::Planet2),  crate::common::ui::background::initialize_background);
 }
 }
 

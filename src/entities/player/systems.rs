@@ -212,11 +212,11 @@ impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         // Startup events
         app.add_systems(OnEnter(AppState::InGame), initialize);
-        app.add_systems(OnEnter(GamePhase::Level2), initialize);
+        app.add_systems(OnEnter(GamePhase::Planet2), initialize);
        // app.add_systems(PreUpdate,  initialize.run_if(state_changed::<GamePhase>));
         app.add_event::<super::blaster::components::ChangeBlasterEvent>();
         app.add_systems(OnEnter(AppState::InGame), super::blaster::systems::initialize.after(initialize));
-        app.add_systems(OnEnter(GamePhase::Level2), super::blaster::systems::initialize.after(initialize));
+        app.add_systems(OnEnter(GamePhase::Planet2), super::blaster::systems::initialize.after(initialize));
 
 
         app.add_systems(Update, move_player.run_if(in_state(AppState::InGame)));

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
-use crate::{LEVEL_H, LEVEL_W,};
+use crate::{LEVEL_H, LEVEL_W, common::state::GamePhase};
 
-const BG_TILE_SIZE: u32 = 150;
+const BG_TILE_SIZE: u32 = 100;
 
 #[derive(Component)]
 pub struct Background;
@@ -10,8 +10,13 @@ pub fn initialize_background (
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
+    state: Res<State<GamePhase>>,
 ) {
-    let planet: u32 = 0;
+    let planet: i32 = match state.get() {
+        GamePhase::Planet1 => 1,
+        GamePhase::Planet2 => 2,
+        _ => 0,
+    };
     let bg_sheet_handle = asset_server.load(format!("planet_{planet}/background.png"));
     let bg_layout = TextureAtlasLayout::from_grid(UVec2::splat(BG_TILE_SIZE), 1, 1, None, None);
     let bg_layout_handle = texture_atlases.add(bg_layout);
@@ -41,12 +46,5 @@ pub fn initialize_background (
                 },
             )).insert(Background);
         }
-    }
-}
-
-pub struct BackgroundPlugin;
-impl Plugin for BackgroundPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_systems(Startup, initialize_background);
     }
 }
