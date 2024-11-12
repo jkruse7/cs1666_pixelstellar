@@ -49,6 +49,6 @@ impl Plugin for WinPlugin {
         app.add_systems(OnEnter(AppState::WinScreen), clear_level)
         .add_systems(OnEnter(AppState::WinScreen), setup_win)
         .add_systems(
-            OnExit(AppState::WinScreen), despawn_win);
+          OnExit(AppState::WinScreen), despawn_win);
     }
 }

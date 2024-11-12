@@ -44,7 +44,7 @@ pub fn set_next_state(
 ){
     match state.get() {
         GamePhase::Planet1 => next_phase.set(GamePhase::Planet2),
-        GamePhase::Planet2 => next_phase.set(GamePhase::Planet3),
+        GamePhase::Planet2 => next_app_state.set(AppState::WinScreen),
         // add level transitions here
         //LAST LEVEL CHANGES THE APP STATE
         GamePhase::Planet3 => next_app_state.set(AppState::WinScreen),

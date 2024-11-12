@@ -45,6 +45,7 @@ pub fn initialize(
         Gravity::new(),
         Hitbox::new(25 as f32, 100 as f32, Vec2::new(WIN_W/3., 110.)),
         Spaceship,
+        FoundFlag::new(),
     ));
 }
 
@@ -98,8 +99,9 @@ fn found_spaceship_event_listener(
     if !ship_event.is_empty() {
         info!("player found ship!");
         //next_app_state.set(AppState::WinScreen);
-        set_next_state(state, next_phase, next_app_state);
         ship_event.clear();
+        set_next_state(state, next_phase, next_app_state);
+        
     }
 }
 

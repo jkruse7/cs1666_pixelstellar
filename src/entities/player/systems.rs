@@ -8,7 +8,7 @@ use crate::{
     },
     entities::particle::resources::ParticleMap,
     entities::enemy::components::Enemy,
-    entities::spaceship::components::{Spaceship, FoundSpaceship},
+    entities::spaceship::components::{Spaceship, FoundSpaceship, FoundFlag},
     LEVEL_H,
     LEVEL_W,
 };
@@ -60,13 +60,13 @@ pub fn move_player(
     hitboxes: Query<&Hitbox, Without<Player>>,
     mut blaster_transform: Query<&mut Transform, (With<Blaster>, Without<Enemy>, Without<Player>)>,
     map: ResMut<ParticleMap>,
-    mut spaceship_hitbox: Query<&Hitbox, (With<Spaceship>, Without<Player>)>,
-    mut ship_event: EventWriter<FoundSpaceship>
+    mut spaceship: Query<(&Hitbox, &mut FoundFlag), (With<Spaceship>, Without<Player>)>,
+    mut ship_event: EventWriter<FoundSpaceship>,
 ) {
     let (mut pt, mut pv, mut ps, mut hb, mut player_health) = player.single_mut();
     let mut deltav_x = 0.;
     let mut bt = blaster_transform.single_mut();
-    let mut spaceship_hb = spaceship_hitbox.single_mut();
+    let (mut spaceship_hb, mut found_flag) = spaceship.single_mut();
 
     if input.pressed(KeyCode::KeyA) {
         if pt.translation.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.{
@@ -107,7 +107,8 @@ pub fn move_player(
     let new_pos = pt.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
 
-    if new_hb.collides_with(&spaceship_hb){
+    if new_hb.collides_with(&spaceship_hb) && !found_flag.found{
+        found_flag.found = true;
         ship_event.send(FoundSpaceship);
     }
     
