@@ -1,0 +1,59 @@
+use bevy::prelude::*;
+
+#[derive(Component)]
+pub struct Enemy;
+
+#[derive(Component)]
+pub struct Jump {
+    pub is_jumping: bool,
+    pub needs_jump: bool,
+    pub jumped: bool,
+}
+
+impl Jump{
+    pub fn new() -> Self {
+        Self {
+            is_jumping: false,
+            needs_jump: false,
+            jumped: false,
+        }
+    }
+}
+
+#[derive(Component, Deref, DerefMut)]
+pub struct AnimationTimer(Timer);
+
+#[derive(Component, Deref, DerefMut)]
+pub struct AnimationFrameCount(usize);
+
+#[derive(Component)]
+pub struct Velocity {
+    pub velocity: Vec2,
+}
+
+impl Velocity {
+    pub fn new() -> Self {
+        Self {
+            velocity: Vec2::splat(0.),
+        }
+    }
+}
+
+impl From<Vec2> for Velocity {
+    fn from(velocity: Vec2) -> Self {
+        Self { velocity }
+    }
+}
+
+#[derive(Component)]
+pub struct EnemyHealth {
+    pub hp: i32,
+}
+
+impl EnemyHealth {
+    pub fn new() -> Self {
+        Self {
+            hp: 100,
+        }
+    }
+}
