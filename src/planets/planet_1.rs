@@ -4,15 +4,6 @@ use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
 
-// Define structs --------------------------------------------------------------------------------
-// WorldGenSettings defines configurations for different terrain layers in world generation.
-// Each layer (height, dirt, stone...) uses its own NoiseSettings to control features like
-// frequency, octaves, persistence, and range.
-
-// NoiseSettings defines the noise parameters for a given layer, including the frequency,
-// number of octaves (for more detail), persistence (controls amplitude scaling), and
-// frequency_modifier (to adjust frequency per octave). It also includes a min/max range
-// to map generated noise values into a useful range for the layer's purpose.
 #[derive(Resource)]
 pub struct WorldGenSettings {
     pub height_noise: NoiseSettings,  // Controls general terrain height
@@ -22,20 +13,14 @@ pub struct WorldGenSettings {
 
 #[derive(Resource)]
 pub struct NoiseSettings {
-    pub start_frequency: f32,       // just treat it as the noise frequency
-    pub octaves: usize,             // for more detail
-    pub persistence: f32,           // controls amplitude scaling
-    pub frequency_modifier: f32,    // adjusts frequency per octave
-    pub noise_range_min: f32,       // maps generated noise values into a range for the layer's purpose
+    pub start_frequency: f32,
+    pub octaves: usize,
+    pub persistence: f32,
+    pub frequency_modifier: f32,
+    pub noise_range_min: f32,
     pub noise_range_max: f32,
 }
 
-
-
-// Parameter adjustment --------------------------------------------------------------------------------
-// Default implementations for NoiseSettings and WorldGenSettings.
-// These provide starting values for noise parameters that can be adjusted as needed.
-// WorldGenSettings defines unique values for each layer to control its appearance.
 impl Default for NoiseSettings {
     fn default() -> Self {
         Self {
@@ -76,8 +61,6 @@ impl Default for WorldGenSettings {
         }
     }
 }
-
-
 
 // Map placement type functions  --------------------------------------------------------------------------------
 fn generate_world(
