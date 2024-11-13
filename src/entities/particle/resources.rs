@@ -28,6 +28,9 @@ impl ParticleMap {
             particle_map: HashMap::new(),
         }
     }
+    pub fn reset(&mut self) {
+        self.particle_map.clear();
+    }
 
     pub fn get_element_at(&self, pos: (i32, i32)) -> ParticleElement {
         self.particle_map.get(&pos)

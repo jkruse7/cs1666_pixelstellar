@@ -261,7 +261,12 @@ pub struct EnemyPlugin;
 impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(AppState::InGame), initialize)
-        .add_systems(OnEnter(GamePhase::Level2), initialize)
+        .add_systems(OnEnter(GamePhase::Planet2), initialize)
+        .add_systems(OnEnter(GamePhase::Planet3), initialize)
+        .add_systems(OnEnter(GamePhase::Planet4), initialize)
+        .add_systems(OnEnter(GamePhase::Planet5), initialize)
+        .add_systems(OnEnter(GamePhase::Planet6), initialize)
+        .add_systems(OnEnter(GamePhase::Planet7), initialize)
         //app.add_systems(PreUpdate,  initialize.run_if(state_changed::<GamePhase>))
         .add_systems(Update, enemy_gravity.after(track_player).run_if(in_state(AppState::InGame)))
         .add_systems(Update, track_player.run_if(in_state(AppState::InGame)))

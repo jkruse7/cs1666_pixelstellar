@@ -5,6 +5,7 @@ use bevy::{prelude::*, window::PresentMode};
 use crate::common::state;
 mod common;
 mod entities;
+mod planets;
 
 
 // Game constants
@@ -26,7 +27,6 @@ fn main() {
 
         .add_plugins(common::ui::menu::MenuPlugin)
         .add_plugins(common::ui::camera::CameraPlugin)
-        .add_plugins(common::ui::background::BackgroundPlugin)
         .add_plugins(common::ui::health_bar::HealthBarPlugin)
         .add_plugins(common::ui::win::WinPlugin)
         .add_plugins(common::ui::end_credits::EndCreditsPlugin)
@@ -35,9 +35,23 @@ fn main() {
         .add_plugins(entities::particle::systems::ParticlePlugin)
         .add_plugins(entities::enemy::systems::EnemyPlugin)
         .add_plugins(entities::player::systems::PlayerPlugin)
-        
         .add_plugins(entities::spaceship::systems::SpaceshipPlugin)
 
+        // Planet Plugins
+        // NEW PLANETS:
+        //  add background in assets/planet_X/background.png (size 100x100)
+        //  edit common/ui/background to add the new planet
+        //  edit common/state.rs. follow all comments in that file.
+        //  add planets/planet_X.rs with your plugin and custom generation
+        //  add the plugin here:
+
+        .add_plugins(planets::planet_1::Planet1Plugin)
+        .add_plugins(planets::planet_2::Planet2Plugin)
+        .add_plugins(planets::planet_3::Planet3Plugin)
+        .add_plugins(planets::planet_4::Planet4Plugin)
+        .add_plugins(planets::planet_5::Planet5Plugin)
+        .add_plugins(planets::planet_6::Planet6Plugin)
+        .add_plugins(planets::planet_7::Planet7Plugin)
 
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {

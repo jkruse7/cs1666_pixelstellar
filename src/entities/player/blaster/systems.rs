@@ -94,10 +94,11 @@ pub fn shoot_blaster(
     let (camera, camera_transform) = camera_query.single();
     let (blaster_transform, blaster_vector, mut blaster_last_fired_time) = q_blaster.single_mut();
     let time_since_last_fired = (time.elapsed_seconds_f64() - blaster_last_fired_time.last_fired) as f32;
-
+    
     if buttons.pressed(MouseButton::Left){
         match blaster_selection.selected {
             BlasterType::Water => {
+                info!("AAAAAAA");
                 if let Some(world_position) = 
                     window.cursor_position()
                         .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
@@ -106,9 +107,11 @@ pub fn shoot_blaster(
                     let size = 1.;
                     let mut y: f32 = -size * PARTICLE_SIZE;
     
+                    info!("BBBBBBBBB");
                 if time_since_last_fired > RECHARGE_RATE{
                     blaster_last_fired_time.last_fired = time.elapsed_seconds_f64();
                     if let Some(cursor_position) = window.cursor_position() {
+                        info!("GGGGGGGGGGGG");
                         if let Some(world_position) = camera.viewport_to_world(camera_transform, cursor_position) {
                             let mut direction = (world_position.origin.truncate() - blaster_transform.translation.truncate()).normalize() * BLASTER_POWER;
                             
@@ -194,7 +197,7 @@ fn change_blaster_sprite(
     //mut q_blaster: Query<(&Blaster, &mut TextureAtlas), With<Blaster>>,
     mut texture_atlas: &mut TextureAtlas,
     blaster_selection: &ResMut<BlasterSelection>,
-) {
+) { 
     let blaster_type = &blaster_selection.selected;
     texture_atlas.index = match blaster_type {
         BlasterType::Water => 0,

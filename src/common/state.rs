@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use crate::entities::particle::resources::ParticleMap;
 use crate::entities::player::{components::Player,
     blaster::components::Blaster};
     use crate::entities::enemy::components::Enemy;
@@ -22,12 +23,19 @@ use crate::entities::player::{components::Player,
     }
         
 
+
+
 #[derive(SubStates, Clone, PartialEq, Eq, Hash, Debug, Default)]
 #[source(AppState = AppState::InGame)]
 pub enum GamePhase {
     #[default]
-    Level1,
-    Level2,
+    Planet1,
+    Planet2,
+    Planet3,
+    Planet4,
+    Planet5,
+    Planet6,
+    Planet7,
     //Add other levels here
 }
 
@@ -38,27 +46,41 @@ pub fn set_next_state(
 
 ){
     match state.get() {
-        GamePhase::Level1 => next_phase.set(GamePhase::Level2),
+        GamePhase::Planet1 => next_phase.set(GamePhase::Planet2),
+        GamePhase::Planet2 => next_phase.set(GamePhase::Planet3),
+        GamePhase::Planet3 => next_phase.set(GamePhase::Planet4),
+        GamePhase::Planet4 => next_phase.set(GamePhase::Planet5),
+        GamePhase::Planet5 => next_phase.set(GamePhase::Planet6),
+        GamePhase::Planet6 => next_phase.set(GamePhase::Planet7),
         // add level transitions here
         //LAST LEVEL CHANGES THE APP STATE
-        GamePhase::Level2 => next_app_state.set(AppState::WinScreen),
+        GamePhase::Planet7 => next_app_state.set(AppState::WinScreen),
     }
 }
 
 fn clear_level(
     mut commands: Commands,
+    mut map: ResMut<ParticleMap>,
     query: Query<Entity, Or<(With<Player>, With<Enemy>, With<Background>, With<ParticleElement>, With<HealthBar>, With<Blaster>, With<Spaceship>)>>,
 
 ){
     for entity in query.iter() {
         commands.entity(entity).despawn();
     }
+    map.reset();
 }
 
-pub struct StatePlugin;
+pub struct StatePlugin; 
 impl Plugin for StatePlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnExit(GamePhase::Level1),  clear_level);
+        app.add_systems(OnExit(GamePhase::Planet1),  clear_level);
+        app.add_systems(OnExit(GamePhase::Planet2),  clear_level);
+        app.add_systems(OnExit(GamePhase::Planet3),  clear_level);
+        app.add_systems(OnExit(GamePhase::Planet4),  clear_level);
+        app.add_systems(OnExit(GamePhase::Planet5),  clear_level);
+        app.add_systems(OnExit(GamePhase::Planet6),  clear_level);
+        app.add_systems(OnExit(GamePhase::Planet7),  clear_level);
+        // Add level clearing here
 }
 }
 

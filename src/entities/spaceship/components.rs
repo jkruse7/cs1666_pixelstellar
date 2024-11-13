@@ -8,6 +8,19 @@ pub struct Velocity {
     pub velocity: Vec2,
 }
 
+#[derive(Component)]
+pub struct FoundFlag {
+    pub found: bool,
+}
+
+impl FoundFlag{
+    pub fn new() -> Self {
+        Self {
+            found: false,
+        }
+    }
+}
+
 #[derive(Event, Default)]
 pub struct FoundSpaceship;
 

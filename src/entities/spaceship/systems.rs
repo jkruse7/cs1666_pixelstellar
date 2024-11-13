@@ -45,6 +45,7 @@ pub fn initialize(
         Gravity::new(),
         Hitbox::new(25 as f32, 100 as f32, Vec2::new(WIN_W/3., 110.)),
         Spaceship,
+        FoundFlag::new(),
     ));
 }
 
@@ -98,8 +99,9 @@ fn found_spaceship_event_listener(
     if !ship_event.is_empty() {
         info!("player found ship!");
         //next_app_state.set(AppState::WinScreen);
-        set_next_state(state, next_phase, next_app_state);
         ship_event.clear();
+        set_next_state(state, next_phase, next_app_state);
+        
     }
 }
 
@@ -108,7 +110,13 @@ pub struct SpaceshipPlugin;
 impl Plugin for SpaceshipPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(OnEnter(AppState::InGame), initialize)
-        .add_systems(OnEnter(GamePhase::Level2), initialize)
+        .add_systems(OnEnter(GamePhase::Planet2), initialize)
+        .add_systems(OnEnter(GamePhase::Planet3), initialize)
+        .add_systems(OnEnter(GamePhase::Planet4), initialize)
+        .add_systems(OnEnter(GamePhase::Planet5), initialize)
+        .add_systems(OnEnter(GamePhase::Planet6), initialize)
+        .add_systems(OnEnter(GamePhase::Planet7), initialize)
+
         //app.add_systems(PreUpdate,  initialize.run_if(state_changed::<GamePhase>))
         .add_systems(Update, spaceship_gravity.run_if(in_state(AppState::InGame)))
         .add_systems(Update, found_spaceship_event_listener.run_if(in_state(AppState::InGame)))
