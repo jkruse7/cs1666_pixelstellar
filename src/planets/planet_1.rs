@@ -4,36 +4,119 @@ use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
 
+#[derive(Resource)]
+pub struct WorldGenSettings {
+    pub height_noise: NoiseSettings,  // Controls general terrain height
+    pub dirt_noise: NoiseSettings,    // Controls dirt layer height
+    pub stone_noise: NoiseSettings,   // Controls stone layer height
+}
+
+#[derive(Resource)]
+pub struct NoiseSettings {
+    pub start_frequency: f32,
+    pub octaves: usize,
+    pub persistence: f32,
+    pub frequency_modifier: f32,
+    pub noise_range_min: f32,
+    pub noise_range_max: f32,
+}
+
+impl Default for NoiseSettings {
+    fn default() -> Self {
+        Self {
+            start_frequency: 0.05,
+            octaves: 3,
+            persistence: 0.5,
+            frequency_modifier: 1.2,
+            noise_range_min: 0.,
+            noise_range_max: 180.,
+        }
+    }
+}
+
+impl Default for WorldGenSettings {
+    fn default() -> Self {
+        Self {
+            height_noise: NoiseSettings {
+                start_frequency: 0.03,
+                octaves: 5,
+                noise_range_min: 0.,
+                noise_range_max: 180.,
+                ..Default::default()
+            },
+            dirt_noise: NoiseSettings {
+                start_frequency: 0.012,
+                octaves: 1,
+                noise_range_min: 0.,
+                noise_range_max: 20.,
+                ..Default::default()
+            },
+            stone_noise: NoiseSettings {
+                start_frequency: 0.015,
+                octaves: 2,
+                noise_range_min: 30.,
+                noise_range_max: 40.,
+                ..Default::default()
+            },
+        }
+    }
+}
+
 // Map placement type functions  --------------------------------------------------------------------------------
 fn generate_world(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
+    config: Res<WorldGenSettings>,  // Use WorldGenSettings resource
 ) {
-    let perm1 = generate_permutation_array();
-    let perm2 = generate_permutation_array();
-    let perm3 = generate_permutation_array();
-    // loop from left side of the screen to right side of the screen
+    let perm = generate_permutation_array();
+
     for x in MIN_X..=MAX_X {
-        let mut noise = get_1d_octaves(x as f32, 0.05, 3, 0.5, 1.2, 0., 180., &perm1);
-        noise = noise.floor();
+        let noise = get_1d_octaves(
+            x as f32,
+            config.height_noise.start_frequency,
+            config.height_noise.octaves,
+            config.height_noise.persistence,
+            config.height_noise.frequency_modifier,
+            config.height_noise.noise_range_min,
+            config.height_noise.noise_range_max,
+            &perm,
+        )
+        .floor();
 
-        let mut noise_dirt = get_1d_octaves(x as f32, 0.012, 1, 0.5, 1.2, 0., 20., &perm2);
-        noise_dirt = noise_dirt.floor();
+        let noise_dirt = get_1d_octaves(
+            x as f32,
+            config.dirt_noise.start_frequency,
+            config.dirt_noise.octaves,
+            config.dirt_noise.persistence,
+            config.dirt_noise.frequency_modifier,
+            config.dirt_noise.noise_range_min,
+            config.dirt_noise.noise_range_max,
+            &perm,
+        )
+        .floor();
 
-        let mut noise_stone = get_1d_octaves(x as f32, 0.015, 2, 0.5, 1.2, 30., 40., &perm2);
-        noise_stone = noise_stone.floor();
+        let noise_stone = get_1d_octaves(
+            x as f32,
+            config.stone_noise.start_frequency,
+            config.stone_noise.octaves,
+            config.stone_noise.persistence,
+            config.stone_noise.frequency_modifier,
+            config.stone_noise.noise_range_min,
+            config.stone_noise.noise_range_max,
+            &perm,
+        )
+        .floor();
 
-        
         for y in MIN_Y..=(-90 + noise as i32) {
             let noise_threshold_min = 0.45;
             let noise_threshold_max = 0.55;
-            let noise_cave = get_2d_octaves(x as f32, y as f32, 0.03, 3, 0.5, 1.2, 0., 1., &perm3);
+            let noise_cave = get_2d_octaves(x as f32, y as f32, 0.03, 3, 0.5, 1.2, 0., 1., &perm);
             if (y as f32) >= -50. && (y as f32) <= 90. &&
                 noise_cave >= noise_threshold_min && noise_cave >= noise_threshold_max {
                     continue;
                 }
 
-            let current_particle: ParticleElement = select_particle((y + 90) as f32, noise, noise_dirt, noise_stone);
+            let current_particle = select_particle((y + 90) as f32, noise, noise_dirt, noise_stone);
             if current_particle == ParticleElement::BedRock {
                 // place data in map
                 map.insert_at::<BedRockParticle>(&mut commands, (x, y), ListType::All);
@@ -45,6 +128,48 @@ fn generate_world(
         }
     }
 }
+
+// fn generate_world(
+//     mut map: ResMut<ParticleMap>,
+//     mut commands: Commands,
+// ) {
+//     let perm1 = generate_permutation_array();
+//     let perm2 = generate_permutation_array();
+//     let perm3 = generate_permutation_array();
+//     // loop from left side of the screen to right side of the screen
+//     for x in MIN_X..=MAX_X {
+//         let mut noise = get_1d_octaves(x as f32, 0.05, 3, 0.5, 1.2, 0., 180., &perm1);
+//         noise = noise.floor();
+
+//         let mut noise_dirt = get_1d_octaves(x as f32, 0.012, 1, 0.5, 1.2, 0., 20., &perm2);
+//         noise_dirt = noise_dirt.floor();
+
+//         let mut noise_stone = get_1d_octaves(x as f32, 0.015, 2, 0.5, 1.2, 30., 40., &perm2);
+//         noise_stone = noise_stone.floor();
+
+        
+//         for y in MIN_Y..=(-90 + noise as i32) {
+//             let noise_threshold_min = 0.45;
+//             let noise_threshold_max = 0.55;
+//             let noise_cave = get_2d_octaves(x as f32, y as f32, 0.03, 3, 0.5, 1.2, 0., 1., &perm3);
+//             if (y as f32) >= -50. && (y as f32) <= 90. &&
+//                 noise_cave >= noise_threshold_min && noise_cave >= noise_threshold_max {
+//                     continue;
+//                 }
+
+//             let current_particle: ParticleElement = select_particle((y + 90) as f32, noise, noise_dirt, noise_stone);
+//             if current_particle == ParticleElement::BedRock {
+//                 // place data in map
+//                 map.insert_at::<BedRockParticle>(&mut commands, (x, y), ListType::All);
+//             } else if current_particle == ParticleElement::Dirt {
+//                 map.insert_at::<StoneParticle>(&mut commands, (x, y), ListType::All);
+//             } else if current_particle == ParticleElement::Stone {
+//                 map.insert_at::<DirtParticle>(&mut commands, (x, y), ListType::All);
+//             }
+//         }
+//     }
+// }
+
 fn select_particle(y: f32, noise: f32, dirt_height: f32, stone_height: f32) -> ParticleElement {
     if y >= stone_height {
         ParticleElement::Stone
@@ -85,6 +210,7 @@ impl Plugin for Planet1Plugin {
     fn build(&self, app: &mut App) {
         // Startup placements
         app.add_systems(OnEnter(GamePhase::Planet1), crate::common::ui::background::initialize_background);
+        app.insert_resource(WorldGenSettings::default());
         app.add_systems(OnEnter(GamePhase::Planet1), generate_world);
         app.add_systems(OnEnter(GamePhase::Planet1), update_grass.after(generate_world));
     }
