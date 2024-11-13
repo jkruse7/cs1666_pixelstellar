@@ -1,17 +1,24 @@
+use core::num;
+use std::cmp::{min, max};
+
 use bevy::prelude::*;
 use super::{blaster::{self, components::*}, components::*, resources::*};
 use crate::{
     common::{
-        hitbox::Hitbox,
-        gravity::Gravity,
-        state::{AppState, GamePhase},
+        gravity::Gravity, 
+        hitbox::Hitbox
     },
-    entities::particle::resources::ParticleMap,
-    entities::enemy::components::Enemy,
-    entities::spaceship::components::{Spaceship, FoundSpaceship, FoundFlag},
+    entities::{
+        enemy::components::Enemy, 
+        particle::{components::{ParticleElement, WaterParticle},
+        resources::*},
+        spaceship::components::{Spaceship, FoundSpaceship, FoundFlag}
+    },
     LEVEL_H,
     LEVEL_W,
 };
+use crate::state::AppState;
+use crate::state::GamePhase;
 
 
 
@@ -51,6 +58,10 @@ pub fn initialize(
         Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, Vec2::new(0., 110.)),
         Player,
     ));
+
+    commands.insert_resource(PlayerRatioWaterParticles{
+        number: 0.0,
+    });
 }
 
 pub fn move_player(
@@ -86,10 +97,10 @@ pub fn move_player(
 
     if deltav_x != 0. {
         if pv.velocity.y >= 0. {
-            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED, PLAYER_SPEED);
+            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_MAX_SPEED, PLAYER_MAX_SPEED);
         }
         else {
-            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_SPEED * 0.5, PLAYER_SPEED * 0.5);
+            pv.velocity.x = (pv.velocity.x + deltav_x * acc_x).clamp(-PLAYER_MAX_SPEED * 0.5, PLAYER_MAX_SPEED * 0.5);
         }
     } else if pv.velocity.x.abs() > acc_x {
         pv.velocity.x -= pv.velocity.x.signum() * acc_x;
@@ -132,6 +143,8 @@ pub fn flight(
     hitboxes: Query<&Hitbox, Without<Player>>,
     mut blaster_transform: Query<&mut Transform, (With<Blaster>, Without<Enemy>, Without<Player>)>,
     map: ResMut<ParticleMap>,
+    mut player_ratio_water_particles: ResMut<PlayerRatioWaterParticles>,
+    mut commands: Commands,
 ) {
     let (mut pt, mut pv, mut pg, mut hb) = player.single_mut();
     let mut bt = blaster_transform.single_mut();
@@ -179,6 +192,11 @@ pub fn flight(
         pv.velocity.y = 0.;
     }
     //assumes the player is a square and pt.translation is the lower-left corner
+
+    //update number of water particles the player is in
+
+    player_ratio_water_particles.number = water_splash(&mut player_ratio_water_particles, &hb, map, &pv, commands);
+
 }
 
 pub fn animate_player(
@@ -205,6 +223,86 @@ pub fn animate_player(
     }
 }
 
+fn water_splash(
+    player_ratio_water_particles: &mut ResMut<PlayerRatioWaterParticles>,
+    hb: &Hitbox, 
+    mut map: ResMut<ParticleMap>,
+    pv: &Velocity,
+    mut commands: Commands,
+) -> f32 {
+    let new_ratio = hb.ratio_of_water_grid_tiles(&map);
+    if new_ratio / player_ratio_water_particles.number > SPLASH_THRESHOLD {
+        let num_water_particles_occupied = hb.number_of_water_grid_tiles_colliding(&map);
+        let num_water_particles_to_splash = ((new_ratio - player_ratio_water_particles.number) * num_water_particles_occupied as f32 * pv.velocity.length() / PLAYER_MAX_SPEED as f32) as i32;
+
+        if num_water_particles_to_splash > 0 {
+            // Actually splash the water particles
+            let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = hb.get_grid_tiles_to_check();
+            let center_x = (top_left_x + bottom_right_x) / 2;
+            let mut row_offset = 0;
+            let mut count = 0;
+
+            let y_splash_distance = get_y_splash_distance(pv.velocity.y.abs());
+
+            loop {
+                let y = top_left_y - row_offset;
+
+                // Stop at bottom row
+                if y < bottom_right_y || count >= num_water_particles_to_splash {
+                    break;
+                }
+
+                // Iterate from top center outwards (left and right)
+                for offset in 0..=(bottom_right_x - top_left_x) / 2 {
+                    let left_x = center_x.saturating_sub(offset);
+                    let right_x = center_x + offset;
+
+                    if left_x >= top_left_x && map.get_element_at((left_x, y)) == ParticleElement::Water{
+                        map.delete_at(&mut commands, (left_x, y));
+                        map.insert_at::<WaterParticle>(&mut commands, (left_x, y+y_splash_distance), ListType::OnlyAir);
+                        count += 1;
+                        if count >= num_water_particles_to_splash {
+                            break;
+                        }
+                    }
+
+                    if right_x <= bottom_right_x && map.get_element_at((right_x, y+y_splash_distance)) == ParticleElement::Water {
+                        map.delete_at(&mut commands, (right_x,y));
+                        map.insert_at::<WaterParticle>(&mut commands, (right_x, y+y_splash_distance), ListType::OnlyAir);
+                        count += 1;
+                        if count >= num_water_particles_to_splash {
+                            break;
+                        }
+                    }
+                }
+
+                row_offset += 1;
+            }
+        }
+    }
+
+    new_ratio
+}
+
+fn get_y_splash_distance(y_velocity: f32) -> i32 {
+    if y_velocity < 0. {
+        0
+    } else if y_velocity < 3. {
+        2
+    } else if y_velocity < 5. {
+        4
+    } else if y_velocity < 12. {
+        6
+    } else if  y_velocity < 30. {
+        8
+    } else if  y_velocity < 70. {
+        10
+    } else if y_velocity < 150. {
+        12
+    } else {
+        14
+    }
+}
 
 
 
@@ -234,12 +332,15 @@ impl Plugin for PlayerPlugin {
 
         app.add_systems(Update, move_player.run_if(in_state(AppState::InGame)));
         
+
+
         app.add_systems(Update, flight.after(super::systems::move_player).run_if(in_state(AppState::InGame)));
         app.add_systems(Update, animate_player.after(super::systems::move_player).run_if(in_state(AppState::InGame)));
         app.add_systems(Update, super::blaster::systems::update_blaster_aim.run_if(in_state(AppState::InGame)));
-        app.add_systems(Update, super::blaster::systems::shoot_blaster.run_if(in_state(AppState::InGame)));
+        app.add_systems(Update, super::blaster::systems::shoot_blaster.after(super::systems::flight).run_if(in_state(AppState::InGame)));
         app.add_systems(Update, super::blaster::systems::handle_blaster_change_input.run_if(in_state(AppState::InGame)));
         app.add_systems(Update, super::blaster::systems::change_blaster_on_event.run_if(in_state(AppState::InGame)));
+
      //   app.add_system(super::blaster::systems::switch_blaster.system());
       //  app.add_system(super::blaster::systems::handle_blaster_switch.system());
         

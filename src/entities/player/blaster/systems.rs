@@ -7,7 +7,7 @@ use crate::{
     entities::particle::{components::*, resources::*},
     WIN_H
 };
-use super::{components::*, resources::{BLASTER_POWER, RECHARGE_RATE}};
+use super::{components::*, resources::*};
 
 
 pub fn initialize(
@@ -114,8 +114,8 @@ pub fn shoot_blaster(
                         info!("GGGGGGGGGGGG");
                         if let Some(world_position) = camera.viewport_to_world(camera_transform, cursor_position) {
                             let mut direction = (world_position.origin.truncate() - blaster_transform.translation.truncate()).normalize() * BLASTER_POWER;
-                            info!("HHHHHHHHHHHHHH");
-                            let position = (convert_to_grid_position(blaster_transform.translation.x, blaster_transform.translation.y));
+                            
+                            let position = (convert_to_grid_position(blaster_transform.translation.x + blaster_vector.vector.normalize().x*BLASTER_DISPLACEMENT, blaster_transform.translation.y + blaster_vector.vector.normalize().y*BLASTER_DISPLACEMENT)); //shoot slightly in the direction of the cursor
                             map.insert_at::<WaterParticle>(&mut commands, position, ListType::OnlyAir);
                             map.give_velocity(&mut commands, position, direction);  
                         }
