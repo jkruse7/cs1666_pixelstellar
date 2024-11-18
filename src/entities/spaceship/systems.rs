@@ -2,12 +2,8 @@ use bevy::prelude::*;
 use super::{components::*, resources::*};
 use crate::{
     common::{
-        hitbox::Hitbox,
-        gravity::Gravity,
-        
-        state::{AppState, GamePhase},
+        gravity::{Gravity, GravityResource}, hitbox::Hitbox, state::{set_next_state, AppState, GamePhase}
     },
-    common::state::set_next_state,
     LEVEL_H,
     LEVEL_W,
     WIN_W,
@@ -54,6 +50,7 @@ pub fn spaceship_gravity(
     time: Res<Time>, 
     mut ship: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox), With<Spaceship>>, 
     hitboxes: Query<&Hitbox, Without<Spaceship>>,
+    grav_res: ResMut<GravityResource>,
 ) {
     /*Julianne 10/8: This function is the same as player flight, but only makes the downward force on the enemy (no flight)*/
     for (mut pt, mut pv, mut pg, mut hb) in &mut ship{
@@ -61,7 +58,7 @@ pub fn spaceship_gravity(
     let deltat = time.delta_seconds();
 
     //update gravity here
-        pg.update_g(&pv.velocity.y, &deltat);
+        pg.update_g(&pv.velocity.y, &deltat, &grav_res);
         pv.velocity.y = pg.get_g();
     
 

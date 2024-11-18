@@ -3,6 +3,7 @@ use rand::Rng;
 use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
+use crate::common::gravity::{Gravity, GravityResource, change_gravity};
 use crate::LEVEL_W;
 
 
@@ -14,7 +15,11 @@ const RAIN_INTENSITY: i32 = 6;
 fn generate_world(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
+    grav_res: ResMut<GravityResource>,
 ) {
+    change_gravity(grav_res, 1800., 400.);
+
+    info!("Generating world2");
     let perm1 = generate_permutation_array();
     let perm2 = generate_permutation_array();
     let perm3 = generate_permutation_array();
