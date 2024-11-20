@@ -1,3 +1,5 @@
+//TODO: Obsidian, enemy, lava rain, audio (damage and shooting), crosshair for each gun, gun permissions
+
 use bevy::prelude::*;
 use rand::Rng;
 use crate::common::state::GamePhase;
