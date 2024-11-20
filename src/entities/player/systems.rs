@@ -111,7 +111,13 @@ pub fn move_player(
     //Account for player in water
     let ratio_of_water_particles = hb.ratio_of_water_grid_tiles(&map);
     if ratio_of_water_particles > 0.0 {
-        pv.velocity.x = pv.velocity.x * (1. - 0.7 * ratio_of_water_particles.powf(0.5));
+        pv.velocity.x = pv.velocity.x * (1. - 0.6 * ratio_of_water_particles.powf(0.5));
+    }
+
+    // Account for player in lava
+    let ratio_of_lava_particles = hb.ratio_of_lava_grid_tiles(&map);
+    if ratio_of_lava_particles > 0.0 {
+        pv.velocity.x = pv.velocity.x * (1. - 0.75 * ratio_of_lava_particles.powf(0.5));
     }
 
     let change = pv.velocity * deltat;
@@ -139,7 +145,7 @@ pub fn move_player(
 pub fn flight(
     time: Res<Time>, 
     input: Res<ButtonInput<KeyCode>>, 
-    mut player: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox), With<Player>>, 
+    mut player: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox, &mut Health), With<Player>>, 
     hitboxes: Query<&Hitbox, Without<Player>>,
     mut blaster_transform: Query<&mut Transform, (With<Blaster>, Without<Enemy>, Without<Player>)>,
     map: ResMut<ParticleMap>,
@@ -147,7 +153,7 @@ pub fn flight(
     mut commands: Commands,
     grav_res: ResMut<GravityResource>,
 ) {
-    let (mut pt, mut pv, mut pg, mut hb) = player.single_mut();
+    let (mut pt, mut pv, mut pg, mut hb, mut health) = player.single_mut();
     let mut bt = blaster_transform.single_mut();
     let deltat = time.delta_seconds();
     let acc_y = ACCEL_RATE_Y * deltat;
@@ -168,8 +174,16 @@ pub fn flight(
     //Account for player in water
     let ratio_of_water_particles = hb.ratio_of_water_grid_tiles(&map);
     if ratio_of_water_particles > 0.0 {
-        pv.velocity.y = pv.velocity.y * (1. - 0.7 * ratio_of_water_particles.powf(0.5));
+        pv.velocity.y = pv.velocity.y * (1. - 0.65 * ratio_of_water_particles.powf(0.5));
     }
+
+    // Account for player in lava
+    let ratio_of_lava_particles = hb.ratio_of_lava_grid_tiles(&map);
+    if ratio_of_lava_particles > 0.0 {
+        pv.velocity.y = pv.velocity.y * (1. - 0.8 * ratio_of_lava_particles.powf(0.5));
+        health.current -= 0.5;
+    }
+
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());

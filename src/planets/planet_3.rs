@@ -37,19 +37,19 @@ fn generate_world(
             if current_particle == ParticleElement::BedRock {
                 // place data in map
                 map.insert_at::<BedRockParticle>(&mut commands, (x, y), ListType::All);
-            } else if current_particle == ParticleElement::Dirt {
-                map.insert_at::<StoneParticle>(&mut commands, (x, y), ListType::All);
+            } else if current_particle == ParticleElement::Hellstone {
+                map.insert_at::<HellstoneParticle>(&mut commands, (x, y), ListType::All);
             } else if current_particle == ParticleElement::Stone {
-                map.insert_at::<DirtParticle>(&mut commands, (x, y), ListType::All);
+                map.insert_at::<StoneParticle>(&mut commands, (x, y), ListType::All);
             }
         }
     }
 }
 fn select_particle(y: f32, noise: f32, dirt_height: f32, stone_height: f32) -> ParticleElement {
     if y >= stone_height {
-        ParticleElement::Stone
+        ParticleElement::Hellstone
     } else if y >= dirt_height{
-        ParticleElement::Dirt
+        ParticleElement::Stone
     } else {
         ParticleElement::BedRock
     }

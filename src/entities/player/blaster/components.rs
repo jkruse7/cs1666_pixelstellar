@@ -4,7 +4,8 @@ use bevy::prelude::*;
 pub enum BlasterType {
     Water,
     Deleter,
-    Gas
+    Gas,
+    Lava,
 }
 
 #[derive(Component)]
