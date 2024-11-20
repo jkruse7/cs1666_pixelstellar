@@ -46,16 +46,44 @@ fn update_water(
             let mut rng = rand::thread_rng();
             let viscosity = rng.gen::<f64>() < WATER_VISCOSITY as f64;
                 let (x, y) = (position.grid_x, position.grid_y);
-                if map.insert_at::<WaterParticle>(&mut commands, (x, y-1), ListType::OnlyAir) {
+                if viscosity && map.insert_at::<WaterParticle>(&mut commands, (x, y-1), ListType::OnlyAir) {
                     map.delete_at(&mut commands, (x, y));
-                } else if viscosity && map.insert_at::<WaterParticle>(&mut commands, (x-1, y-1), ListType::OnlyAir){
+                } else if viscosity && map.get_element_at((x,y-1)) == ParticleElement::Lava {
                     map.delete_at(&mut commands, (x, y));
-                } else if viscosity && map.insert_at::<WaterParticle>(&mut commands, (x+1, y-1), ListType::OnlyAir){
+                    map.delete_at(&mut commands, (x, y-1));
+                    map.insert_at::<ObsidianParticle>(&mut commands, (x, y-1), ListType::OnlyAir);
+                }
+
+                else if viscosity && map.insert_at::<WaterParticle>(&mut commands, (x-1, y-1), ListType::OnlyAir){
                     map.delete_at(&mut commands, (x, y));
-                } else if viscosity && map.insert_at::<WaterParticle>(&mut commands, (x-1, y), ListType::OnlyAir){
+                } else if viscosity && map.get_element_at((x-1,y-1)) == ParticleElement::Lava {
                     map.delete_at(&mut commands, (x, y));
-                } else if viscosity && map.insert_at::<WaterParticle>(&mut commands, (x+1, y), ListType::OnlyAir){
+                    map.delete_at(&mut commands, (x-1, y-1));
+                    map.insert_at::<ObsidianParticle>(&mut commands, (x-1, y-1), ListType::OnlyAir);
+                }
+
+                else if viscosity && map.insert_at::<WaterParticle>(&mut commands, (x+1, y-1), ListType::OnlyAir){
                     map.delete_at(&mut commands, (x, y));
+                } else if viscosity && map.get_element_at((x+1,y-1)) == ParticleElement::Lava {
+                    map.delete_at(&mut commands, (x, y));
+                    map.delete_at(&mut commands, (x+1, y-1));
+                    map.insert_at::<ObsidianParticle>(&mut commands, (x+1, y-1), ListType::OnlyAir);
+                } 
+
+                else if viscosity && map.insert_at::<WaterParticle>(&mut commands, (x-1, y), ListType::OnlyAir){
+                    map.delete_at(&mut commands, (x, y));
+                } else if viscosity && map.get_element_at((x-1, y)) == ParticleElement::Lava {
+                    map.delete_at(&mut commands, (x, y));
+                    map.delete_at(&mut commands, (x-1, y));
+                    map.insert_at::<ObsidianParticle>(&mut commands, (x-1, y), ListType::OnlyAir);
+                }
+                 
+                else if viscosity && map.insert_at::<WaterParticle>(&mut commands, (x+1, y), ListType::OnlyAir){
+                    map.delete_at(&mut commands, (x, y));
+                } else if viscosity && map.get_element_at((x+1, y)) == ParticleElement::Lava {
+                    map.delete_at(&mut commands, (x, y));
+                    map.delete_at(&mut commands, (x+1, y));
+                    map.insert_at::<ObsidianParticle>(&mut commands, (x+1, y), ListType::OnlyAir);
                 }
         }
     }
@@ -90,16 +118,44 @@ fn update_lava(
             let mut rng = rand::thread_rng();
             let viscosity = rng.gen::<f64>() < LAVA_VISCOSITY as f64;
                 let (x, y) = (position.grid_x, position.grid_y);
-                if map.insert_at::<LavaParticle>(&mut commands, (x, y-1), ListType::OnlyAir) {
+                if viscosity && map.insert_at::<LavaParticle>(&mut commands, (x, y-1), ListType::OnlyAir) {
                     map.delete_at(&mut commands, (x, y));
-                } else if viscosity && map.insert_at::<LavaParticle>(&mut commands, (x-1, y-1), ListType::OnlyAir){
+                } else if viscosity && map.get_element_at((x, y-1)) == ParticleElement::Water {
                     map.delete_at(&mut commands, (x, y));
-                } else if viscosity && map.insert_at::<LavaParticle>(&mut commands, (x+1, y-1), ListType::OnlyAir){
+                    map.delete_at(&mut commands, (x, y-1));
+                    map.insert_at::<ObsidianParticle>(&mut commands, (x, y-1), ListType::OnlyAir);
+                }
+
+                else if viscosity && map.insert_at::<LavaParticle>(&mut commands, (x-1, y-1), ListType::OnlyAir){
                     map.delete_at(&mut commands, (x, y));
-                } else if viscosity && map.insert_at::<LavaParticle>(&mut commands, (x-1, y), ListType::OnlyAir){
+                } else if viscosity && map.get_element_at((x-1, y-1)) == ParticleElement::Water {
                     map.delete_at(&mut commands, (x, y));
-                } else if viscosity && map.insert_at::<LavaParticle>(&mut commands, (x+1, y), ListType::OnlyAir){
+                    map.delete_at(&mut commands, (x-1, y-1));
+                    map.insert_at::<ObsidianParticle>(&mut commands, (x-1, y-1), ListType::OnlyAir);
+                } 
+
+                else if viscosity && map.insert_at::<LavaParticle>(&mut commands, (x+1, y-1), ListType::OnlyAir){
                     map.delete_at(&mut commands, (x, y));
+                } else if viscosity && map.get_element_at((x+1, y-1)) == ParticleElement::Water {
+                    map.delete_at(&mut commands, (x, y));
+                    map.delete_at(&mut commands, (x+1, y-1));
+                    map.insert_at::<ObsidianParticle>(&mut commands, (x+1, y-1), ListType::OnlyAir);
+                } 
+
+                else if viscosity && map.insert_at::<LavaParticle>(&mut commands, (x-1, y), ListType::OnlyAir){
+                    map.delete_at(&mut commands, (x, y));
+                } else if viscosity && map.get_element_at((x-1, y)) == ParticleElement::Water {
+                    map.delete_at(&mut commands, (x, y));
+                    map.delete_at(&mut commands, (x-1, y));
+                    map.insert_at::<ObsidianParticle>(&mut commands, (x-1, y), ListType::OnlyAir);
+                }
+
+                else if viscosity && map.insert_at::<LavaParticle>(&mut commands, (x+1, y), ListType::OnlyAir){
+                    map.delete_at(&mut commands, (x, y));
+                } else if viscosity && map.get_element_at((x+1, y)) == ParticleElement::Water {
+                    map.delete_at(&mut commands, (x, y));
+                    map.delete_at(&mut commands, (x+1, y));
+                    map.insert_at::<ObsidianParticle>(&mut commands, (x+1, y), ListType::OnlyAir);
                 }
         }
     }
