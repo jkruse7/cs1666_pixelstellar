@@ -224,10 +224,23 @@ pub fn change_blaster_on_event(
     mut q_blaster: Query<(&Blaster, &mut TextureAtlas), With<Blaster>>,
     mut events: EventReader<ChangeBlasterEvent>,
     mut blaster_selection: ResMut<BlasterSelection>,
+    mut q_window: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
 ) {
+    let mut window: Mut<'_, Window> = q_window.single_mut();
     let (_, mut texture_atlas) = q_blaster.single_mut();
+
     for ev in events.read() {
         blaster_selection.selected = ev.new_blaster_type;
         change_blaster_sprite(&mut texture_atlas, &blaster_selection);
+
+        if blaster_selection.selected == BlasterType::Deleter {
+            set_cursor(&mut window, CursorIcon::Cell);
+        } else if window.cursor.icon == CursorIcon::Crosshair {
+            set_cursor(&mut window, CursorIcon::Crosshair);
+        }
     }
+}
+
+fn set_cursor(window: &mut Window, cursor_icon: CursorIcon) {
+    window.cursor.icon = cursor_icon;
 }

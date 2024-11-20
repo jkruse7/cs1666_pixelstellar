@@ -223,6 +223,11 @@ fn update_grass(
     }
 }
 
+fn set_crosshair_cursor( mut q_window: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
+) {
+    let mut window = q_window.single_mut();
+    window.cursor.icon = CursorIcon::Cell;
+}
 
 pub struct Planet1Plugin;
 impl Plugin for Planet1Plugin {
@@ -230,6 +235,7 @@ impl Plugin for Planet1Plugin {
         // Startup placements
         app.add_systems(OnEnter(GamePhase::Planet1), crate::common::ui::background::initialize_background);
         app.insert_resource(WorldGenSettings::default());
+        app.add_systems(OnEnter(GamePhase::Planet1), set_crosshair_cursor);
         app.add_systems(OnEnter(GamePhase::Planet1), generate_world);
         app.add_systems(OnEnter(GamePhase::Planet1), update_grass.after(generate_world));
     }
