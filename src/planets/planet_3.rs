@@ -1,10 +1,14 @@
-//TODO: Obsidian, enemy, lava rain, audio (damage and shooting), crosshair for each gun, gun permissions
+//TODO: enemy, audio (damage and shooting),  gun permissions
 
 use bevy::prelude::*;
 use rand::Rng;
 use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
+use crate::LEVEL_W;
+
+const RAIN_INTENSITY: i32 = 6;
+const RAIN_VEL: Vec2 = Vec2::new(2., -6.);
 
 // Map placement type functions  --------------------------------------------------------------------------------
 fn generate_world(
@@ -57,30 +61,20 @@ fn select_particle(y: f32, noise: f32, dirt_height: f32, stone_height: f32) -> P
     }
 }
 
-fn update_grass(
+fn draw_lava_rain(
     mut map: ResMut<ParticleMap>,
-    time: Res<Time>, 
     mut commands: Commands,
-    mut particles: Query<&mut ParticlePosVel, With<ParticleTagDirt>>,
 ) {
-    for mut position in &mut particles {
-        let (x, y) = (position.grid_x, position.grid_y);
-        if map.get_element_at((x, y+1)) == ParticleElement::Air{
-            map.delete_at(&mut commands, (x, y));
-            map.insert_at::<GrassParticle>(&mut commands, (x, y), ListType::OnlyAir);
-        }
-        if ((map.get_element_at((x + 1, y)) == ParticleElement::Air &&
-             map.get_element_at((x+1, y-1)) == ParticleElement::Air)||
-            (map.get_element_at((x + 1, y)) == ParticleElement::Air &&
-             map.get_element_at((x+1, y-1)) == ParticleElement::Air))&&
-           (map.get_element_at((x, y-1)) == ParticleElement::Dirt ||
-            map.get_element_at((x, y-1)) == ParticleElement::Grass ){
-            map.delete_at(&mut commands, (x, y));
-            map.insert_at::<GrassParticle>(&mut commands, (x, y), ListType::OnlyAir);
+    for _ in 0..RAIN_INTENSITY{
+        let mut rng = rand::thread_rng();
+        let x = rng.gen_range(-(LEVEL_W/2.)..=(LEVEL_W/2.)) as i32;
+        let y = rng.gen_range(100..200);
+        if map.get_element_at((x, y)) == ParticleElement::Air {
+            map.insert_at::<LavaParticle>(&mut commands, (x, y), ListType::OnlyAir);
+            map.give_velocity(&mut commands, (x,y), RAIN_VEL);
         }
     }
 }
-
 
 pub struct Planet3Plugin;
 impl Plugin for Planet3Plugin {
@@ -88,6 +82,6 @@ impl Plugin for Planet3Plugin {
         // Startup placements
         app.add_systems(OnEnter(GamePhase::Planet3), crate::common::ui::background::initialize_background);
         app.add_systems(OnEnter(GamePhase::Planet3), generate_world);
-        app.add_systems(OnEnter(GamePhase::Planet3), update_grass.after(generate_world));
+        app.add_systems(Update, draw_lava_rain.run_if(in_state(GamePhase::Planet3)));
     }
 } 
