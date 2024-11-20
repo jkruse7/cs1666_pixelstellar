@@ -85,6 +85,8 @@ fn generate_world(
     mut commands: Commands,
     config: Res<WorldGenSettings>,  // Use WorldGenSettings resource
 ) {
+    crate::common::gravity::initialize(&mut commands); //init gravity
+
     let perm = generate_permutation_array();
 
     for x in MIN_X..=MAX_X {

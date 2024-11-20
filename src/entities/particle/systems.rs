@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use rand::Rng;
 use super::{components::*, resources::*};
-use crate::common::{gravity::Gravity, perlin_noise::{generate_permutation_array, get_1d_octaves, get_2d_octaves}, state::{AppState, GamePhase}};
+use crate::common::{gravity::{Gravity, GravityResource}, perlin_noise::{generate_permutation_array, get_1d_octaves, get_2d_octaves}, state::{AppState, GamePhase}};
 use crate::entities::player::components::Player;
 use crate::{LEVEL_W, LEVEL_H};
 
@@ -23,6 +23,7 @@ fn update_water(
     time: Res<Time>, 
     mut commands: Commands,
     mut particles: Query<&mut ParticlePosVel, With<ParticleTagWater>>,
+    grav_res: ResMut<GravityResource>,
 ) {
     let deltat = time.delta_seconds() ;
 
@@ -30,7 +31,7 @@ fn update_water(
     for mut position in &mut particles {
         if position.velocity.x != 0. && position.velocity.y != 0.{
             let new_pos = ((position.grid_x as f32 + position.velocity.x) as i32, (position.grid_y as f32 + position.velocity.y) as i32);
-            position.velocity.y = Gravity::update_gravity(&position.velocity.y, &deltat);
+            position.velocity.y = Gravity::update_gravity(&position.velocity.y, &deltat, &grav_res);
 
             let p = map.ray(&mut commands, (position.grid_x, position.grid_y), new_pos, ListType::OnlyAir);
             if let Some(position_of_part) = p {

@@ -5,14 +5,14 @@ use bevy::prelude::*;
 use super::{blaster::{self, components::*}, components::*, resources::*};
 use crate::{
     common::{
-        gravity::Gravity, 
+        gravity::{Gravity, GravityResource}, 
         hitbox::Hitbox
     },
     entities::{
         enemy::components::Enemy, 
         particle::{components::{ParticleElement, WaterParticle},
         resources::*},
-        spaceship::components::{Spaceship, FoundSpaceship, FoundFlag}
+        spaceship::components::{FoundFlag, FoundSpaceship, Spaceship}
     },
     LEVEL_H,
     LEVEL_W,
@@ -145,6 +145,7 @@ pub fn flight(
     map: ResMut<ParticleMap>,
     mut player_ratio_water_particles: ResMut<PlayerRatioWaterParticles>,
     mut commands: Commands,
+    grav_res: ResMut<GravityResource>,
 ) {
     let (mut pt, mut pv, mut pg, mut hb) = player.single_mut();
     let mut bt = blaster_transform.single_mut();
@@ -161,7 +162,7 @@ pub fn flight(
             pv.velocity.y = 0.0;
         }
     } else {
-        pg.update_g(&pv.velocity.y, &deltat);
+        pg.update_g(&pv.velocity.y, &deltat, &grav_res);
         pv.velocity.y = pg.get_g();
     }
     //Account for player in water

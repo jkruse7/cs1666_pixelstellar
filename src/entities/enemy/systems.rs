@@ -1,16 +1,11 @@
 use bevy::prelude::*;
 use crate::{
     common::{
-        hitbox::Hitbox,
-        gravity::Gravity,
-        state::{AppState, GamePhase},
-        death::Death,
+        death::Death, gravity::{Gravity, GravityResource}, hitbox::Hitbox, state::{AppState, GamePhase}
     },
     entities::{
         particle::resources::ParticleMap,
-        player::{
-            components::{AnimationTimer, AnimationFrameCount, Player, Health}
-        },
+        player::components::{AnimationFrameCount, AnimationTimer, Health, Player},
     },
     LEVEL_H,
     LEVEL_W,
@@ -86,6 +81,7 @@ pub fn enemy_gravity(
     time: Res<Time>, 
     mut enemy: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox, &mut Jump), With<Enemy>>, 
     hitboxes: Query<&Hitbox, Without<Enemy>>,
+    grav_res: ResMut<GravityResource>,
 ) {
     /*Julianne 10/8: This function is the same as player flight, but only makes the downward force on the enemy (no flight)*/
     for (mut pt, mut pv, mut pg, mut hb, mut e_jump) in &mut enemy{
@@ -100,7 +96,7 @@ pub fn enemy_gravity(
         e_jump.needs_jump = false;
         e_jump.is_jumping = true;
     }else {
-        pg.update_g(&pv.velocity.y, &deltat);
+        pg.update_g(&pv.velocity.y, &deltat, &grav_res);
         pv.velocity.y = pg.get_g();
     }
     
