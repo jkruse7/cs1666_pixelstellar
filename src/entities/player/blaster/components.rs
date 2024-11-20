@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub enum BlasterType {
     Water,
     Deleter,
@@ -10,7 +10,7 @@ pub enum BlasterType {
 #[derive(Component)]
 pub struct Blaster;
 
-#[derive(Component, Resource)]
+#[derive(Component, Resource, PartialEq)]
 pub struct BlasterSelection {
     pub selected: BlasterType,
 }
