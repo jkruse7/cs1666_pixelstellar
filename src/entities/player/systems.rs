@@ -1,12 +1,11 @@
 use core::num;
-use std::cmp::{min, max};
+use std::{cmp::{max, min}, mem::take};
 
 use bevy::prelude::*;
 use super::{blaster::{self, components::*}, components::*, resources::*};
 use crate::{
     common::{
-        gravity::{Gravity, GravityResource}, 
-        hitbox::Hitbox
+        death::Death, gravity::{Gravity, GravityResource}, hitbox::Hitbox
     },
     entities::{
         enemy::components::Enemy, 
@@ -152,6 +151,7 @@ pub fn flight(
     mut player_ratio_water_particles: ResMut<PlayerRatioWaterParticles>,
     mut commands: Commands,
     grav_res: ResMut<GravityResource>,
+    mut death_event: EventWriter<Death>,
 ) {
     let (mut pt, mut pv, mut pg, mut hb, mut health) = player.single_mut();
     let mut bt = blaster_transform.single_mut();
@@ -181,7 +181,7 @@ pub fn flight(
     let ratio_of_lava_particles = hb.ratio_of_lava_grid_tiles(&map);
     if ratio_of_lava_particles > 0.0 {
         pv.velocity.y = pv.velocity.y * (1. - 0.8 * ratio_of_lava_particles.powf(0.5));
-        health.current -= 0.5;
+        take_damage(&mut health , 0.5, &mut death_event);
     }
 
     let change = pv.velocity * deltat;
@@ -319,6 +319,16 @@ fn get_y_splash_distance(y_velocity: f32) -> i32 {
     }
 }
 
+pub fn take_damage(
+    player_health: &mut Health,
+    damage_amount: f32,
+    death_event: &mut EventWriter<Death>,
+) {
+    player_health.current -= damage_amount;
+    if player_health.current == 0.{
+        death_event.send(Death);
+    }
+}
 
 
 pub struct PlayerPlugin;

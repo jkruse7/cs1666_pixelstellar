@@ -1,3 +1,5 @@
+use std::mem::take;
+
 use bevy::prelude::*;
 use crate::{
     common::{
@@ -6,6 +8,7 @@ use crate::{
     entities::{
         particle::resources::ParticleMap,
         player::components::{AnimationFrameCount, AnimationTimer, Health, Player},
+        player::systems::take_damage,
     },
     LEVEL_H,
     LEVEL_W,
@@ -212,7 +215,7 @@ pub fn track_player(
     let mut no_jump = false;
     if player_hb.collides_with(&new_hb) {
         no_jump = true;
-        player_health.current -= 1.;
+        take_damage(&mut player_health, 1.0, &mut death_event);
         //info!("Player hit! Current health: {:?}", player_health.current); // 记录伤害
         if player_health.current == 0.{
             death_event.send(Death);
