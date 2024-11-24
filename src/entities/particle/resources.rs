@@ -3,8 +3,8 @@ use bevy::utils::HashMap;
 use crate::{entities::particle::components::*, LEVEL_W, LEVEL_H};
 
 pub const PARTICLE_SIZE: f32 = 4.;
-pub const WATER_VISCOSITY: f32 = 0.7; //range 0-1, 1 is low viscosity, 0 doesnt move (higher is more viscous)
-
+pub const WATER_VISCOSITY: f32 = 0.75; //range 0-1, 1 is low viscosity, 0 doesnt move (higher is more viscous)
+pub const LAVA_VISCOSITY: f32 = 0.35;
 pub enum ListType {
     All,
     OnlyAir,
