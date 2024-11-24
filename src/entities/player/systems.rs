@@ -338,7 +338,9 @@ pub fn take_damage(
     if player_health.current == 0.{
         death_event.send(Death);
     }
-    play_damage_sound(asset_server, commands, sound_tracker, time);
+    if PLAY_SOUND_BOOL {
+        play_damage_sound(asset_server, commands, sound_tracker, time);
+    }
 }
 
 fn play_damage_sound(

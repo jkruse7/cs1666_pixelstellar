@@ -20,6 +20,7 @@ pub const SPLASH_THRESHOLD: f32 = 1.5; //ratio of new ratio of water particles t
 
 pub const PLAYER_DAMAGE_SOUND_FILE: &str = "damage_sound.wav";
 pub const PLAYER_DAMAGE_SOUND_DURATION: f32 = 1.5;
+pub const PLAY_SOUND_BOOL: bool = true;
 
 #[derive(Resource)]
 pub struct PlayerRatioWaterParticles { //Ratio of player's hitbox that is in water

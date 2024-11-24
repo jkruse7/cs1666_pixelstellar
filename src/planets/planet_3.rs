@@ -1,7 +1,8 @@
-//TODO: enemy, audio (damage and shooting),  gun permissions
+//TODO: enemy,  gun permissions
 
 use bevy::prelude::*;
 use rand::Rng;
+use crate::common::gravity::{change_gravity, GravityResource};
 use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
@@ -14,7 +15,9 @@ const RAIN_VEL: Vec2 = Vec2::new(2., -6.);
 fn generate_world(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
+    grav_res: ResMut<GravityResource>,
 ) {
+    change_gravity(grav_res, 1400., 600.);
     let perm1 = generate_permutation_array();
     let perm2 = generate_permutation_array();
     let perm3 = generate_permutation_array();
