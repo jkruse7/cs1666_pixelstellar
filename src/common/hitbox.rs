@@ -161,4 +161,9 @@ impl Hitbox {
         }
         count
     }
+
+    pub fn is_particle_in_hitbox(&self, (x,y): (i32, i32)) -> bool {
+        let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
+        x >= top_left_x && x <= bottom_right_x && y <= top_left_y && y >= bottom_right_y
+    }
 }
