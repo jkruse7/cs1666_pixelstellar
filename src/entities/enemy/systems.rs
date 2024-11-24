@@ -7,8 +7,7 @@ use crate::{
     },
     entities::{
         particle::resources::ParticleMap,
-        player::components::{AnimationFrameCount, AnimationTimer, Health, Player},
-        player::systems::take_damage,
+        player::{components::{AnimationFrameCount, AnimationTimer, Health, Player}, resources::PlayerSoundTracker, systems::take_damage},
     },
     LEVEL_H,
     LEVEL_W,
@@ -169,6 +168,7 @@ pub fn track_player(
     mut death_event: EventWriter<Death>,
     asset_server: Res<AssetServer>,
     mut commands: Commands,
+    mut sound_tracker: ResMut<PlayerSoundTracker>,
 ){
     //get enemy, player and camera
     for (mut et, mut ev, mut es, mut ehb, mut timer, mut e_jump) in &mut enemy{
@@ -217,7 +217,8 @@ pub fn track_player(
     let mut no_jump = false;
     if player_hb.collides_with(&new_hb) {
         no_jump = true;
-        take_damage(&mut player_health, 1.0, &mut death_event, &asset_server, &mut commands);
+        take_damage(&mut player_health, 1.0, &mut death_event, &asset_server, &mut commands, &mut sound_tracker, &time);
+
         //info!("Player hit! Current health: {:?}", player_health.current); // 记录伤害
         if player_health.current == 0.{
             death_event.send(Death);

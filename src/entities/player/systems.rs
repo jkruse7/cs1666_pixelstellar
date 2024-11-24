@@ -1,5 +1,5 @@
 use core::num;
-use std::{cmp::{max, min}, mem::take};
+use std::{cmp::{max, min}, mem::take, time::Duration};
 
 use bevy::prelude::*;
 use super::{blaster::{self, components::*}, components::*, resources::*};
@@ -60,6 +60,10 @@ pub fn initialize(
 
     commands.insert_resource(PlayerRatioWaterParticles{
         number: 0.0,
+    });
+
+    commands.insert_resource(PlayerSoundTracker{
+        last_played: Duration::new(0, 0),
     });
 }
 
@@ -153,6 +157,7 @@ pub fn flight(
     grav_res: ResMut<GravityResource>,
     mut death_event: EventWriter<Death>,
     asset_server: Res<AssetServer>,
+    mut sound_tracker: ResMut<PlayerSoundTracker>,
 ) {
     let (mut pt, mut pv, mut pg, mut hb, mut health) = player.single_mut();
     let mut bt = blaster_transform.single_mut();
@@ -182,7 +187,7 @@ pub fn flight(
     let ratio_of_lava_particles = hb.ratio_of_lava_grid_tiles(&map);
     if ratio_of_lava_particles > 0.0 {
         pv.velocity.y = pv.velocity.y * (1. - 0.8 * ratio_of_lava_particles.powf(0.5));
-        take_damage(&mut health , 0.5, &mut death_event, &asset_server, &mut commands);
+        take_damage(&mut health , 0.5, &mut death_event, &asset_server, &mut commands, &mut sound_tracker, &time);
     }
 
     let change = pv.velocity * deltat;
@@ -326,22 +331,32 @@ pub fn take_damage(
     death_event: &mut EventWriter<Death>,
     asset_server: &Res<AssetServer>,
     mut commands: &mut Commands,
+    sound_tracker: &mut ResMut<PlayerSoundTracker>,
+    time: &Res<Time>,
 ) {
     player_health.current -= damage_amount;
     if player_health.current == 0.{
         death_event.send(Death);
     }
-    play_damage_sound(asset_server, commands);
+    play_damage_sound(asset_server, commands, sound_tracker, time);
 }
 
 fn play_damage_sound(
     asset_server: &Res<AssetServer>,
     commands: &mut Commands,
+    sound_tracker: &mut ResMut<PlayerSoundTracker>,
+    time: &Res<Time>,
 ) {
-    commands.spawn(AudioBundle {
-        source: asset_server.load(PLAYER_DAMAGE_SOUND_FILE),
-        settings: PlaybackSettings::ONCE,
-    });
+    let elapsed_since_last_play = time.elapsed() - sound_tracker.last_played;
+    let cooldown = Duration::from_secs_f32(PLAYER_DAMAGE_SOUND_DURATION);
+
+    if elapsed_since_last_play >= cooldown {
+        commands.spawn(AudioBundle {
+            source: asset_server.load(PLAYER_DAMAGE_SOUND_FILE),
+            settings: PlaybackSettings::ONCE,
+        });
+        sound_tracker.last_played = time.elapsed();
+    }
 }
 
 pub struct PlayerPlugin;
