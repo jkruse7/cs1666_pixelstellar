@@ -167,6 +167,8 @@ pub fn track_player(
     mut player_hitbox: Query<&Hitbox, (With<Player>, Without<Enemy>)>,
     mut camera: Query<&mut Transform, (Without<Player>, Without<Enemy>, With<Camera>)>,
     mut death_event: EventWriter<Death>,
+    asset_server: Res<AssetServer>,
+    mut commands: Commands,
 ){
     //get enemy, player and camera
     for (mut et, mut ev, mut es, mut ehb, mut timer, mut e_jump) in &mut enemy{
@@ -215,7 +217,7 @@ pub fn track_player(
     let mut no_jump = false;
     if player_hb.collides_with(&new_hb) {
         no_jump = true;
-        take_damage(&mut player_health, 1.0, &mut death_event);
+        take_damage(&mut player_health, 1.0, &mut death_event, &asset_server, &mut commands);
         //info!("Player hit! Current health: {:?}", player_health.current); // 记录伤害
         if player_health.current == 0.{
             death_event.send(Death);

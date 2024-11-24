@@ -152,6 +152,7 @@ pub fn flight(
     mut commands: Commands,
     grav_res: ResMut<GravityResource>,
     mut death_event: EventWriter<Death>,
+    asset_server: Res<AssetServer>,
 ) {
     let (mut pt, mut pv, mut pg, mut hb, mut health) = player.single_mut();
     let mut bt = blaster_transform.single_mut();
@@ -181,7 +182,7 @@ pub fn flight(
     let ratio_of_lava_particles = hb.ratio_of_lava_grid_tiles(&map);
     if ratio_of_lava_particles > 0.0 {
         pv.velocity.y = pv.velocity.y * (1. - 0.8 * ratio_of_lava_particles.powf(0.5));
-        take_damage(&mut health , 0.5, &mut death_event);
+        take_damage(&mut health , 0.5, &mut death_event, &asset_server, &mut commands);
     }
 
     let change = pv.velocity * deltat;
@@ -323,13 +324,25 @@ pub fn take_damage(
     player_health: &mut Health,
     damage_amount: f32,
     death_event: &mut EventWriter<Death>,
+    asset_server: &Res<AssetServer>,
+    mut commands: &mut Commands,
 ) {
     player_health.current -= damage_amount;
     if player_health.current == 0.{
         death_event.send(Death);
     }
+    play_damage_sound(asset_server, commands);
 }
 
+fn play_damage_sound(
+    asset_server: &Res<AssetServer>,
+    commands: &mut Commands,
+) {
+    commands.spawn(AudioBundle {
+        source: asset_server.load(PLAYER_DAMAGE_SOUND_FILE),
+        settings: PlaybackSettings::ONCE,
+    });
+}
 
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {

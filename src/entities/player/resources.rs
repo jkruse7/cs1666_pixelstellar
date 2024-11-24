@@ -16,6 +16,8 @@ pub const SPRITE_WIDTH: u32 = 30;
 
 pub const SPLASH_THRESHOLD: f32 = 1.5; //ratio of new ratio of water particles to old ratio of water particles to trigger splash (should be greater than 1)
 
+pub const PLAYER_DAMAGE_SOUND_FILE: &str = "damage_sound.wav";
+
 #[derive(Resource)]
 pub struct PlayerRatioWaterParticles { //Ratio of player's hitbox that is in water
     pub number: f32,
