@@ -165,6 +165,59 @@ fn update_lava(
     }
 }
 
+fn update_quicksand(
+    mut map: ResMut<ParticleMap>,
+    time: Res<Time>, 
+    mut commands: Commands,
+    mut particles: Query<&mut ParticlePosVel, With<ParticleTagQuickSand>>,
+    grav_res: ResMut<GravityResource>,
+    player_hb_query: Query<& Hitbox, With<Player>>,
+) {
+    let deltat = time.delta_seconds() ;
+
+    let player_hb: &Hitbox = player_hb_query.single();
+    let mut rng = rand::thread_rng();
+    for mut position in &mut particles {
+        if position.velocity.x != 0. && position.velocity.y != 0.{
+            let new_pos = ((position.grid_x as f32 + position.velocity.x) as i32, (position.grid_y as f32 + position.velocity.y) as i32);
+            position.velocity.y = Gravity::update_gravity(&position.velocity.y, &deltat, &grav_res);
+
+            let p = map.ray(&mut commands, (position.grid_x, position.grid_y), new_pos, ListType::OnlyAir);
+            if let Some(position_of_part) = p {
+                if position_of_part != new_pos{
+                    position.velocity = Vec2::splat(0.);
+                }
+                map.delete_at(&mut commands, (position.grid_x, position.grid_y));
+                map.insert_at::<QuickSandParticle>(&mut commands, position_of_part, ListType::OnlyAir);
+                map.give_velocity(&mut commands, position_of_part, Vec2::new(position.velocity.x, position.velocity.y), );
+            }
+        } else {
+            let mut rng = rand::thread_rng();
+            let viscosity = rng.gen::<f64>() < WATER_VISCOSITY as f64;
+                let (x, y) = (position.grid_x, position.grid_y);
+                if viscosity && map.insert_at::<QuickSandParticle>(&mut commands, (x, y-1), ListType::OnlyAir) {
+                    map.delete_at(&mut commands, (x, y));
+                }
+
+                else if viscosity && map.insert_at::<QuickSandParticle>(&mut commands, (x-1, y-1), ListType::OnlyAir){
+                    map.delete_at(&mut commands, (x, y));
+                } 
+
+                else if viscosity && map.insert_at::<QuickSandParticle>(&mut commands, (x+1, y-1), ListType::OnlyAir){
+                    map.delete_at(&mut commands, (x, y));
+                } 
+
+                else if viscosity && map.insert_at::<QuickSandParticle>(&mut commands, (x-1, y), ListType::OnlyAir){
+                    map.delete_at(&mut commands, (x, y));
+                }
+                 
+                else if viscosity && map.insert_at::<QuickSandParticle>(&mut commands, (x+1, y), ListType::OnlyAir){
+                    map.delete_at(&mut commands, (x, y));
+                }
+        }
+    }
+}
+
 fn update_gas(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
@@ -312,6 +365,8 @@ impl Plugin for ParticlePlugin {
         app.add_systems(Update, update_gas
                         .run_if(in_state(AppState::InGame)));
         app.add_systems(Update, update_lava.after(update_water)
+                        .run_if(in_state(AppState::InGame)));
+        app.add_systems(Update, update_quicksand
                         .run_if(in_state(AppState::InGame)));
         //app.add_systems(Update, paint_with_ray.after(update_water));
         //app.add_systems(Update, build_or_destroy.after(update_water));
