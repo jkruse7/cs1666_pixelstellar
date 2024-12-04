@@ -33,6 +33,7 @@ pub fn initialize_health_bar(
     ));
 }
 
+
 pub fn update_health_bar(
     mut query: Query<(&mut Style, &mut BackgroundColor), With<HealthBar>>, 
     player_query: Query<&Health, With<Player>>,
