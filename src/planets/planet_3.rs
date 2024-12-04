@@ -9,7 +9,7 @@ use crate::common::perlin_noise::*;
 use crate::LEVEL_W;
 
 const RAIN_INTENSITY: i32 = 6;
-const RAIN_VEL: Vec2 = Vec2::new(2., -6.);
+const RAIN_VEL: Vec2 = Vec2::new(2., -0.7);
 
 // Map placement type functions  --------------------------------------------------------------------------------
 fn generate_world(
@@ -23,10 +23,10 @@ fn generate_world(
     let perm3 = generate_permutation_array();
     // loop from left side of the screen to right side of the screen
     for x in MIN_X..=MAX_X {
-        let mut noise = get_1d_octaves(x as f32, 0.05, 3, 0.5, 1.2, 0., 180., &perm1);
+        let mut noise = get_1d_octaves(x as f32, 0.008, 4, 0.5, 1.2, 0., 180., &perm1);
         noise = noise.floor();
 
-        let mut noise_dirt = get_1d_octaves(x as f32, 0.012, 1, 0.5, 1.2, 0., 20., &perm2);
+        let mut noise_dirt = get_1d_octaves(x as f32, 0.012, 1, 0.5, 2.2, 0., 20., &perm2);
         noise_dirt = noise_dirt.floor();
 
         let mut noise_stone = get_1d_octaves(x as f32, 0.015, 2, 0.5, 1.2, 30., 40., &perm2);
