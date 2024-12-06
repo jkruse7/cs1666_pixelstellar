@@ -4,6 +4,7 @@ use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
 use crate::LEVEL_W;
+use crate::entities::player::components::Player;
 
 
 
@@ -100,7 +101,6 @@ fn update_grass(
     }
 }
 
-
 pub struct Planet2Plugin;
 impl Plugin for Planet2Plugin {
     fn build(&self, app: &mut App) {
@@ -109,5 +109,6 @@ impl Plugin for Planet2Plugin {
         app.add_systems(OnEnter(GamePhase::Planet2), generate_world);
         app.add_systems(OnEnter(GamePhase::Planet2), update_grass.after(generate_world));
         app.add_systems(Update, draw_rain.run_if(in_state(GamePhase::Planet2)));
+        //app.add_systems(Update, handle_chunks.run_if(in_state(GamePhase::Planet2)).after(generate_world));
     }
 } 

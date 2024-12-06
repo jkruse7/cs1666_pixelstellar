@@ -189,11 +189,6 @@ pub fn paint_with_ray(
     }
 }
 
-
-
-
-
-
 pub struct ParticlePlugin;
 impl Plugin for ParticlePlugin {
     fn build(&self, app: &mut App) {
@@ -209,5 +204,32 @@ impl Plugin for ParticlePlugin {
         
         //app.add_systems(Update, paint_with_ray.after(update_water));
         //app.add_systems(Update, build_or_destroy.after(update_water));
+    }
+} 
+
+
+
+fn handle_chunks(
+    mut chunks: ResMut<ChunkList>,
+    mut particles: ResMut<ParticleMap>,
+    mut commands: Commands,
+    player_transform: Query<&Transform, With<Player>>,
+) {
+    let pt = player_transform.single().translation;
+    let position = ((pt.x / PARTICLE_SIZE).floor() as i32, (pt.y / PARTICLE_SIZE).floor() as i32);
+
+    let new_chunks = chunks.load(position);
+
+    let old_chunks = chunks.unload(position);
+    for chunk in old_chunks {
+        particles.despawn_chunk(&mut commands, chunk);
+    }
+}
+
+pub struct ChunkPlugin;
+impl Plugin for ChunkPlugin {
+    fn build(&self, app: &mut App) {
+        app.insert_resource(ChunkList::new());
+        app.add_systems(Update, handle_chunks.run_if(in_state(AppState::InGame)));
     }
 } 

@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use crate::entities::particle::resources::ParticleMap;
+use crate::entities::particle::resources::{ParticleMap, ChunkList};
 use crate::entities::player::{components::Player,
     blaster::components::Blaster};
     use crate::entities::enemy::components::Enemy;
@@ -61,6 +61,7 @@ pub fn set_next_state(
 fn clear_level(
     mut commands: Commands,
     mut map: ResMut<ParticleMap>,
+    mut chunks: ResMut<ChunkList>,
     query: Query<Entity, Or<(With<Player>, With<Enemy>, With<Background>, With<ParticleElement>, With<HealthBar>, With<Blaster>, With<Spaceship>)>>,
 
 ){
@@ -68,6 +69,7 @@ fn clear_level(
         commands.entity(entity).despawn();
     }
     map.reset();
+    chunks.chunk_list.clear();
 }
 
 pub struct StatePlugin; 

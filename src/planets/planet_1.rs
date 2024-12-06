@@ -3,6 +3,7 @@ use rand::Rng;
 use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
+use crate::entities::player::components::Player;
 
 // Define structs --------------------------------------------------------------------------------
 // WorldGenSettings defines configurations for different terrain layers in world generation.
@@ -18,6 +19,7 @@ pub struct WorldGenSettings {
     pub height_noise: NoiseSettings,  // Controls general terrain height
     pub dirt_noise: NoiseSettings,    // Controls dirt layer height
     pub stone_noise: NoiseSettings,   // Controls stone layer height
+    pub perm: [usize; 512],
 }
 
 #[derive(Resource)]
@@ -73,6 +75,7 @@ impl Default for WorldGenSettings {
                 noise_range_max: 40.,
                 ..Default::default()
             },
+            perm: generate_permutation_array(),
         }
     }
 }
@@ -81,13 +84,20 @@ impl Default for WorldGenSettings {
 
 // Map placement type functions  --------------------------------------------------------------------------------
 fn generate_world(
-    mut map: ResMut<ParticleMap>,
-    mut commands: Commands,
-    config: Res<WorldGenSettings>,  // Use WorldGenSettings resource
+    map: &mut ResMut<ParticleMap>,
+    commands: &mut Commands,
+    config: &Res<WorldGenSettings>,  // Use WorldGenSettings resource
+    chunk: (i32, i32),
 ) {
     let perm = generate_permutation_array();
 
-    for x in MIN_X..=MAX_X {
+    let x_start = chunk.0 * 64;
+    let x_end = x_start + 64;
+
+    let y_start = chunk.1 * 64;
+    let mut y_end = y_start + 64;
+
+    for x in x_start..=x_end {
         let noise = get_1d_octaves(
             x as f32,
             config.height_noise.start_frequency,
@@ -96,9 +106,17 @@ fn generate_world(
             config.height_noise.frequency_modifier,
             config.height_noise.noise_range_min,
             config.height_noise.noise_range_max,
-            &perm,
+            &config.perm,
         )
         .floor();
+
+        let y_terrain = -90 + noise as i32;
+        if y_start > y_terrain {
+            continue;
+        }
+        if y_end > y_terrain {
+            y_end = y_terrain;
+        }
 
         let noise_dirt = get_1d_octaves(
             x as f32,
@@ -108,7 +126,7 @@ fn generate_world(
             config.dirt_noise.frequency_modifier,
             config.dirt_noise.noise_range_min,
             config.dirt_noise.noise_range_max,
-            &perm,
+            &config.perm,
         )
         .floor();
 
@@ -120,14 +138,14 @@ fn generate_world(
             config.stone_noise.frequency_modifier,
             config.stone_noise.noise_range_min,
             config.stone_noise.noise_range_max,
-            &perm,
+            &config.perm,
         )
         .floor();
 
-        for y in MIN_Y..=(-90 + noise as i32) {
+        for y in y_start..=y_end {
             let noise_threshold_min = 0.45;
             let noise_threshold_max = 0.55;
-            let noise_cave = get_2d_octaves(x as f32, y as f32, 0.03, 3, 0.5, 1.2, 0., 1., &perm);
+            let noise_cave = get_2d_octaves(x as f32, y as f32, 0.03, 3, 0.5, 1.2, 0., 1., &config.perm);
             if (y as f32) >= -50. && (y as f32) <= 90. &&
                 noise_cave >= noise_threshold_min && noise_cave >= noise_threshold_max {
                     continue;
@@ -136,13 +154,34 @@ fn generate_world(
             let current_particle = select_particle((y + 90) as f32, noise, noise_dirt, noise_stone);
             if current_particle == ParticleElement::BedRock {
                 // place data in map
-                map.insert_at::<BedRockParticle>(&mut commands, (x, y), ListType::All);
+                map.insert_at::<BedRockParticle>(commands, (x, y), ListType::All);
             } else if current_particle == ParticleElement::Dirt {
-                map.insert_at::<StoneParticle>(&mut commands, (x, y), ListType::All);
+                map.insert_at::<StoneParticle>(commands, (x, y), ListType::All);
             } else if current_particle == ParticleElement::Stone {
-                map.insert_at::<DirtParticle>(&mut commands, (x, y), ListType::All);
+                map.insert_at::<DirtParticle>(commands, (x, y), ListType::All);
             }
         }
+    }
+}
+
+fn handle_chunks(
+    config: Res<WorldGenSettings>,
+    mut chunks: ResMut<ChunkList>,
+    mut particles: ResMut<ParticleMap>,
+    mut commands: Commands,
+    player_transform: Query<&Transform, With<Player>>,
+) {
+    let pt = player_transform.single().translation;
+    let position = ((pt.x / PARTICLE_SIZE).floor() as i32, (pt.y / PARTICLE_SIZE).floor() as i32);
+
+    let new_chunks = chunks.load(position);
+    for chunk in new_chunks {
+        generate_world(&mut particles, &mut commands, &config, chunk);
+    }
+
+    let old_chunks = chunks.unload(position);
+    for chunk in old_chunks {
+        particles.despawn_chunk(&mut commands, chunk);
     }
 }
 
@@ -221,6 +260,23 @@ fn update_grass(
     }
 }
 
+// fn handle_chunks(
+//     mut chunks: ResMut<ChunkList>,
+//     mut particles: ResMut<ParticleMap>,
+//     mut commands: Commands,
+//     player_transform: Query<&Transform, With<Player>>,
+// ) {
+//     let pt = player_transform.single().translation;
+//     let position = ((pt.x / PARTICLE_SIZE).floor() as i32, (pt.y / PARTICLE_SIZE).floor() as i32);
+
+//     let new_chunks = chunks.load(position);
+
+//     let old_chunks = chunks.unload(position);
+//     for chunk in old_chunks {
+//         particles.despawn_chunk(&mut commands, chunk);
+//     }
+// }
+
 
 pub struct Planet1Plugin;
 impl Plugin for Planet1Plugin {
@@ -228,7 +284,9 @@ impl Plugin for Planet1Plugin {
         // Startup placements
         app.add_systems(OnEnter(GamePhase::Planet1), crate::common::ui::background::initialize_background);
         app.insert_resource(WorldGenSettings::default());
-        app.add_systems(OnEnter(GamePhase::Planet1), generate_world);
-        app.add_systems(OnEnter(GamePhase::Planet1), update_grass.after(generate_world));
+        app.insert_resource(ChunkList::new());
+        //app.add_systems(OnEnter(GamePhase::Planet1), generate_world);
+        //app.add_systems(OnEnter(GamePhase::Planet1), update_grass.after(generate_world));
+        app.add_systems(Update, handle_chunks.run_if(in_state(GamePhase::Planet1)));
     }
 } 

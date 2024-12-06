@@ -33,6 +33,7 @@ fn main() {
 
         // Entity Plugins
         .add_plugins(entities::particle::systems::ParticlePlugin)
+        //.add_plugins(entities::particle::systems::ChunkPlugin)
         .add_plugins(entities::enemy::systems::EnemyPlugin)
         .add_plugins(entities::player::systems::PlayerPlugin)
         .add_plugins(entities::spaceship::systems::SpaceshipPlugin)

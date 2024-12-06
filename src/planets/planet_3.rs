@@ -3,6 +3,7 @@ use rand::Rng;
 use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
+use crate::entities::player::components::Player;
 
 // Map placement type functions  --------------------------------------------------------------------------------
 fn generate_world(
@@ -45,6 +46,9 @@ fn generate_world(
         }
     }
 }
+
+
+
 fn select_particle(y: f32, noise: f32, dirt_height: f32, stone_height: f32) -> ParticleElement {
     if y >= stone_height {
         ParticleElement::Stone
@@ -79,7 +83,6 @@ fn update_grass(
     }
 }
 
-
 pub struct Planet3Plugin;
 impl Plugin for Planet3Plugin {
     fn build(&self, app: &mut App) {
@@ -87,5 +90,6 @@ impl Plugin for Planet3Plugin {
         app.add_systems(OnEnter(GamePhase::Planet3), crate::common::ui::background::initialize_background);
         app.add_systems(OnEnter(GamePhase::Planet3), generate_world);
         app.add_systems(OnEnter(GamePhase::Planet3), update_grass.after(generate_world));
+        //app.add_systems(Update, handle_chunks.run_if(in_state(GamePhase::Planet3)).after(generate_world));
     }
 } 
