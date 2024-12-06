@@ -221,8 +221,8 @@ impl ChunkList {
         let x_chunk = (pos.0 as f32 / self.size).floor() as i32;
         let y_chunk = (pos.1 as f32 / self.size).floor() as i32;
 
-        let min = IVec2::new(x_chunk - 1, y_chunk - 1);
-        let max = IVec2::new(x_chunk + 1, y_chunk + 1);
+        let min = IVec2::new(x_chunk - 5, y_chunk - 3);
+        let max = IVec2::new(x_chunk + 5, y_chunk + 3);
 
         let mut added: Vec<(i32, i32)> = Vec::new();
 
@@ -246,8 +246,8 @@ impl ChunkList {
         let x_chunk = (pos.0 as f32 / self.size).floor() as i32;
         let y_chunk = (pos.1 as f32 / self.size).floor() as i32;
 
-        let min = IVec2::new(x_chunk - 1, y_chunk - 1);
-        let max = IVec2::new(x_chunk + 1, y_chunk + 1);
+        let min = IVec2::new(x_chunk - 5, y_chunk - 3);
+        let max = IVec2::new(x_chunk + 5, y_chunk + 3);
 
         let to_remove: Vec<(i32, i32)> = self.chunk_list
             .iter()
