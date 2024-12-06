@@ -1,24 +1,33 @@
+//TODO: enemy,  gun permissions
+
 use bevy::prelude::*;
 use rand::Rng;
+use crate::common::gravity::{change_gravity, GravityResource};
 use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
 use crate::entities::player::components::Player;
+use crate::LEVEL_W;
+
+const RAIN_INTENSITY: i32 = 6;
+const RAIN_VEL: Vec2 = Vec2::new(2., -0.7);
 
 // Map placement type functions  --------------------------------------------------------------------------------
 fn generate_world(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
+    grav_res: ResMut<GravityResource>,
 ) {
+    change_gravity(grav_res, 1400., 600.);
     let perm1 = generate_permutation_array();
     let perm2 = generate_permutation_array();
     let perm3 = generate_permutation_array();
     // loop from left side of the screen to right side of the screen
     for x in MIN_X..=MAX_X {
-        let mut noise = get_1d_octaves(x as f32, 0.05, 3, 0.5, 1.2, 0., 180., &perm1);
+        let mut noise = get_1d_octaves(x as f32, 0.008, 4, 0.5, 1.2, 0., 180., &perm1);
         noise = noise.floor();
 
-        let mut noise_dirt = get_1d_octaves(x as f32, 0.012, 1, 0.5, 1.2, 0., 20., &perm2);
+        let mut noise_dirt = get_1d_octaves(x as f32, 0.012, 1, 0.5, 2.2, 0., 20., &perm2);
         noise_dirt = noise_dirt.floor();
 
         let mut noise_stone = get_1d_octaves(x as f32, 0.015, 2, 0.5, 1.2, 30., 40., &perm2);
@@ -38,10 +47,10 @@ fn generate_world(
             if current_particle == ParticleElement::BedRock {
                 // place data in map
                 map.insert_at::<BedRockParticle>(&mut commands, (x, y), ListType::All);
-            } else if current_particle == ParticleElement::Dirt {
-                map.insert_at::<StoneParticle>(&mut commands, (x, y), ListType::All);
+            } else if current_particle == ParticleElement::Hellstone {
+                map.insert_at::<HellstoneParticle>(&mut commands, (x, y), ListType::All);
             } else if current_particle == ParticleElement::Stone {
-                map.insert_at::<DirtParticle>(&mut commands, (x, y), ListType::All);
+                map.insert_at::<StoneParticle>(&mut commands, (x, y), ListType::All);
             }
         }
     }
@@ -51,34 +60,25 @@ fn generate_world(
 
 fn select_particle(y: f32, noise: f32, dirt_height: f32, stone_height: f32) -> ParticleElement {
     if y >= stone_height {
-        ParticleElement::Stone
+        ParticleElement::Hellstone
     } else if y >= dirt_height{
-        ParticleElement::Dirt
+        ParticleElement::Stone
     } else {
         ParticleElement::BedRock
     }
 }
 
-fn update_grass(
+fn draw_lava_rain(
     mut map: ResMut<ParticleMap>,
-    time: Res<Time>, 
     mut commands: Commands,
-    mut particles: Query<&mut ParticlePosVel, With<ParticleTagDirt>>,
 ) {
-    for mut position in &mut particles {
-        let (x, y) = (position.grid_x, position.grid_y);
-        if map.get_element_at((x, y+1)) == ParticleElement::Air{
-            map.delete_at(&mut commands, (x, y));
-            map.insert_at::<GrassParticle>(&mut commands, (x, y), ListType::OnlyAir);
-        }
-        if ((map.get_element_at((x + 1, y)) == ParticleElement::Air &&
-             map.get_element_at((x+1, y-1)) == ParticleElement::Air)||
-            (map.get_element_at((x + 1, y)) == ParticleElement::Air &&
-             map.get_element_at((x+1, y-1)) == ParticleElement::Air))&&
-           (map.get_element_at((x, y-1)) == ParticleElement::Dirt ||
-            map.get_element_at((x, y-1)) == ParticleElement::Grass ){
-            map.delete_at(&mut commands, (x, y));
-            map.insert_at::<GrassParticle>(&mut commands, (x, y), ListType::OnlyAir);
+    for _ in 0..RAIN_INTENSITY{
+        let mut rng = rand::thread_rng();
+        let x = rng.gen_range(-(LEVEL_W/2.)..=(LEVEL_W/2.)) as i32;
+        let y = rng.gen_range(100..200);
+        if map.get_element_at((x, y)) == ParticleElement::Air {
+            map.insert_at::<LavaParticle>(&mut commands, (x, y), ListType::OnlyAir);
+            map.give_velocity(&mut commands, (x,y), RAIN_VEL);
         }
     }
 }
@@ -89,7 +89,6 @@ impl Plugin for Planet3Plugin {
         // Startup placements
         app.add_systems(OnEnter(GamePhase::Planet3), crate::common::ui::background::initialize_background);
         app.add_systems(OnEnter(GamePhase::Planet3), generate_world);
-        app.add_systems(OnEnter(GamePhase::Planet3), update_grass.after(generate_world));
-        //app.add_systems(Update, handle_chunks.run_if(in_state(GamePhase::Planet3)).after(generate_world));
+        app.add_systems(Update, draw_lava_rain.run_if(in_state(GamePhase::Planet3)));
     }
 } 

@@ -2,12 +2,8 @@ use bevy::prelude::*;
 use super::{components::*, resources::*};
 use crate::{
     common::{
-        hitbox::Hitbox,
-        gravity::Gravity,
-        
-        state::{AppState, GamePhase},
+        gravity::{Gravity, GravityResource}, hitbox::Hitbox, state::{set_next_state, AppState, GamePhase}
     },
-    common::state::set_next_state,
     LEVEL_H,
     LEVEL_W,
     WIN_W,
@@ -20,8 +16,8 @@ pub fn initialize(
     asset_server: Res<AssetServer>,
     mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
 ){
-    let ship_sheet_handle = asset_server.load("spaceship_nobkg.png");
-    let ship_layout = TextureAtlasLayout::from_grid(UVec2::splat(100), 1, 1, None, None);
+    let ship_sheet_handle = asset_server.load("spaceship_final.png");
+    let ship_layout = TextureAtlasLayout::from_grid(UVec2::new(62, 101), 1, 1, None, None);
     let ship_layout_handle = texture_atlases.add(ship_layout);
     commands.spawn((
         SpriteBundle {
@@ -43,7 +39,7 @@ pub fn initialize(
         },
         Velocity::new(),
         Gravity::new(),
-        Hitbox::new(25 as f32, 100 as f32, Vec2::new(WIN_W/3., 110.)),
+        Hitbox::new(50 as f32, 100 as f32, Vec2::new(WIN_W/3., 100.)),
         Spaceship,
         FoundFlag::new(),
     ));
@@ -54,6 +50,7 @@ pub fn spaceship_gravity(
     time: Res<Time>, 
     mut ship: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox), With<Spaceship>>, 
     hitboxes: Query<&Hitbox, Without<Spaceship>>,
+    grav_res: ResMut<GravityResource>,
 ) {
     /*Julianne 10/8: This function is the same as player flight, but only makes the downward force on the enemy (no flight)*/
     for (mut pt, mut pv, mut pg, mut hb) in &mut ship{
@@ -61,13 +58,13 @@ pub fn spaceship_gravity(
     let deltat = time.delta_seconds();
 
     //update gravity here
-        pg.update_g(&pv.velocity.y, &deltat);
+        pg.update_g(&pv.velocity.y, &deltat, &grav_res);
         pv.velocity.y = pg.get_g();
     
 
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
-    let new_hb = Hitbox::new(25 as f32, 100 as f32, Vec2::new(new_pos.x-25., new_pos.y));
+    let new_hb = Hitbox::new(50 as f32, 100 as f32, Vec2::new(new_pos.x, new_pos.y));
     //Bound enemy to within level height
     if new_pos.y >= -(LEVEL_H / 2.) + (100 as f32) / 2.
         && new_pos.y <= LEVEL_H - (100 as f32) / 2.
@@ -77,7 +74,7 @@ pub fn spaceship_gravity(
             pt.translation = new_pos;
             *hb = new_hb; 
     }  
-    let new_hb = Hitbox::new(25 as f32, 100 as f32,Vec2::new(new_pos.x-25., new_pos.y));
+    let new_hb = Hitbox::new(50 as f32, 100 as f32,Vec2::new(new_pos.x, new_pos.y));
     // Velocity is zero when hits the ground
     if pt.translation.y <= -(LEVEL_H / 2.) + (50 as f32) ||
         new_hb.all_ship_collisions(&hitboxes)

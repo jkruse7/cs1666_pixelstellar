@@ -1,18 +1,17 @@
 use core::num;
-use std::cmp::{min, max};
+use std::{cmp::{max, min}, mem::take, time::Duration};
 
 use bevy::prelude::*;
 use super::{blaster::{self, components::*}, components::*, resources::*};
 use crate::{
     common::{
-        gravity::Gravity, 
-        hitbox::Hitbox
+        death::Death, gravity::{Gravity, GravityResource}, hitbox::Hitbox
     },
     entities::{
         enemy::components::Enemy, 
         particle::{components::{ParticleElement, WaterParticle},
         resources::*},
-        spaceship::components::{Spaceship, FoundSpaceship, FoundFlag}
+        spaceship::components::{FoundFlag, FoundSpaceship, Spaceship}
     },
     LEVEL_H,
     LEVEL_W,
@@ -61,6 +60,10 @@ pub fn initialize(
 
     commands.insert_resource(PlayerRatioWaterParticles{
         number: 0.0,
+    });
+
+    commands.insert_resource(PlayerSoundTracker{
+        last_played: Duration::new(0, 0),
     });
 }
 
@@ -111,7 +114,13 @@ pub fn move_player(
     //Account for player in water
     let ratio_of_water_particles = hb.ratio_of_water_grid_tiles(&map);
     if ratio_of_water_particles > 0.0 {
-        pv.velocity.x = pv.velocity.x * (1. - 0.7 * ratio_of_water_particles.powf(0.5));
+        pv.velocity.x = pv.velocity.x * (1. - 0.6 * ratio_of_water_particles.powf(0.5));
+    }
+
+    // Account for player in lava
+    let ratio_of_lava_particles = hb.ratio_of_lava_grid_tiles(&map);
+    if ratio_of_lava_particles > 0.0 {
+        pv.velocity.x = pv.velocity.x * (1. - 0.75 * ratio_of_lava_particles.powf(0.5));
     }
 
     let change = pv.velocity * deltat;
@@ -139,14 +148,18 @@ pub fn move_player(
 pub fn flight(
     time: Res<Time>, 
     input: Res<ButtonInput<KeyCode>>, 
-    mut player: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox), With<Player>>, 
+    mut player: Query<(&mut Transform, &mut Velocity, &mut Gravity, &mut Hitbox, &mut Health), With<Player>>, 
     hitboxes: Query<&Hitbox, Without<Player>>,
     mut blaster_transform: Query<&mut Transform, (With<Blaster>, Without<Enemy>, Without<Player>)>,
     map: ResMut<ParticleMap>,
     mut player_ratio_water_particles: ResMut<PlayerRatioWaterParticles>,
     mut commands: Commands,
+    grav_res: ResMut<GravityResource>,
+    mut death_event: EventWriter<Death>,
+    asset_server: Res<AssetServer>,
+    mut sound_tracker: ResMut<PlayerSoundTracker>,
 ) {
-    let (mut pt, mut pv, mut pg, mut hb) = player.single_mut();
+    let (mut pt, mut pv, mut pg, mut hb, mut health) = player.single_mut();
     let mut bt = blaster_transform.single_mut();
     let deltat = time.delta_seconds();
     let acc_y = ACCEL_RATE_Y * deltat;
@@ -161,14 +174,22 @@ pub fn flight(
             pv.velocity.y = 0.0;
         }
     } else {
-        pg.update_g(&pv.velocity.y, &deltat);
+        pg.update_g(&pv.velocity.y, &deltat, &grav_res);
         pv.velocity.y = pg.get_g();
     }
     //Account for player in water
     let ratio_of_water_particles = hb.ratio_of_water_grid_tiles(&map);
     if ratio_of_water_particles > 0.0 {
-        pv.velocity.y = pv.velocity.y * (1. - 0.7 * ratio_of_water_particles.powf(0.5));
+        pv.velocity.y = pv.velocity.y * (1. - 0.65 * ratio_of_water_particles.powf(0.5));
     }
+
+    // Account for player in lava
+    let ratio_of_lava_particles = hb.ratio_of_lava_grid_tiles(&map);
+    if ratio_of_lava_particles > 0.0 {
+        pv.velocity.y = pv.velocity.y * (1. - 0.8 * ratio_of_lava_particles.powf(0.5));
+        take_damage(&mut health , 0.5, &mut death_event, &asset_server, &mut commands, &mut sound_tracker, &time);
+    }
+
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
@@ -304,7 +325,41 @@ fn get_y_splash_distance(y_velocity: f32) -> i32 {
     }
 }
 
+pub fn take_damage(
+    player_health: &mut Health,
+    damage_amount: f32,
+    death_event: &mut EventWriter<Death>,
+    asset_server: &Res<AssetServer>,
+    mut commands: &mut Commands,
+    sound_tracker: &mut ResMut<PlayerSoundTracker>,
+    time: &Res<Time>,
+) {
+    player_health.current -= damage_amount;
+    if player_health.current == 0.{
+        death_event.send(Death);
+    }
+    if PLAY_SOUND_BOOL {
+        play_damage_sound(asset_server, commands, sound_tracker, time);
+    }
+}
 
+fn play_damage_sound(
+    asset_server: &Res<AssetServer>,
+    commands: &mut Commands,
+    sound_tracker: &mut ResMut<PlayerSoundTracker>,
+    time: &Res<Time>,
+) {
+    let elapsed_since_last_play = time.elapsed() - sound_tracker.last_played;
+    let cooldown = Duration::from_secs_f32(PLAYER_DAMAGE_SOUND_DURATION);
+
+    if elapsed_since_last_play >= cooldown {
+        commands.spawn(AudioBundle {
+            source: asset_server.load(PLAYER_DAMAGE_SOUND_FILE),
+            settings: PlaybackSettings::ONCE,
+        });
+        sound_tracker.last_played = time.elapsed();
+    }
+}
 
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {

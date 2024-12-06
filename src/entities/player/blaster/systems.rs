@@ -98,7 +98,6 @@ pub fn shoot_blaster(
     if buttons.pressed(MouseButton::Left){
         match blaster_selection.selected {
             BlasterType::Water => {
-                info!("AAAAAAA");
                 if let Some(world_position) = 
                     window.cursor_position()
                         .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
@@ -107,11 +106,9 @@ pub fn shoot_blaster(
                     let size = 1.;
                     let mut y: f32 = -size * PARTICLE_SIZE;
     
-                    info!("BBBBBBBBB");
                 if time_since_last_fired > RECHARGE_RATE{
                     blaster_last_fired_time.last_fired = time.elapsed_seconds_f64();
                     if let Some(cursor_position) = window.cursor_position() {
-                        info!("GGGGGGGGGGGG");
                         if let Some(world_position) = camera.viewport_to_world(camera_transform, cursor_position) {
                             let mut direction = (world_position.origin.truncate() - blaster_transform.translation.truncate()).normalize() * BLASTER_POWER;
                             
@@ -130,7 +127,7 @@ pub fn shoot_blaster(
                         .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
                         .map(|ray| ray.origin.truncate())
                 {
-                    let size = 1.;
+                    let size = 2.;
                     let mut y: f32 = -size * PARTICLE_SIZE;
                     while y < size * PARTICLE_SIZE + 0.1{
                         let mut x: f32 = -size * PARTICLE_SIZE;
@@ -160,6 +157,29 @@ pub fn shoot_blaster(
                             x += PARTICLE_SIZE;
                         }
                         y += PARTICLE_SIZE;
+                    }
+                }
+            }
+            BlasterType::Lava => {
+                if let Some(world_position) = 
+                window.cursor_position()
+                    .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+                    .map(|ray| ray.origin.truncate())
+                {
+                    let size = 1.;
+                    let mut y: f32 = -size * PARTICLE_SIZE;
+
+                    if time_since_last_fired > RECHARGE_RATE{
+                        blaster_last_fired_time.last_fired = time.elapsed_seconds_f64();
+                        if let Some(cursor_position) = window.cursor_position() {
+                            if let Some(world_position) = camera.viewport_to_world(camera_transform, cursor_position) {
+                                let mut direction = (world_position.origin.truncate() - blaster_transform.translation.truncate()).normalize() * BLASTER_POWER;
+                                
+                                let position = (convert_to_grid_position(blaster_transform.translation.x + blaster_vector.vector.normalize().x*BLASTER_DISPLACEMENT, blaster_transform.translation.y + blaster_vector.vector.normalize().y*BLASTER_DISPLACEMENT)); //shoot slightly in the direction of the cursor
+                                map.insert_at::<LavaParticle>(&mut commands, position, ListType::OnlyAir);
+                                map.give_velocity(&mut commands, position, direction);  
+                            }
+                        }
                     }
                 }
             }
@@ -203,6 +223,7 @@ fn change_blaster_sprite(
         BlasterType::Water => 0,
         BlasterType::Deleter => 1,
         BlasterType::Gas => 2,
+        BlasterType::Lava => 3,
     };    
 }
 
@@ -217,6 +238,8 @@ pub fn handle_blaster_change_input(
         event_writer.send(ChangeBlasterEvent { new_blaster_type: BlasterType::Deleter });
     } else if keyboard_input.just_pressed(KeyCode::Digit3) {
         event_writer.send(ChangeBlasterEvent { new_blaster_type: BlasterType::Gas });
+    } else if keyboard_input.just_pressed(KeyCode::Digit4) {
+        event_writer.send(ChangeBlasterEvent { new_blaster_type: BlasterType::Lava });
     }
 }
 
@@ -224,10 +247,23 @@ pub fn change_blaster_on_event(
     mut q_blaster: Query<(&Blaster, &mut TextureAtlas), With<Blaster>>,
     mut events: EventReader<ChangeBlasterEvent>,
     mut blaster_selection: ResMut<BlasterSelection>,
+    mut q_window: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
 ) {
+    let mut window: Mut<'_, Window> = q_window.single_mut();
     let (_, mut texture_atlas) = q_blaster.single_mut();
+
     for ev in events.read() {
         blaster_selection.selected = ev.new_blaster_type;
         change_blaster_sprite(&mut texture_atlas, &blaster_selection);
+
+        if blaster_selection.selected == BlasterType::Deleter {
+            set_cursor(&mut window, CursorIcon::Cell);
+        } else if window.cursor.icon == CursorIcon::Crosshair {
+            set_cursor(&mut window, CursorIcon::Crosshair);
+        }
     }
+}
+
+fn set_cursor(window: &mut Window, cursor_icon: CursorIcon) {
+    window.cursor.icon = cursor_icon;
 }

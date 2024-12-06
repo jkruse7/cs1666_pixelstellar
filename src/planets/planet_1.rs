@@ -4,6 +4,7 @@ use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
 use crate::entities::player::components::Player;
+use crate::common::gravity::GravityResource;
 
 // Define structs --------------------------------------------------------------------------------
 // WorldGenSettings defines configurations for different terrain layers in world generation.
@@ -89,6 +90,9 @@ fn generate_world(
     config: &Res<WorldGenSettings>,  // Use WorldGenSettings resource
     chunk: (i32, i32),
 ) {
+    //crate::common::gravity::initialize(commands); //init gravity
+    //commands.insert_resource(GravityResource::new(3600., 750.));
+
     let perm = generate_permutation_array();
 
     let x_start = chunk.0 * 64;
@@ -260,23 +264,11 @@ fn update_grass(
     }
 }
 
-// fn handle_chunks(
-//     mut chunks: ResMut<ChunkList>,
-//     mut particles: ResMut<ParticleMap>,
-//     mut commands: Commands,
-//     player_transform: Query<&Transform, With<Player>>,
-// ) {
-//     let pt = player_transform.single().translation;
-//     let position = ((pt.x / PARTICLE_SIZE).floor() as i32, (pt.y / PARTICLE_SIZE).floor() as i32);
-
-//     let new_chunks = chunks.load(position);
-
-//     let old_chunks = chunks.unload(position);
-//     for chunk in old_chunks {
-//         particles.despawn_chunk(&mut commands, chunk);
-//     }
-// }
-
+fn set_crosshair_cursor( mut q_window: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
+) {
+    let mut window = q_window.single_mut();
+    window.cursor.icon = CursorIcon::Cell;
+}
 
 pub struct Planet1Plugin;
 impl Plugin for Planet1Plugin {
@@ -285,8 +277,13 @@ impl Plugin for Planet1Plugin {
         app.add_systems(OnEnter(GamePhase::Planet1), crate::common::ui::background::initialize_background);
         app.insert_resource(WorldGenSettings::default());
         app.insert_resource(ChunkList::new());
+        app.insert_resource(GravityResource::new(3600., 750.));
+        //app.add_systems(OnEnter(GamePhase::Planet1), generate_world);
+        app.add_systems(Update, handle_chunks.run_if(in_state(GamePhase::Planet1)));
+
+
+        app.add_systems(OnEnter(GamePhase::Planet1), set_crosshair_cursor);
         //app.add_systems(OnEnter(GamePhase::Planet1), generate_world);
         //app.add_systems(OnEnter(GamePhase::Planet1), update_grass.after(generate_world));
-        app.add_systems(Update, handle_chunks.run_if(in_state(GamePhase::Planet1)));
     }
 } 
