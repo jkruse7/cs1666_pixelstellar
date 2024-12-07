@@ -67,10 +67,10 @@ impl ParticleMap {
     */
     pub fn insert_at<P: NewParticle + Bundle>(&mut self, commands: &mut Commands, pos: (i32, i32), list: ListType) -> bool {
         // do not spawn particles if they are outside of map. will need to change later with chunks
-        if  (pos.0 < -(LEVEL_W/2.) as i32) || (pos.0 > (LEVEL_W/2.) as i32) ||
-            (pos.1 < -(LEVEL_H/2.) as i32) || (pos.1 > (LEVEL_H/2.) as i32){
-            return false
-        }
+        // if  (pos.0 < -(LEVEL_W/2.) as i32) || (pos.0 > (LEVEL_W/2.) as i32) ||
+        //     (pos.1 < -(LEVEL_H/2.) as i32) || (pos.1 > (LEVEL_H/2.) as i32){
+        //     return false
+        // }
         let element_at_pos = self.get_element_at(pos);
     
         
