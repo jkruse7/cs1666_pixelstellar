@@ -83,17 +83,21 @@ pub fn move_player(
     let (mut spaceship_hb, mut found_flag) = spaceship.single_mut();
 
     if input.pressed(KeyCode::KeyA) {
-        if pt.translation.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.{
-            deltav_x -= 1.;
-            ps.flip_x = true;
-        }
+        // if pt.translation.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.{
+        //     deltav_x -= 1.;
+        //     ps.flip_x = true;
+        // }
+        deltav_x -= 1.;
+        ps.flip_x = true;
     }
 
     if input.pressed(KeyCode::KeyD) {
-        if pt.translation.x <= LEVEL_W - (LEVEL_W / 2. + (SPRITE_WIDTH as f32) / 2.){
-            deltav_x += 1.;
-            ps.flip_x = false;
-        }
+        // if pt.translation.x <= LEVEL_W - (LEVEL_W / 2. + (SPRITE_WIDTH as f32) / 2.){
+        //     deltav_x += 1.;
+        //     ps.flip_x = false;
+        // }
+        deltav_x += 1.;
+        ps.flip_x = false;
     }
     let deltat = time.delta_seconds();
     let acc_x = ACCEL_RATE_X * deltat;
