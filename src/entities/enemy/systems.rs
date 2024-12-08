@@ -101,6 +101,39 @@ pub fn initialize(
     } else if *game_state == GamePhase::Planet5 {
 
     } else if *game_state == GamePhase::Planet6 {
+        let enemy_sheet_handle = asset_server.load("planet_3/ghost.png");
+        //             used to be tilesize. removed TILE_SIZE and now at 100, but change as needed  \/
+        let enemy_layout = TextureAtlasLayout::from_grid(UVec2::new(W2_SPRITE_WIDTH, W2_SPRITE_HEIGHT), 1, 1, None, None);
+        let enemy_layout_len = enemy_layout.textures.len();
+        let enemy_layout_handle = texture_atlases.add(enemy_layout);
+        commands.spawn((
+            SpriteBundle {
+                texture: enemy_sheet_handle,
+                transform: Transform {
+                    // Julianne 10/8: For now, enemy is being spawned at WIN_W. This will need to be changed eventually.
+                    translation: Vec3::new(WIN_W / 2., 100.0, 900.),
+                    ..default()
+                },
+                sprite: Sprite {
+                    flip_x: false,
+                    ..default()
+                },
+                ..default()
+            },
+            TextureAtlas {
+                layout: enemy_layout_handle,
+                index: 0,
+            },
+            AnimationTimer(Timer::from_seconds(W1_ANIM_TIME, TimerMode::Repeating)),
+            AnimationFrameCount(enemy_layout_len),
+            Velocity::new(),
+            EnemyHealth::new(),
+            Gravity::new(),
+            Hitbox::new(W2_SPRITE_WIDTH as f32, W2_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
+            DamageBox::new(W2_SPRITE_WIDTH as f32, W2_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
+            Jump::new(),  
+            Enemy,
+        ));
 
     } else if *game_state == GamePhase::Planet7 {
 

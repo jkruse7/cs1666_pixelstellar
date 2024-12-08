@@ -123,6 +123,13 @@ pub fn move_player(
         pv.velocity.x = pv.velocity.x * (1. - 0.75 * ratio_of_lava_particles.powf(0.5));
     }
 
+
+    let ratio_of_toxic_gas_particles = hb.ratio_of_toxic_gas_tiles(&map);
+    if ratio_of_toxic_gas_particles > 0.0 {
+        pv.velocity.x = pv.velocity.x * (1. - 0.9 * ratio_of_toxic_gas_particles.powf(0.5));
+        player_health.take_damage(0.1 * ratio_of_toxic_gas_particles);
+    }
+
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());

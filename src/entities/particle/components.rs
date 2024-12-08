@@ -33,6 +33,8 @@ pub enum ParticleElement {
     Obsidian,
     Hellstone,
     Lava,
+    AcidicDirt,
+    ToxicGas,
 }
 
 
@@ -453,3 +455,91 @@ impl NewParticle for LavaParticle {
     }
 }
 
+
+
+// AcidicDirt ------------------------------------------------------------------------
+#[derive(Component, Debug)]
+pub struct ParticleTagAcidicDirt;
+#[derive(Bundle, Debug)]
+pub struct AcidicDirtParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    tag: ParticleTagAcidicDirt,
+}
+impl NewParticle for AcidicDirtParticle {
+    const ELEMENT: ParticleElement = ParticleElement::AcidicDirt;
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
+        let mut rng = rand::thread_rng();
+        let red = rng.gen_range(10..=30) as u8;
+        let green = rng.gen_range(20..=30) as u8;
+        let blue = rng.gen_range(5..=15) as u8;
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgb_u8(red, green, blue),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        0.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosVel::new(x, y, vel),
+                data: ParticleElement::AcidicDirt,
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
+            },
+            tag: ParticleTagAcidicDirt,
+        }
+    }
+}
+
+// ToxicGas ------------------------------------------------------------------------
+#[derive(Component)]
+pub struct ParticleTagToxicGas;
+#[derive(Bundle)]
+pub struct ToxicGasParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    tag: ParticleTagToxicGas,
+}
+impl NewParticle for ToxicGasParticle {
+    const ELEMENT: ParticleElement = ParticleElement::ToxicGas;
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
+        let mut rng = rand::thread_rng();
+        let (r,g,b) = (rng.gen_range(165..=180) as u8, rng.gen_range(249..=255) as u8, rng.gen_range(165..=180) as u8);
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgba_u8(r, g, b, 150),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        904.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosVel::new(x, y, vel),
+                data: ParticleElement::ToxicGas,
+                // correct hitbox:
+                // hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
+                // incorrect hitbox: (so that player can walk through)
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
+            },
+            tag: ParticleTagToxicGas,
+        }
+    }
+}

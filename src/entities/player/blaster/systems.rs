@@ -153,7 +153,7 @@ pub fn shoot_blaster(
                         let mut x: f32 = -size * PARTICLE_SIZE;
                         while x < size * PARTICLE_SIZE + 0.1{
                             let position = (((world_position.x+x) / PARTICLE_SIZE) as i32, ((world_position.y+y) / PARTICLE_SIZE) as i32);
-                            map.insert_at::<GasParticle>(&mut commands, (position.0, position.1), ListType::OnlyAir);
+                            map.insert_at::<ToxicGasParticle>(&mut commands, (position.0, position.1), ListType::OnlyAir);
                             x += PARTICLE_SIZE;
                         }
                         y += PARTICLE_SIZE;

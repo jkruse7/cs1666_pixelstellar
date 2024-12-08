@@ -70,7 +70,7 @@ impl ParticleMap {
         }
         let element_at_pos = self.get_element_at(pos);
     
-        
+        info!("Element: {:?}", element_at_pos);
         let should_replace = match list {
             ListType::All => true,
             ListType::OnlyAir => element_at_pos == ParticleElement::Air,
@@ -81,6 +81,7 @@ impl ParticleMap {
         if should_replace{
             // If we need to replace a non-air element, delete it
             if element_at_pos != ParticleElement::Air {
+                info!("Delete");
                 self.delete_at(commands, pos);
             }
             let particle_instance = P::new(pos.0, pos.1, Vec2::splat(0.));

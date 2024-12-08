@@ -221,6 +221,58 @@ fn update_gas(
 
 
 
+fn update_toxic_gas(
+    mut map: ResMut<ParticleMap>,
+    mut commands: Commands,
+    mut particles: Query<&mut ParticlePosVel, With<ParticleTagToxicGas>>,
+) {
+    for mut position in &mut particles {
+        let mut rng = rand::thread_rng();
+        let move_r = 2;
+        let decay_rate = 50;
+        // This decay logic just says if the positions 10 away in each cardinal direction is air theres a small chance to despawn.
+        // just means that 
+        //               1 to disable or just comment out
+        if rng.gen_range(1..decay_rate) == 0 {
+            if map.get_element_at((position.grid_x+10, position.grid_y)) == ParticleElement::Air &&
+               map.get_element_at((position.grid_x, position.grid_y+10)) == ParticleElement::Air &&
+               map.get_element_at((position.grid_x-10, position.grid_y)) == ParticleElement::Air &&
+               map.get_element_at((position.grid_x, position.grid_y-10)) == ParticleElement::Air {
+                map.delete_at(&mut commands, (position.grid_x, position.grid_y));
+               }
+        } else if rng.gen_range(0..=1) == 0{
+            let radius: i32 = rng.gen_range(1..=3);
+            let center_x = position.grid_x;
+            let center_y = position.grid_y;
+            
+
+            // We can use this to give certain elements different densities. some may float very quickly, some may disperse more, etc.
+            //70% chance to pick an upward angle, 30% chance for any angle
+            let angle = if rng.gen_bool(0.4) {
+                // Bias towards an upward angle (between π/4 and 3π/4)
+                rng.gen_range(-3.0*std::f32::consts::FRAC_PI_4..=-1.0*std::f32::consts::FRAC_PI_4)
+            } else {
+                rng.gen_range(0.0..=2.0 * std::f32::consts::PI)
+            };
+            // or just be random.
+            //let angle = rng.gen_range(0.0..=2.0 * std::f32::consts::PI);
+
+            let dx = (radius as f32 * angle.cos()).round() as i32;
+            let dy = (radius as f32 * angle.sin()).round() as i32;
+            let new_pos = (center_x + dx, center_y + dy);
+            
+            if let Some(position_of_part) = map.ray(&mut commands, (center_x, center_y), new_pos, ListType::Whitelist(vec!(ParticleElement::ToxicGas, ParticleElement::Air, ParticleElement::Stone, ParticleElement::AcidicDirt))) {
+                if map.get_element_at(position_of_part) == ParticleElement::Air {
+                    map.delete_at(&mut commands, (center_x, center_y));
+                    // Check that the new coordinates are within bounds before spawning
+                    if grid_coords_within_map(position_of_part) {
+                        map.insert_at::<ToxicGasParticle>(&mut commands, position_of_part, ListType::Whitelist(vec![ParticleElement::Air, ParticleElement::Water, ParticleElement::Stone]));
+                    }
+                }
+            }
+        }
+    }
+}
 
 
 
@@ -312,6 +364,8 @@ impl Plugin for ParticlePlugin {
         app.add_systems(Update, update_gas
                         .run_if(in_state(AppState::InGame)));
         app.add_systems(Update, update_lava.after(update_water)
+                        .run_if(in_state(AppState::InGame)));
+        app.add_systems(Update, update_toxic_gas.after(update_water)
                         .run_if(in_state(AppState::InGame)));
         //app.add_systems(Update, paint_with_ray.after(update_water));
         //app.add_systems(Update, build_or_destroy.after(update_water));
