@@ -45,15 +45,15 @@ impl From<Vec2> for Velocity {
     }
 }
 
-#[derive(Component)]
-pub struct EnemyHealth {
-    pub hp: i32,
-}
+// #[derive(Component)]
+// pub struct EnemyHealth {
+//     pub hp: i32,
+// }
 
-impl EnemyHealth {
-    pub fn new() -> Self {
-        Self {
-            hp: 100,
-        }
-    }
-}
+// impl EnemyHealth {
+//     pub fn new() -> Self {
+//         Self {
+//             hp: 100,
+//         }
+//     }
+// }
