@@ -220,7 +220,22 @@ fn update_gas(
 
 
 
-
+fn get_surrounding_toxic_gas_ratio(
+    mut map: &ResMut<ParticleMap>,
+    x: i32,
+    y: i32,
+) -> f32 {
+    let mut count: f32 = 1.0;
+    if (map.get_element_at((x-1, y-1)) == ParticleElement::ToxicGas){ count += 1.0; }
+    if (map.get_element_at((x-1, y  )) == ParticleElement::ToxicGas){ count += 1.0; }
+    if (map.get_element_at((x-1, y+1)) == ParticleElement::ToxicGas){ count += 1.0; }
+    if (map.get_element_at((x  , y-1)) == ParticleElement::ToxicGas){ count += 1.0; }
+    if (map.get_element_at((x  , y+1)) == ParticleElement::ToxicGas){ count += 1.0; }
+    if (map.get_element_at((x+1, y-1)) == ParticleElement::ToxicGas){ count += 1.0; }
+    if (map.get_element_at((x+1, y  )) == ParticleElement::ToxicGas){ count += 1.0; }
+    if (map.get_element_at((x+1, y+1)) == ParticleElement::ToxicGas){ count += 1.0; }
+    return (count / 8.0)
+}
 fn update_toxic_gas(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
@@ -230,7 +245,7 @@ fn update_toxic_gas(
         let mut rng = rand::thread_rng();
         let move_r = 2;
         let decay_rate = 50;
-        let acidity_rate = 3;
+        let acidity_rate = 4;
         // This decay logic just says if the positions 10 away in each cardinal direction is air theres a small chance to despawn.
         // just means that 
         //               1 to disable or just comment out
@@ -270,9 +285,16 @@ fn update_toxic_gas(
                 if map.get_element_at(position_of_part) == ParticleElement::Air {
                     map.delete_at(&mut commands, (center_x, center_y));
                     // Check that the new coordinates are within bounds before spawning
-                    if let Some(delete_pos) = map.ray(&mut commands, (center_x, center_y), new_pos2, ListType::Blacklist(vec!(ParticleElement::Stone))){
-                        if (map.get_element_at(delete_pos) == ParticleElement::Stone && rng.gen_range(0..acidity_rate) == 0){ 
+
+                    if let Some(delete_pos) = map.ray(&mut commands, (center_x, center_y), new_pos2, ListType::Blacklist(vec!(ParticleElement::Stone, ParticleElement::Water))){
+                        let ratio_of_surrounding_toxic_gas = get_surrounding_toxic_gas_ratio(&map, center_x, center_y);
+                        if (map.get_element_at(delete_pos) == ParticleElement::Stone && rng.gen_range(0..(acidity_rate * (ratio_of_surrounding_toxic_gas) as i32  + 1)) == 0){ 
                             map.delete_at(&mut commands, delete_pos);
+                        }
+                    }
+                    if (map.get_element_at((position_of_part.0, position_of_part.1 - 1)) == ParticleElement::Stone || map.get_element_at((position_of_part.0, position_of_part.1 - 1)) == ParticleElement::Water){
+                        if (rng.gen_range(0..(acidity_rate*acidity_rate)) == 0){
+                            map.delete_at(&mut commands, (position_of_part.0, position_of_part.1 - 1));
                         }
                     }
                     if grid_coords_within_map(position_of_part) {

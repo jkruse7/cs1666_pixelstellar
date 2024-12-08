@@ -46,7 +46,7 @@ pub fn set_next_state(
 
 ){
     match state.get() {
-        GamePhase::Planet1 => next_phase.set(GamePhase::Planet6),
+        GamePhase::Planet1 => next_phase.set(GamePhase::Planet2),
         GamePhase::Planet2 => next_phase.set(GamePhase::Planet3),
         GamePhase::Planet3 => next_phase.set(GamePhase::Planet4),
         GamePhase::Planet4 => next_phase.set(GamePhase::Planet5),

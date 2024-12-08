@@ -47,13 +47,18 @@ impl From<Vec2> for Velocity {
 
 #[derive(Component)]
 pub struct EnemyHealth {
-    pub hp: i32,
-}
+    pub hp: f32,
+} 
 
 impl EnemyHealth {
     pub fn new() -> Self {
         Self {
-            hp: 100,
+            hp: 100.,
         }
+    }
+
+
+    pub fn take_damage(&mut self, amount: f32) {
+        self.hp = (self.hp - amount).max(0.0);
     }
 }

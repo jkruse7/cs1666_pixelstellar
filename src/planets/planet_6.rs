@@ -136,7 +136,7 @@ impl Default for WorldGenSettings {
                     noise_settings: NoiseSettings {
                         start_frequency: 0.012,
                         octaves: 1,
-                        noise_range_min: 0.,
+                        noise_range_min: -100.,
                         noise_range_max: 20.,
                         ..Default::default()
                     },
@@ -167,7 +167,7 @@ impl Default for CaveSettings {
             persistence: 0.5,
             frequency_modifier: 1.2,
             min_y: -170,
-            max_y: 10,
+            max_y: 40,
             noise_threshold_min: 0.45,
             noise_threshold_max: 0.55,
         }

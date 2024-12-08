@@ -41,6 +41,5 @@ impl Health {
 
     pub fn take_damage(&mut self, amount: f32) {
         self.current = (self.current - amount).max(0.0);
-        info!("Player took damage, current health: {}", self.current);
     }
 }
