@@ -5,3 +5,4 @@ pub mod planet_4;
 pub mod planet_5;
 pub mod planet_6;
 pub mod planet_7;
+pub mod planet_8;

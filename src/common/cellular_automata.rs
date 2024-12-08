@@ -38,10 +38,8 @@ pub fn simulate_step(grid: &Vec<Vec<u8>>, birth_limit: usize, survival_limit: us
             let wall_neighbors = count_wall_neighbors(grid, x, y);
 
             if grid[y][x] == 1 {
-                // Cell is a wall
                 new_grid[y][x] = if wall_neighbors >= survival_limit { 1 } else { 0 };
             } else {
-                // Cell is empty
                 new_grid[y][x] = if wall_neighbors >= birth_limit { 1 } else { 0 };
             }
         }
@@ -65,7 +63,7 @@ pub fn count_wall_neighbors(grid: &Vec<Vec<u8>>, x: usize, y: usize) -> usize {
             if nx >= 0 && ny >= 0 && nx < width as isize && ny < height as isize {
                 count += grid[ny as usize][nx as usize];
             } else {
-                count += 1; // Treat out-of-bounds as walls
+                count += 1;
             }
         }
     }
