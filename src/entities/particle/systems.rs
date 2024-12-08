@@ -230,6 +230,7 @@ fn update_toxic_gas(
         let mut rng = rand::thread_rng();
         let move_r = 2;
         let decay_rate = 50;
+        let acidity_rate = 3;
         // This decay logic just says if the positions 10 away in each cardinal direction is air theres a small chance to despawn.
         // just means that 
         //               1 to disable or just comment out
@@ -260,13 +261,26 @@ fn update_toxic_gas(
             let dx = (radius as f32 * angle.cos()).round() as i32;
             let dy = (radius as f32 * angle.sin()).round() as i32;
             let new_pos = (center_x + dx, center_y + dy);
+
+            let dx2 = ((radius + 1) as f32 * angle.cos()).round() as i32;
+            let dy2 = ((radius + 1) as f32 * angle.sin()).round() as i32;
+            let new_pos2 = (center_x + dx2, center_y + dy2);
             
-            if let Some(position_of_part) = map.ray(&mut commands, (center_x, center_y), new_pos, ListType::Whitelist(vec!(ParticleElement::ToxicGas, ParticleElement::Air, ParticleElement::Stone, ParticleElement::AcidicDirt))) {
+            if let Some(position_of_part) = map.ray(&mut commands, (center_x, center_y), new_pos, ListType::Whitelist(vec!(ParticleElement::ToxicGas, ParticleElement::Air, ParticleElement::Stone))) {
                 if map.get_element_at(position_of_part) == ParticleElement::Air {
                     map.delete_at(&mut commands, (center_x, center_y));
                     // Check that the new coordinates are within bounds before spawning
+                    if let Some(delete_pos) = map.ray(&mut commands, (center_x, center_y), new_pos2, ListType::Blacklist(vec!(ParticleElement::Stone))){
+                        if (map.get_element_at(delete_pos) == ParticleElement::Stone && rng.gen_range(0..acidity_rate) == 0){ 
+                            map.delete_at(&mut commands, delete_pos);
+                        }
+                    }
                     if grid_coords_within_map(position_of_part) {
-                        map.insert_at::<ToxicGasParticle>(&mut commands, position_of_part, ListType::Whitelist(vec![ParticleElement::Air, ParticleElement::Water, ParticleElement::Stone]));
+                        if map.insert_at::<ToxicGasParticle>(&mut commands, position_of_part, ListType::Whitelist(vec![ParticleElement::Stone, ParticleElement::Water, ParticleElement::Air])){
+                            /*if let Some(delete_position) = map.ray(&mut commands, (center_x, center_y), new_pos, ListType::Blacklist(vec!(ParticleElement::Stone))){
+                                map.delete_at(&mut commands, delete_position);
+                            }*/
+                        }
                     }
                 }
             }

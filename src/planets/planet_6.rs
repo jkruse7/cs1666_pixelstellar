@@ -263,14 +263,14 @@ fn draw_toxic_gas(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
 ) {
-    /*for _ in 0..8{
+    for _ in 0..8{
         let mut rng = rand::thread_rng();
         let x = rng.gen_range(-(LEVEL_W/2.)..=(LEVEL_W/2.)) as i32;
         let y = rng.gen_range(-175..-80);
         if map.get_element_at((x, y)) == ParticleElement::Air {
             map.insert_at::<ToxicGasParticle>(&mut commands, (x, y), ListType::OnlyAir);
         }
-    }*/
+    }
 }
 
 
