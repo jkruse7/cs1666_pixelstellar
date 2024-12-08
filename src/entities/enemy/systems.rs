@@ -100,7 +100,7 @@ pub fn initialize(
 
     } else if *game_state == GamePhase::Planet5 {
          //let enemy_sheet_handle = asset_server.load("enemy_walking.png");
-        let enemy_sheet_handle = asset_server.load("planet_1/enemy_walking.png");
+        let enemy_sheet_handle = asset_server.load("planet_5/enemy_walking.png");
         //             used to be tilesize. removed TILE_SIZE and now at 100, but change as needed  \/
         let enemy_layout = TextureAtlasLayout::from_grid(UVec2::splat(100), 4, 1, None, None);
         let enemy_layout_len = enemy_layout.textures.len();

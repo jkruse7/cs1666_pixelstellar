@@ -3,12 +3,7 @@ use rand::Rng;
 use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
-use crate::LEVEL_W;
 
-
-
-const RAIN_INTENSITY: i32 = 10;
-const RAIN_VEL: Vec2 = Vec2::new(2., -20.);
 // Define structs --------------------------------------------------------------------------------
 // WorldGenSettings defines configurations for different terrain layers in world generation.
 // Each layer (height, dirt, stone...) uses its own NoiseSettings to control features like
@@ -21,8 +16,8 @@ const RAIN_VEL: Vec2 = Vec2::new(2., -20.);
 #[derive(Resource)]
 pub struct WorldGenSettings {
     pub height_noise: NoiseSettings,  // Controls general terrain height
-    pub sand_noise: NoiseSettings,    // Controls sand layer height
-    pub quicksand_noise: NoiseSettings,    // Controls quicksand layer height
+    pub dirt_noise: NoiseSettings,    // Controls dirt layer height
+    pub stone_noise: NoiseSettings,   // Controls stone layer height
 }
 
 #[derive(Resource)]
@@ -64,18 +59,18 @@ impl Default for WorldGenSettings {
                 noise_range_max: 180.,
                 ..Default::default()
             },
-            sand_noise: NoiseSettings {
-                start_frequency: 0.0015,
-                octaves: 2,
+            dirt_noise: NoiseSettings {
+                start_frequency: 0.012,
+                octaves: 1,
                 noise_range_min: 0.,
                 noise_range_max: 20.,
                 ..Default::default()
             },
-            quicksand_noise: NoiseSettings {
-                start_frequency: 0.0015,
-                octaves: 1,
-                noise_range_min: 40.,
-                noise_range_max: 30.,
+            stone_noise: NoiseSettings {
+                start_frequency: 0.015,
+                octaves: 2,
+                noise_range_min: 30.,
+                noise_range_max: 40.,
                 ..Default::default()
             },
         }
@@ -107,30 +102,29 @@ fn generate_world(
         )
         .floor();
 
-        let noise_sand = get_1d_octaves(
+        let noise_dirt = get_1d_octaves(
             x as f32,
-            config.sand_noise.start_frequency,
-            config.sand_noise.octaves,
-            config.sand_noise.persistence,
-            config.sand_noise.frequency_modifier,
-            config.sand_noise.noise_range_min,
-            config.sand_noise.noise_range_max,
+            config.dirt_noise.start_frequency,
+            config.dirt_noise.octaves,
+            config.dirt_noise.persistence,
+            config.dirt_noise.frequency_modifier,
+            config.dirt_noise.noise_range_min,
+            config.dirt_noise.noise_range_max,
             &perm,
         )
         .floor();
 
-        let noise_quicksand = get_1d_octaves(
+        let noise_stone = get_1d_octaves(
             x as f32,
-            config.quicksand_noise.start_frequency,
-            config.quicksand_noise.octaves,
-            config.quicksand_noise.persistence,
-            config.quicksand_noise.frequency_modifier,
-            config.quicksand_noise.noise_range_min,
-            config.quicksand_noise.noise_range_max,
+            config.stone_noise.start_frequency,
+            config.stone_noise.octaves,
+            config.stone_noise.persistence,
+            config.stone_noise.frequency_modifier,
+            config.stone_noise.noise_range_min,
+            config.stone_noise.noise_range_max,
             &perm,
         )
         .floor();
-
 
         for y in MIN_Y..=(-90 + noise as i32) {
             let noise_threshold_min = 0.45;
@@ -141,15 +135,14 @@ fn generate_world(
                     continue;
                 }
 
-            let current_particle = select_particle((y + 90) as f32, noise, noise_sand, noise_quicksand);
+            let current_particle = select_particle((y + 90) as f32, noise, noise_dirt, noise_stone);
             if current_particle == ParticleElement::BedRock {
                 // place data in map
                 map.insert_at::<BedRockParticle>(&mut commands, (x, y), ListType::All);
-            } else if current_particle == ParticleElement::Sand {
-                map.insert_at::<SandParticle>(&mut commands, (x, y), ListType::All);
-            }
-            else if current_particle == ParticleElement::QuickSand {
-                //map.insert_at::<QuickSandParticle>(&mut commands, (x, y), ListType::All);
+            } else if current_particle == ParticleElement::Dirt {
+                map.insert_at::<StoneParticle>(&mut commands, (x, y), ListType::All);
+            } else if current_particle == ParticleElement::Stone {
+                map.insert_at::<DirtParticle>(&mut commands, (x, y), ListType::All);
             }
         }
     }
@@ -196,55 +189,36 @@ fn generate_world(
 //     }
 // }
 
-fn select_particle(y: f32, noise: f32, sand_height: f32, quicksand_height: f32) -> ParticleElement {
-    if y >= quicksand_height {
-        ParticleElement::Sand
-} else if y >= sand_height {
-    ParticleElement::Sand
-} 
-else {
+fn select_particle(y: f32, noise: f32, dirt_height: f32, stone_height: f32) -> ParticleElement {
+    if y >= stone_height {
+        ParticleElement::Stone
+    } else if y >= dirt_height{
+        ParticleElement::Dirt
+    } else {
         ParticleElement::BedRock
     }
 }
 
-fn update_quicksand(
+fn update_grass(
     mut map: ResMut<ParticleMap>,
     time: Res<Time>, 
     mut commands: Commands,
-    mut particles: Query<&mut ParticlePosVel, Or<(With<ParticleTagSand>, With<ParticleTagQuickSand>)>>,
+    mut particles: Query<&mut ParticlePosVel, With<ParticleTagDirt>>,
 ) {
-
-    for _ in 0..RAIN_INTENSITY{
     for mut position in &mut particles {
         let (x, y) = (position.grid_x, position.grid_y);
         if map.get_element_at((x, y+1)) == ParticleElement::Air{
             map.delete_at(&mut commands, (x, y));
-            map.insert_at::<QuickSandParticle>(&mut commands, (x, y+1), ListType::OnlyAir);
+            map.insert_at::<GrassParticle>(&mut commands, (x, y), ListType::OnlyAir);
         }
         if ((map.get_element_at((x + 1, y)) == ParticleElement::Air &&
              map.get_element_at((x+1, y-1)) == ParticleElement::Air)||
             (map.get_element_at((x + 1, y)) == ParticleElement::Air &&
              map.get_element_at((x+1, y-1)) == ParticleElement::Air))&&
-           (map.get_element_at((x, y-1)) == ParticleElement::Sand ||
-            map.get_element_at((x, y-1)) == ParticleElement::QuickSand ){
+           (map.get_element_at((x, y-1)) == ParticleElement::Dirt ||
+            map.get_element_at((x, y-1)) == ParticleElement::Grass ){
             map.delete_at(&mut commands, (x, y));
-            map.insert_at::<QuickSandParticle>(&mut commands, (x, y), ListType::OnlyAir);
-        }
-    }
-}
-}
-
-fn draw_lava_rain(
-    mut map: ResMut<ParticleMap>,
-    mut commands: Commands,
-) {
-    for _ in 0..RAIN_INTENSITY{
-        let mut rng = rand::thread_rng();
-        let x = rng.gen_range(-(LEVEL_W/2.)..=(LEVEL_W/2.)) as i32;
-        let y = rng.gen_range(100..200);
-        if map.get_element_at((x, y)) == ParticleElement::Air {
-            map.insert_at::<QuickSandParticle>(&mut commands, (x, y), ListType::OnlyAir);
-            map.give_velocity(&mut commands, (x,y), RAIN_VEL);
+            map.insert_at::<GrassParticle>(&mut commands, (x, y), ListType::OnlyAir);
         }
     }
 }

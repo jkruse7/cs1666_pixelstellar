@@ -255,8 +255,8 @@ fn set_crosshair_cursor( mut q_window: Query<&mut Window, With<bevy::window::Pri
     window.cursor.icon = CursorIcon::Cell;
 }
 
-pub struct Planet1Plugin;
-impl Plugin for Planet1Plugin {
+pub struct Planet5Plugin;
+impl Plugin for Planet5Plugin {
     fn build(&self, app: &mut App) {
         // Startup placements
         app.add_systems(OnEnter(GamePhase::Planet5), crate::common::ui::background::initialize_background);
