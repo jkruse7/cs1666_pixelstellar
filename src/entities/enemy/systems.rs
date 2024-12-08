@@ -105,8 +105,8 @@ pub fn initialize(
 
         let mut rng = rand::thread_rng();
         for _ in (0..rng.gen_range(10..20)){
-            let p6_enemy_sheet_handle = asset_server.load("planet_3/ghost.png");
-            let p6_enemy_layout = TextureAtlasLayout::from_grid(UVec2::new(W2_SPRITE_WIDTH, W2_SPRITE_HEIGHT), 1, 1, None, None);
+            let p6_enemy_sheet_handle = asset_server.load("planet_6/frog.png");
+            let p6_enemy_layout = TextureAtlasLayout::from_grid(UVec2::new(W6_SPRITE_WIDTH, W6_SPRITE_HEIGHT), 1, 1, None, None);
             let p6_enemy_layout_len = p6_enemy_layout.textures.len();
             let p6_enemy_layout_handle = texture_atlases.add(p6_enemy_layout);
             commands.spawn((
@@ -132,8 +132,8 @@ pub fn initialize(
                 Velocity::new(),
                 EnemyHealth::new(),
                 Gravity::new(),
-                Hitbox::new(W2_SPRITE_WIDTH as f32, W2_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
-                DamageBox::new(W2_SPRITE_WIDTH as f32, W2_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
+                Hitbox::new(W6_SPRITE_WIDTH as f32, W6_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
+                DamageBox::new(W6_SPRITE_WIDTH as f32, W6_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
                 Jump::new(),  
                 Enemy,
             ));

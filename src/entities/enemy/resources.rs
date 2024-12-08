@@ -10,3 +10,10 @@ pub const W2_ACCEL_RATE_X: f32 = 1.;
 pub const W2_ACCEL_RATE_Y: f32 = 1.;
 pub const W2_SPRITE_HEIGHT: u32 = 62;
 pub const W2_SPRITE_WIDTH: u32 = 40;
+
+
+pub const W6_ENEMY_SPEED: f32 = 2.;
+pub const W6_ACCEL_RATE_X: f32 = 1.;
+pub const W6_ACCEL_RATE_Y: f32 = 1.5;
+pub const W6_SPRITE_HEIGHT: u32 = 40;
+pub const W6_SPRITE_WIDTH: u32 = 40;
