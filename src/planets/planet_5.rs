@@ -1,103 +1,47 @@
 use bevy::prelude::*;
 use rand::Rng;
-use std::collections::HashMap;
+use crate::common::gravity::{change_gravity, GravityResource};
 use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
+use crate::LEVEL_W;
 
+
+
+const SAND_INTENSITY: i32 = 10;
+const SAND_VEL: Vec2 = Vec2::new(2., -20.);
 // Define structs --------------------------------------------------------------------------------
-#[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
-pub enum ParticleType {
-    Stone,
-    Dirt,
-    BedRock,
-    // Add more particle types as needed. The order doesn't matter.
+// WorldGenSettings defines configurations for different terrain layers in world generation.
+// Each layer (height, dirt, stone...) uses its own NoiseSettings to control features like
+// frequency, octaves, persistence, and range.
 
+// NoiseSettings defines the noise parameters for a given layer, including the frequency,
+// number of octaves (for more detail), persistence (controls amplitude scaling), and
+// frequency_modifier (to adjust frequency per octave). It also includes a min/max range
+// to map generated noise values into a useful range for the layer's purpose.
+#[derive(Resource)]
+pub struct WorldGenSettings {
+    pub height_noise: NoiseSettings,  // Controls general terrain height
+    pub sand_noise: NoiseSettings,    // Controls sand layer height
+    pub quicksand_noise: NoiseSettings,    // Controls quicksand layer height
 }
 
 #[derive(Resource)]
 pub struct NoiseSettings {
-    /// The starting frequency of the noise function.
-    /// Determines the initial scale of the noise pattern.
-    /// Lower values result in broader, smoother features,
-    /// while higher values create finer, more frequent variations.
-    pub start_frequency: f32,
-
-    /// The number of octaves to use in the noise generation.
-    /// Each octave adds a layer of detail by superimposing noise at higher frequencies
-    /// and lower amplitudes. Increasing the number of octaves adds complexity
-    /// to the noise pattern.
-    pub octaves: usize,
-
-    /// Controls the amplitude scaling (persistence) for each successive octave.
-    /// It determines how quickly the amplitude decreases for higher octaves.
-    /// A lower persistence value results in a smoother noise (less influence from higher octaves),
-    /// while a higher value retains more detail from the higher-frequency octaves.
-    pub persistence: f32,
-
-    /// Adjusts the frequency for each successive octave.
-    /// This multiplier increases the frequency at each octave level,
-    /// allowing for finer details at higher octaves.
-    /// It controls how rapidly the frequency increases with each octave.
-    pub frequency_modifier: f32,
-
-    /// The minimum value of the mapped noise range.
-    /// After generating the raw noise values, they are mapped to a range between
-    /// `noise_range_min` and `noise_range_max`. This parameter sets the lower bound
-    /// of that range.
-    pub noise_range_min: f32,
-
-    /// The maximum value of the mapped noise range.
-    /// Sets the upper bound of the mapped noise values after scaling.
-    /// This allows you to control the maximum effect the noise can have on the terrain,
-    /// such as limiting the maximum height variation in a terrain layer.
+    pub start_frequency: f32,       // just treat it as the noise frequency
+    pub octaves: usize,             // for more detail
+    pub persistence: f32,           // controls amplitude scaling
+    pub frequency_modifier: f32,    // adjusts frequency per octave
+    pub noise_range_min: f32,       // maps generated noise values into a range for the layer's purpose
     pub noise_range_max: f32,
 }
 
-#[derive(Resource)]
-pub struct CaveSettings {
-    /// Controls the starting frequency of the 2D noise for cave generation.
-    /// Lower values will result in larger, more sparse caves; higher values will make caves more frequent and smaller.
-    pub start_frequency: f32,
 
-    /// The number of octaves used for the 2D noise.
-    /// More octaves add complexity and detail to the caves, but might also reduce large cave systems.
-    pub octaves: usize,
-
-    /// The persistence value of the cave noise function.
-    /// Determines how much each octave contributes to the final cave generation.
-    pub persistence: f32,
-
-    /// Frequency modifier that adjusts how rapidly the frequency increases per octave.
-    pub frequency_modifier: f32,
-
-    /// The minimum Y-coordinate for cave placement.
-    pub min_y: i32,
-
-    /// The maximum Y-coordinate for cave placement.
-    pub max_y: i32,
-
-    /// Minimum threshold value for cave generation.
-    /// Only cave cells that have a noise value above this will be placed.
-    pub noise_threshold_min: f32,
-
-    /// Maximum threshold value for cave generation.
-    /// Caves will not be placed if the noise value exceeds this threshold.
-    pub noise_threshold_max: f32,
-}
-
-pub struct LayerSettings {
-    pub particle_type: ParticleType,
-    pub noise_settings: NoiseSettings,
-}
-
-#[derive(Resource)]
-pub struct WorldGenSettings {
-    pub layers: Vec<LayerSettings>,
-    pub caves: Option<CaveSettings>,  // Optional cave settings
-}
 
 // Parameter adjustment --------------------------------------------------------------------------------
+// Default implementations for NoiseSettings and WorldGenSettings.
+// These provide starting values for noise parameters that can be adjusted as needed.
+// WorldGenSettings defines unique values for each layer to control its appearance.
 impl Default for NoiseSettings {
     fn default() -> Self {
         Self {
@@ -114,164 +58,144 @@ impl Default for NoiseSettings {
 impl Default for WorldGenSettings {
     fn default() -> Self {
         Self {
-            layers: vec![
-                LayerSettings {
-                    particle_type: ParticleType::Stone,
-                    noise_settings: NoiseSettings {
-                        start_frequency: 0.015,
-                        octaves: 2,
-                        noise_range_min: 30.,
-                        noise_range_max: 40.,
-                        ..Default::default()
-                    },
-                },
-                LayerSettings {
-                    particle_type: ParticleType::Dirt,
-                    noise_settings: NoiseSettings {
-                        start_frequency: 0.012,
-                        octaves: 1,
-                        noise_range_min: 0.,
-                        noise_range_max: 20.,
-                        ..Default::default()
-                    },
-                },
-                LayerSettings {
-                    particle_type: ParticleType::BedRock,
-                    noise_settings: NoiseSettings {
-                        start_frequency: 0.03,
-                        octaves: 5,
-                        noise_range_min: 0.,
-                        noise_range_max: 180.,
-                        ..Default::default()
-                    },
-                },
-                // Add more layers here if needed, in order from top to bottom
-
-            ],
-            caves: Some(CaveSettings::default()),  // "caves: None" to disable caves
+            height_noise: NoiseSettings {
+                start_frequency: 0.03,
+                octaves: 5,
+                noise_range_min: 0.,
+                noise_range_max: 180.,
+                ..Default::default()
+            },
+            sand_noise: NoiseSettings {
+                start_frequency: 0.0015,
+                octaves: 2,
+                noise_range_min: 0.,
+                noise_range_max: 20.,
+                ..Default::default()
+            },
+            quicksand_noise: NoiseSettings {
+                start_frequency: 0.0015,
+                octaves: 1,
+                noise_range_min: 40.,
+                noise_range_max: 30.,
+                ..Default::default()
+            },
         }
     }
-}
-
-impl Default for CaveSettings {
-    fn default() -> Self {
-        Self {
-            start_frequency: 0.03,
-            octaves: 3,
-            persistence: 0.5,
-            frequency_modifier: 1.2,
-            min_y: -50,
-            max_y: 90,
-            noise_threshold_min: 0.45,
-            noise_threshold_max: 0.55,
-        }
-    }
-}
-
-// Map placement type functions  --------------------------------------------------------------------------------
-fn select_particle_layers(y: f32, layer_noises: &[(ParticleType, f32)]) -> ParticleType {
-    for (particle_type, noise_height) in layer_noises.iter() {
-        if y >= *noise_height {
-            return *particle_type;
-        }
-    }
-    layer_noises.last().unwrap().0
 }
 
 fn generate_world(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
-    config: Res<WorldGenSettings>,
+    config: Res<WorldGenSettings>,  // Use WorldGenSettings resource
 ) {
+    crate::common::gravity::initialize(&mut commands); //init gravity
+
     let perm = generate_permutation_array();
 
     for x in MIN_X..=MAX_X {
-        let mut layer_noises = Vec::new();
+        let noise = get_1d_octaves(
+            x as f32,
+            config.height_noise.start_frequency,
+            config.height_noise.octaves,
+            config.height_noise.persistence,
+            config.height_noise.frequency_modifier,
+            config.height_noise.noise_range_min,
+            config.height_noise.noise_range_max,
+            &perm,
+        )
+        .floor();
 
-        for layer in &config.layers {
-            let noise = get_1d_octaves(
-                x as f32,
-                layer.noise_settings.start_frequency,
-                layer.noise_settings.octaves,
-                layer.noise_settings.persistence,
-                layer.noise_settings.frequency_modifier,
-                layer.noise_settings.noise_range_min,
-                layer.noise_settings.noise_range_max,
-                &perm,
-            )
-            .floor();
+        let noise_sand = get_1d_octaves(
+            x as f32,
+            config.sand_noise.start_frequency,
+            config.sand_noise.octaves,
+            config.sand_noise.persistence,
+            config.sand_noise.frequency_modifier,
+            config.sand_noise.noise_range_min,
+            config.sand_noise.noise_range_max,
+            &perm,
+        )
+        .floor();
 
-            layer_noises.push((layer.particle_type, noise));
-        }
+        let noise_quicksand = get_1d_octaves(
+            x as f32,
+            config.quicksand_noise.start_frequency,
+            config.quicksand_noise.octaves,
+            config.quicksand_noise.persistence,
+            config.quicksand_noise.frequency_modifier,
+            config.quicksand_noise.noise_range_min,
+            config.quicksand_noise.noise_range_max,
+            &perm,
+        )
+        .floor();
 
-        let max_noise = layer_noises
-            .iter()
-            .map(|(_, noise)| *noise)
-            .fold(f32::MIN, f32::max);
 
-        if let Some(cave_settings) = &config.caves {
-            for y in MIN_Y..=(-90 + max_noise as i32) {
-                let noise_cave = get_2d_octaves(
-                    x as f32,
-                    y as f32,
-                    cave_settings.start_frequency,
-                    cave_settings.octaves,
-                    cave_settings.persistence,
-                    cave_settings.frequency_modifier,
-                    0.,
-                    1.,
-                    &perm,
-                );
-
-                if (y as f32) >= cave_settings.min_y as f32 && (y as f32) <= cave_settings.max_y as f32 &&
-                    (noise_cave >= cave_settings.noise_threshold_min && noise_cave <= cave_settings.noise_threshold_max) {
+        for y in MIN_Y..=(-90 + noise as i32) {
+            let noise_threshold_min = 0.45;
+            let noise_threshold_max = 0.55;
+            let noise_cave = get_2d_octaves(x as f32, y as f32, 0.03, 3, 0.5, 1.2, 0., 1., &perm);
+            if (y as f32) >= -50. && (y as f32) <= 90. &&
+                noise_cave >= noise_threshold_min && noise_cave >= noise_threshold_max {
                     continue;
                 }
 
-                let current_particle = select_particle_layers((y + 90) as f32, &layer_noises);
-
-                match current_particle {
-                    ParticleType::BedRock => {
-                        map.insert_at::<BedRockParticle>(&mut commands, (x, y), ListType::All);
-                    }
-                    ParticleType::Dirt => {
-                        map.insert_at::<DirtParticle>(&mut commands, (x, y), ListType::All);
-                    }
-                    ParticleType::Stone => {
-                        map.insert_at::<StoneParticle>(&mut commands, (x, y), ListType::All);
-                    }
-                    // Handle other particle types if necessary
-
-                }
+            let current_particle = select_particle((y + 90) as f32, noise, noise_sand, noise_quicksand);
+            if current_particle == ParticleElement::BedRock {
+                // place data in map
+                map.insert_at::<BedRockParticle>(&mut commands, (x, y), ListType::All);
+            } else if current_particle == ParticleElement::Sand {
+                map.insert_at::<SandParticle>(&mut commands, (x, y), ListType::All);
+            }
+            else if current_particle == ParticleElement::QuickSand {
+                //map.insert_at::<QuickSandParticle>(&mut commands, (x, y), ListType::All);
             }
         }
     }
 }
 
-fn update_grass(
+fn select_particle(y: f32, noise: f32, sand_height: f32, quicksand_height: f32) -> ParticleElement {
+    if y >= quicksand_height {
+        ParticleElement::Sand
+} else if y >= sand_height {
+    ParticleElement::Sand
+} 
+else {
+        ParticleElement::BedRock
+    }
+}
+
+fn update_quicksand(
     mut map: ResMut<ParticleMap>,
     time: Res<Time>, 
     mut commands: Commands,
-    mut particles: Query<&mut ParticlePosVel, With<ParticleTagDirt>>,
+    mut particles: Query<&mut ParticlePosVel, Or<(With<ParticleTagSand>, With<ParticleTagQuickSand>)>>,
 ) {
+
+    for _ in 0..SAND_INTENSITY{
     for mut position in &mut particles {
         let (x, y) = (position.grid_x, position.grid_y);
         if map.get_element_at((x, y+1)) == ParticleElement::Air{
             map.delete_at(&mut commands, (x, y));
-            map.insert_at::<GrassParticle>(&mut commands, (x, y), ListType::OnlyAir);
+            map.insert_at::<QuickSandParticle>(&mut commands, (x, y+1), ListType::OnlyAir);
         }
         if ((map.get_element_at((x + 1, y)) == ParticleElement::Air &&
              map.get_element_at((x+1, y-1)) == ParticleElement::Air)||
             (map.get_element_at((x + 1, y)) == ParticleElement::Air &&
              map.get_element_at((x+1, y-1)) == ParticleElement::Air))&&
-           (map.get_element_at((x, y-1)) == ParticleElement::Dirt ||
-            map.get_element_at((x, y-1)) == ParticleElement::Grass ){
+           (map.get_element_at((x, y-1)) == ParticleElement::Sand ||
+            map.get_element_at((x, y-1)) == ParticleElement::QuickSand ){
             map.delete_at(&mut commands, (x, y));
-            map.insert_at::<GrassParticle>(&mut commands, (x, y), ListType::OnlyAir);
+            map.insert_at::<QuickSandParticle>(&mut commands, (x, y), ListType::OnlyAir);
         }
     }
 }
+}
 
+fn set_crosshair_cursor( mut q_window: Query<&mut Window, With<bevy::window::PrimaryWindow>>,
+) {
+    let mut window = q_window.single_mut();
+    window.cursor.icon = CursorIcon::Cell;
+}
 
 pub struct Planet5Plugin;
 impl Plugin for Planet5Plugin {
@@ -279,7 +203,9 @@ impl Plugin for Planet5Plugin {
         // Startup placements
         app.add_systems(OnEnter(GamePhase::Planet5), crate::common::ui::background::initialize_background);
         app.insert_resource(WorldGenSettings::default());
+        app.add_systems(OnEnter(GamePhase::Planet5), set_crosshair_cursor);
         app.add_systems(OnEnter(GamePhase::Planet5), generate_world);
-        app.add_systems(OnEnter(GamePhase::Planet5), update_grass.after(generate_world));
+        app.add_systems(OnEnter(GamePhase::Planet5), update_quicksand.after(generate_world));
     }
-}
+} 
+ 
