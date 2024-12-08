@@ -7,7 +7,7 @@ use crate::LEVEL_W;
 
 
 
-const RAIN_INTENSITY: i32 = 40000;
+const RAIN_INTENSITY: i32 = 10;
 const RAIN_VEL: Vec2 = Vec2::new(2., -20.);
 // Define structs --------------------------------------------------------------------------------
 // WorldGenSettings defines configurations for different terrain layers in world generation.
@@ -207,17 +207,19 @@ else {
     }
 }
 
-fn update_grass(
+fn update_quicksand(
     mut map: ResMut<ParticleMap>,
     time: Res<Time>, 
     mut commands: Commands,
-    mut particles: Query<&mut ParticlePosVel, With<ParticleTagSand>>,
+    mut particles: Query<&mut ParticlePosVel, Or<(With<ParticleTagSand>, With<ParticleTagQuickSand>)>>,
 ) {
+
+    for _ in 0..RAIN_INTENSITY{
     for mut position in &mut particles {
         let (x, y) = (position.grid_x, position.grid_y);
         if map.get_element_at((x, y+1)) == ParticleElement::Air{
             map.delete_at(&mut commands, (x, y));
-            map.insert_at::<QuickSandParticle>(&mut commands, (x, y), ListType::OnlyAir);
+            map.insert_at::<QuickSandParticle>(&mut commands, (x, y+1), ListType::OnlyAir);
         }
         if ((map.get_element_at((x + 1, y)) == ParticleElement::Air &&
              map.get_element_at((x+1, y-1)) == ParticleElement::Air)||
@@ -229,6 +231,7 @@ fn update_grass(
             map.insert_at::<QuickSandParticle>(&mut commands, (x, y), ListType::OnlyAir);
         }
     }
+}
 }
 
 fn draw_lava_rain(
@@ -260,6 +263,6 @@ impl Plugin for Planet1Plugin {
         app.insert_resource(WorldGenSettings::default());
         app.add_systems(OnEnter(GamePhase::Planet1), set_crosshair_cursor);
         app.add_systems(OnEnter(GamePhase::Planet1), generate_world);
-        app.add_systems(OnEnter(GamePhase::Planet1), draw_lava_rain.after(generate_world));
+        app.add_systems(OnEnter(GamePhase::Planet1), update_grass.after(generate_world));
     }
 } 

@@ -193,7 +193,7 @@ fn update_quicksand(
             }
         } else {
             let mut rng = rand::thread_rng();
-            let viscosity = rng.gen::<f64>() < WATER_VISCOSITY as f64;
+            let viscosity = rng.gen::<f64>() < QUICKSAND_VISCOSITY as f64;
                 let (x, y) = (position.grid_x, position.grid_y);
                 if viscosity && map.insert_at::<QuickSandParticle>(&mut commands, (x, y-1), ListType::OnlyAir) {
                     map.delete_at(&mut commands, (x, y));
@@ -367,7 +367,7 @@ impl Plugin for ParticlePlugin {
         app.add_systems(Update, update_lava.after(update_water)
                         .run_if(in_state(AppState::InGame)));
         app.add_systems(Update, update_quicksand
-                        .run_if(in_state(AppState::InGame)));
+                      .run_if(in_state(AppState::InGame)));
         //app.add_systems(Update, paint_with_ray.after(update_water));
         //app.add_systems(Update, build_or_destroy.after(update_water));
     }

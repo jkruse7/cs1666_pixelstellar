@@ -512,8 +512,8 @@ impl NewParticle for QuickSandParticle {
     const ELEMENT: ParticleElement = ParticleElement::QuickSand;
     fn new(x: i32, y: i32, vel: Vec2) -> Self {
         let mut rng = rand::thread_rng();
-        let red = rng.gen_range(230..=250) as u8;
-        let green = rng.gen_range(100..=110) as u8;
+        let red = rng.gen_range(240..=250) as u8;
+        let green = rng.gen_range(180..=200) as u8;
         let blue = rng.gen_range(80..=110) as u8;
         Self {
             sprite: SpriteBundle {
@@ -535,8 +535,8 @@ impl NewParticle for QuickSandParticle {
             particle: Particle {
                 position: ParticlePosVel::new(x, y, vel),
                 data: ParticleElement::QuickSand,
-                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
-            },
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
+                        },
             tag: ParticleTagQuickSand,
         }
     }
