@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 use rand::Rng;
-use std::collections::HashMap;
+use crate::common::gravity::{change_gravity, GravityResource};
 use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
@@ -8,8 +8,8 @@ use crate::LEVEL_W;
 
 
 
-const RAIN_INTENSITY: i32 = 10;
-const RAIN_VEL: Vec2 = Vec2::new(2., -20.);
+const SAND_INTENSITY: i32 = 10;
+const SAND_VEL: Vec2 = Vec2::new(2., -20.);
 // Define structs --------------------------------------------------------------------------------
 // WorldGenSettings defines configurations for different terrain layers in world generation.
 // Each layer (height, dirt, stone...) uses its own NoiseSettings to control features like
@@ -83,18 +83,6 @@ impl Default for WorldGenSettings {
     }
 }
 
-
-
-// Map placement type functions  --------------------------------------------------------------------------------
-fn select_particle_layers(y: f32, layer_noises: &[(ParticleType, f32)]) -> ParticleType {
-    for (particle_type, noise_height) in layer_noises.iter() {
-        if y >= *noise_height {
-            return *particle_type;
-        }
-    }
-    layer_noises.last().unwrap().0
-}
-
 fn generate_world(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,
@@ -165,47 +153,6 @@ fn generate_world(
     }
 }
 
-// fn generate_world(
-//     mut map: ResMut<ParticleMap>,
-//     mut commands: Commands,
-// ) {
-//     let perm1 = generate_permutation_array();
-//     let perm2 = generate_permutation_array();
-//     let perm3 = generate_permutation_array();
-//     // loop from left side of the screen to right side of the screen
-//     for x in MIN_X..=MAX_X {
-//         let mut noise = get_1d_octaves(x as f32, 0.05, 3, 0.5, 1.2, 0., 180., &perm1);
-//         noise = noise.floor();
-
-//         let mut noise_dirt = get_1d_octaves(x as f32, 0.012, 1, 0.5, 1.2, 0., 20., &perm2);
-//         noise_dirt = noise_dirt.floor();
-
-//         let mut noise_stone = get_1d_octaves(x as f32, 0.015, 2, 0.5, 1.2, 30., 40., &perm2);
-//         noise_stone = noise_stone.floor();
-
-        
-//         for y in MIN_Y..=(-90 + noise as i32) {
-//             let noise_threshold_min = 0.45;
-//             let noise_threshold_max = 0.55;
-//             let noise_cave = get_2d_octaves(x as f32, y as f32, 0.03, 3, 0.5, 1.2, 0., 1., &perm3);
-//             if (y as f32) >= -50. && (y as f32) <= 90. &&
-//                 noise_cave >= noise_threshold_min && noise_cave >= noise_threshold_max {
-//                     continue;
-//                 }
-
-//             let current_particle: ParticleElement = select_particle((y + 90) as f32, noise, noise_dirt, noise_stone);
-//             if current_particle == ParticleElement::BedRock {
-//                 // place data in map
-//                 map.insert_at::<BedRockParticle>(&mut commands, (x, y), ListType::All);
-//             } else if current_particle == ParticleElement::Dirt {
-//                 map.insert_at::<StoneParticle>(&mut commands, (x, y), ListType::All);
-//             } else if current_particle == ParticleElement::Stone {
-//                 map.insert_at::<DirtParticle>(&mut commands, (x, y), ListType::All);
-//             }
-//         }
-//     }
-// }
-
 fn select_particle(y: f32, noise: f32, sand_height: f32, quicksand_height: f32) -> ParticleElement {
     if y >= quicksand_height {
         ParticleElement::Sand
@@ -224,7 +171,7 @@ fn update_quicksand(
     mut particles: Query<&mut ParticlePosVel, Or<(With<ParticleTagSand>, With<ParticleTagQuickSand>)>>,
 ) {
 
-    for _ in 0..RAIN_INTENSITY{
+    for _ in 0..SAND_INTENSITY{
     for mut position in &mut particles {
         let (x, y) = (position.grid_x, position.grid_y);
         if map.get_element_at((x, y+1)) == ParticleElement::Air{
@@ -242,21 +189,6 @@ fn update_quicksand(
         }
     }
 }
-}
-
-fn draw_lava_rain(
-    mut map: ResMut<ParticleMap>,
-    mut commands: Commands,
-) {
-    for _ in 0..RAIN_INTENSITY{
-        let mut rng = rand::thread_rng();
-        let x = rng.gen_range(-(LEVEL_W/2.)..=(LEVEL_W/2.)) as i32;
-        let y = rng.gen_range(100..200);
-        if map.get_element_at((x, y)) == ParticleElement::Air {
-            map.insert_at::<QuickSandParticle>(&mut commands, (x, y), ListType::OnlyAir);
-            map.give_velocity(&mut commands, (x,y), RAIN_VEL);
-        }
-    }
 }
 
 fn set_crosshair_cursor( mut q_window: Query<&mut Window, With<bevy::window::PrimaryWindow>>,

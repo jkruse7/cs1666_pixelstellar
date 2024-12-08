@@ -126,7 +126,7 @@ pub fn initialize(
             AnimationTimer(Timer::from_seconds(W1_ANIM_TIME, TimerMode::Repeating)),
             AnimationFrameCount(enemy_layout_len),
             Velocity::new(),
-            EnemyHealth::new(),
+            EnemyHealth::new(5.),
             Gravity::new(),
             Hitbox::new(40 as f32, 40 as f32, Vec2::new(0., -210.)),
             DamageBox::new(50.0, 50.0, Vec2::new(0., -210.)),
