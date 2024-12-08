@@ -4,6 +4,11 @@ use std::collections::HashMap;
 use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
+use crate::common::cellular_automata::*;
+
+use crate::LEVEL_W;
+const RAIN_INTENSITY: i32 = 6;
+const RAIN_VEL: Vec2 = Vec2::new(2., -0.7);
 
 // Define structs --------------------------------------------------------------------------------
 #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
@@ -162,8 +167,8 @@ impl Default for CaveSettings {
             frequency_modifier: 1.2,
             min_y: -50,
             max_y: 90,
-            noise_threshold_min: 0.45,
-            noise_threshold_max: 0.55,
+            noise_threshold_min: 1.,
+            noise_threshold_max: 0.,
         }
     }
 }
@@ -184,6 +189,14 @@ fn generate_world(
     config: Res<WorldGenSettings>,
 ) {
     let perm = generate_permutation_array();
+
+    let width = (MAX_X - MIN_X + 1) as usize;
+    let height = (MAX_Y - MIN_Y + 1) as usize;
+    let wall_prob = 0.45;
+    let steps = 6;
+    let birth_limit = 5;
+    let survival_limit = 4;
+    let cave = generate_cave(width, height, wall_prob, steps, birth_limit, survival_limit);
 
     for x in MIN_X..=MAX_X {
         let mut layer_noises = Vec::new();
@@ -211,20 +224,11 @@ fn generate_world(
 
         if let Some(cave_settings) = &config.caves {
             for y in MIN_Y..=(-90 + max_noise as i32) {
-                let noise_cave = get_2d_octaves(
-                    x as f32,
-                    y as f32,
-                    cave_settings.start_frequency,
-                    cave_settings.octaves,
-                    cave_settings.persistence,
-                    cave_settings.frequency_modifier,
-                    0.,
-                    1.,
-                    &perm,
-                );
-
-                if (y as f32) >= cave_settings.min_y as f32 && (y as f32) <= cave_settings.max_y as f32 &&
-                    (noise_cave >= cave_settings.noise_threshold_min && noise_cave <= cave_settings.noise_threshold_max) {
+                let cave_x = (x - MIN_X) as usize;
+                let cave_y = (y - MIN_Y) as usize;
+    
+                if cave[cave_y][cave_x] == 0 
+                    && y > -75 {
                     continue;
                 }
 
@@ -244,6 +248,21 @@ fn generate_world(
 
                 }
             }
+        }
+    }
+}
+
+fn draw_lava_rain(
+    mut map: ResMut<ParticleMap>,
+    mut commands: Commands,
+) {
+    for _ in 0..RAIN_INTENSITY{
+        let mut rng = rand::thread_rng();
+        let x = rng.gen_range(-(LEVEL_W/2.)..=(LEVEL_W/2.)) as i32;
+        let y = rng.gen_range(100..200);
+        if map.get_element_at((x, y)) == ParticleElement::Air {
+            map.insert_at::<LavaParticle>(&mut commands, (x, y), ListType::OnlyAir);
+            map.give_velocity(&mut commands, (x,y), RAIN_VEL);
         }
     }
 }
@@ -273,13 +292,14 @@ fn update_grass(
 }
 
 
-pub struct Planet7Plugin;
-impl Plugin for Planet7Plugin {
+pub struct Planet8Plugin;
+impl Plugin for Planet8Plugin {
     fn build(&self, app: &mut App) {
         // Startup placements
-        app.add_systems(OnEnter(GamePhase::Planet7), crate::common::ui::background::initialize_background);
+        app.add_systems(OnEnter(GamePhase::Planet8), crate::common::ui::background::initialize_background);
         app.insert_resource(WorldGenSettings::default());
-        app.add_systems(OnEnter(GamePhase::Planet7), generate_world);
-        app.add_systems(OnEnter(GamePhase::Planet7), update_grass.after(generate_world));
+        app.add_systems(OnEnter(GamePhase::Planet8), generate_world);
+        app.add_systems(OnEnter(GamePhase::Planet8), update_grass.after(generate_world));
+        // app.add_systems(Update, draw_lava_rain.run_if(in_state(GamePhase::Planet2)));
     }
 }

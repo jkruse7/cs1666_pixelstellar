@@ -6,6 +6,7 @@ pub enum BlasterType {
     Deleter,
     Gas,
     Lava,
+    Healing_Spring,
 }
 
 #[derive(Component)]

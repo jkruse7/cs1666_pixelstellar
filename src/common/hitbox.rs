@@ -49,25 +49,6 @@ impl Hitbox {
         }
         false
     }
-    pub fn collides_with_sand(&self, mut other: &mut Hitbox) -> bool {
-        //tr = topright corner
-        let self_tr = self.offset + Vec2::new(self.width,self.height)/2.0;
-        let self_bl = self.offset - Vec2::new(self.width,self.height)/2.0;
-        let other_bl = other.offset - Vec2::new(other.width,other.height)/2.0;
-        let other_tr = other.offset + Vec2::new(other.width,other.height)/2.0;
-        self_tr.x > other_bl.x && self_bl.x < other_tr.x && self_tr.y > other_bl.y && self_bl.y < other_tr.y
-    }
-    pub fn player_quicksand_interaction(&self, mut hitboxes: &mut Query<&mut Hitbox, With<ParticleTagQuickSand>>){
-        for mut hitbox in hitboxes.iter_mut() {
-            if self.collides_with_sand(hitbox.as_mut()) {
-                //info!("Collision detected between {:?} and {:?}", self, hitbox);
-                info!("Player touching quicksand");
-                //hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
-                hitbox.width = 4.;
-                hitbox.height = 4.;
-            }
-        }
-    }
     pub fn player_enemy_collision(&self, hitboxes: &Query<&Hitbox, (With<Enemy>, Without<Player>)>)  -> bool {
         for hitbox in hitboxes.iter() {
             if self.collides_with(hitbox) {
@@ -168,6 +149,24 @@ impl Hitbox {
         for x in top_left_x..=bottom_right_x {
             for y in bottom_right_y..=top_left_y {
                 if map.get_element_at((x, y)) == ParticleElement::QuickSand {
+                    count+=1;
+                }
+                else {
+                    no_count+=1;
+                }
+            }   
+        }
+        count as f32 / (count + no_count) as f32
+    }
+    
+
+    pub fn ratio_of_healing_spring_grid_tiles(&self, map: &ResMut<ParticleMap>) -> f32 {
+        let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
+        let mut count = 0;
+        let mut no_count = 0;
+        for x in top_left_x..=bottom_right_x {
+            for y in bottom_right_y..=top_left_y {
+                if map.get_element_at((x, y)) == ParticleElement::Healing_Spring {
                     count+=1;
                 }
                 else {

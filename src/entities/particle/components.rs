@@ -33,6 +33,7 @@ pub enum ParticleElement {
     Obsidian,
     Hellstone,
     Lava,
+    Healing_Spring,
     Sand,
     QuickSand,
 }
@@ -424,7 +425,7 @@ impl NewParticle for LavaParticle {
     const ELEMENT: ParticleElement = ParticleElement::Lava;
     fn new(x: i32, y: i32, vel: Vec2) -> Self {
         let mut rng = rand::thread_rng();
-        let (r,g,b) = (rng.gen_range(200..=255) as u8, rng.gen_range(80..=120) as u8, rng.gen_range(10..=40) as u8);
+        let (r,g,b) = (rng.gen_range(200..=255) as u8, rng.gen_range(80..=120) as u8, rng.gen_range(43..=73) as u8);
         Self {
             sprite: SpriteBundle {
                 sprite: Sprite {
@@ -451,6 +452,47 @@ impl NewParticle for LavaParticle {
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
             },
             tag: ParticleTagLava,
+        }
+    }
+}
+
+// Healing_Spring ------------------------------------------------------------------------
+#[derive(Component)]
+pub struct ParticleTagHealing_Spring;
+#[derive(Bundle)]
+pub struct Healing_SpringParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    tag: ParticleTagHealing_Spring,
+}
+impl NewParticle for Healing_SpringParticle {
+    const ELEMENT: ParticleElement = ParticleElement::Healing_Spring;
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
+        let mut rng = rand::thread_rng();
+        let (r,g,b) = (rng.gen_range(118..=133) as u8, rng.gen_range(220..=230) as u8, rng.gen_range(10..=40) as u8);
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgba_u8(r, g, b, 220),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        904.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosVel::new(x, y, vel),
+                data: ParticleElement::Healing_Spring,
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
+            },
+            tag: ParticleTagHealing_Spring,
         }
     }
 }

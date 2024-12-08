@@ -31,11 +31,63 @@ pub fn initialize(
     let player_layout = TextureAtlasLayout::from_grid(UVec2::splat(100), 4, 1, None, None);
     let player_layout_len = player_layout.textures.len();
     let player_layout_handle = texture_atlases.add(player_layout);
+
+    let player_scale = 1.0;
     commands.spawn((
         SpriteBundle {
             texture: player_sheet_handle,
             transform: Transform {
                 translation: Vec3::new(0., 100.0, 900.),
+                scale: Vec3::splat(player_scale),
+                ..default()
+            },
+            sprite: Sprite {
+                // Flip the logo to the left
+                flip_x: false,
+                ..default()
+            },
+            ..default()
+        },
+        TextureAtlas {
+            layout: player_layout_handle,
+            index: 0,
+        },
+        AnimationTimer(Timer::from_seconds(ANIM_TIME, TimerMode::Repeating)),
+        AnimationFrameCount(player_layout_len),
+        Velocity::new(),
+        Health::new(100.0),
+        Gravity::new(),
+        Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, Vec2::new(0., 110.)),
+        Player,
+    ));
+
+    commands.insert_resource(PlayerRatioWaterParticles{
+        number: 0.0,
+    });
+
+    commands.insert_resource(PlayerSoundTracker{
+        last_played: Duration::new(0, 0),
+    });
+}
+
+pub fn initialize_special(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut texture_atlases: ResMut<Assets<TextureAtlasLayout>>,
+){
+    let player_sheet_handle = asset_server.load("walking.png");
+    //               used to be tilesize. removed TILE_SIZE and now at 100, but change as needed  \/
+    let player_layout = TextureAtlasLayout::from_grid(UVec2::splat(100), 4, 1, None, None);
+    let player_layout_len = player_layout.textures.len();
+    let player_layout_handle = texture_atlases.add(player_layout);
+
+    let player_scale = 0.4;
+    commands.spawn((
+        SpriteBundle {
+            texture: player_sheet_handle,
+            transform: Transform {
+                translation: Vec3::new(0., 100.0, 900.),
+                scale: Vec3::splat(player_scale),
                 ..default()
             },
             sprite: Sprite {
@@ -83,14 +135,14 @@ pub fn move_player(
     let (mut spaceship_hb, mut found_flag) = spaceship.single_mut();
 
     if input.pressed(KeyCode::KeyA) {
-        if pt.translation.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.{
+        if pt.translation.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) * pt.scale.x / 2.{
             deltav_x -= 1.;
             ps.flip_x = true;
         }
     }
 
     if input.pressed(KeyCode::KeyD) {
-        if pt.translation.x <= LEVEL_W - (LEVEL_W / 2. + (SPRITE_WIDTH as f32) / 2.){
+        if pt.translation.x <= LEVEL_W - (LEVEL_W / 2. + (SPRITE_WIDTH as f32) * pt.scale.x / 2.){
             deltav_x += 1.;
             ps.flip_x = false;
         }
@@ -123,6 +175,12 @@ pub fn move_player(
         pv.velocity.x = pv.velocity.x * (1. - 0.75 * ratio_of_lava_particles.powf(0.5));
     }
 
+    // Account for player in healing spring
+    let ratio_of_healing_spring_particles = hb.ratio_of_healing_spring_grid_tiles(&map);
+    if ratio_of_healing_spring_particles > 0.0 {
+        pv.velocity.x = pv.velocity.x * (1. - 0.7 * ratio_of_healing_spring_particles.powf(0.5));
+    }
+
     let ratio_of_quicksand_particles = hb.ratio_of_quicksand_grid_tiles(&map);
     if ratio_of_quicksand_particles > 0.0 {
         pv.velocity.x = pv.velocity.x * (1. - 0.9 * ratio_of_quicksand_particles.powf(0.5));
@@ -131,7 +189,7 @@ pub fn move_player(
 
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
-    let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
+    let new_hb = Hitbox::new(SPRITE_WIDTH as f32 * pt.scale.x, SPRITE_HEIGHT as f32 * pt.scale.x, new_pos.xy());
 
     if new_hb.collides_with(&spaceship_hb) && !found_flag.found{
         found_flag.found = true;
@@ -171,7 +229,7 @@ pub fn flight(
     let acc_y = ACCEL_RATE_Y * deltat;
 
     if input.pressed(KeyCode::Space) {
-        if pt.translation.y <= (LEVEL_H / 2.) - (SPRITE_HEIGHT as f32) / 2. {
+        if pt.translation.y <= (LEVEL_H / 2.) - (SPRITE_HEIGHT as f32) * pt.scale.x / 2. {
             pg.reset_g();
             pv.velocity.y = f32::min(MAX_FLIGHT_SPEED, pv.velocity.y + (1. * acc_y))
         }
@@ -196,6 +254,13 @@ pub fn flight(
         take_damage(&mut health , 0.5, &mut death_event, &asset_server, &mut commands, &mut sound_tracker, &time);
     }
 
+    // Account for player in healing spring
+    let ratio_of_healing_spring_particles = hb.ratio_of_healing_spring_grid_tiles(&map);
+    if ratio_of_healing_spring_particles > 0.0 {
+        pv.velocity.y = pv.velocity.y * (1. - 0.8 * ratio_of_healing_spring_particles.powf(0.5));
+        take_healing(&mut health , 0.5, &mut death_event, &asset_server, &mut commands, &mut sound_tracker, &time);
+    }
+
     //hb.player_quicksand_interaction(quicksand_hb);
     let ratio_of_quicksand_particles = hb.ratio_of_quicksand_grid_tiles(&map);
     if ratio_of_quicksand_particles > 0.0 {
@@ -204,7 +269,7 @@ pub fn flight(
 
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
-    let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
+    let new_hb = Hitbox::new(SPRITE_WIDTH as f32 * pt.scale.x, SPRITE_HEIGHT as f32 * pt.scale.x, new_pos.xy());
     //Bound player to within level height
 
     if new_pos.y >= -(LEVEL_H / 2.) + (SPRITE_HEIGHT as f32) / 2.
@@ -217,7 +282,7 @@ pub fn flight(
         bt.translation.y = pt.translation.y + BLASTER_OFFSET_Y;
     }  
     
-    let new_hb = Hitbox::new(SPRITE_WIDTH as f32, SPRITE_HEIGHT as f32, new_pos.xy());
+    let new_hb = Hitbox::new(SPRITE_WIDTH as f32 * pt.scale.x, SPRITE_HEIGHT as f32 * pt.scale.x, new_pos.xy());
     // Velocity is zero when player hits the ground
     if pt.translation.y <= -(LEVEL_H / 2.) + (SPRITE_HEIGHT as f32) ||
         new_hb.all_player_collisions(&hitboxes) 
@@ -373,6 +438,66 @@ fn play_damage_sound(
     }
 }
 
+pub fn take_healing(
+    player_health: &mut Health,
+    healing_amount: f32,
+    death_event: &mut EventWriter<Death>,
+    asset_server: &Res<AssetServer>,
+    mut commands: &mut Commands,
+    sound_tracker: &mut ResMut<PlayerSoundTracker>,
+    time: &Res<Time>,
+) {
+    player_health.current += healing_amount;
+    if player_health.current == 0.{
+        death_event.send(Death);
+    }
+    if PLAY_SOUND_BOOL {
+        play_healing_sound(asset_server, commands, sound_tracker, time);
+    }
+}
+
+fn play_healing_sound(
+    asset_server: &Res<AssetServer>,
+    commands: &mut Commands,
+    sound_tracker: &mut ResMut<PlayerSoundTracker>,
+    time: &Res<Time>,
+) {
+    let elapsed_since_last_play = time.elapsed() - sound_tracker.last_played;
+    let cooldown = Duration::from_secs_f32(PLAYER_HEALING_SOUND_DURATION);
+
+    if elapsed_since_last_play >= cooldown {
+        commands.spawn(AudioBundle {
+            source: asset_server.load(PLAYER_HEALING_SOUND_FILE),
+            settings: PlaybackSettings::ONCE,
+        });
+        sound_tracker.last_played = time.elapsed();
+    }
+}
+
+pub fn constant_damage(
+    time: Res<Time>,
+    mut player: Query<(&mut Health, &Transform), With<Player>>,
+    mut death_event: EventWriter<Death>,
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut sound_tracker: ResMut<PlayerSoundTracker>,
+) {
+    let (mut health, _transform) = player.single_mut();
+
+    // Damage the player every second
+    let damage_amount = 2.5; // Adjust damage amount as needed
+
+    take_damage(
+        &mut health,
+        damage_amount * time.delta_seconds(),
+        &mut death_event,
+        &asset_server,
+        &mut commands,
+        &mut sound_tracker,
+        &time,
+    );
+}
+
 pub struct PlayerPlugin;
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
@@ -384,6 +509,7 @@ impl Plugin for PlayerPlugin {
         app.add_systems(OnEnter(GamePhase::Planet5), initialize);
         app.add_systems(OnEnter(GamePhase::Planet6), initialize);
         app.add_systems(OnEnter(GamePhase::Planet7), initialize);
+        app.add_systems(OnEnter(GamePhase::Planet8), initialize_special);
 
        // app.add_systems(PreUpdate,  initialize.run_if(state_changed::<GamePhase>));
         app.add_event::<super::blaster::components::ChangeBlasterEvent>();
@@ -394,6 +520,7 @@ impl Plugin for PlayerPlugin {
         app.add_systems(OnEnter(GamePhase::Planet5), super::blaster::systems::initialize.after(initialize));
         app.add_systems(OnEnter(GamePhase::Planet6), super::blaster::systems::initialize.after(initialize));
         app.add_systems(OnEnter(GamePhase::Planet7), super::blaster::systems::initialize.after(initialize));
+        app.add_systems(OnEnter(GamePhase::Planet8), super::blaster::systems::initialize.after(initialize_special));
 
 
 
@@ -407,6 +534,7 @@ impl Plugin for PlayerPlugin {
         app.add_systems(Update, super::blaster::systems::shoot_blaster.after(super::systems::flight).run_if(in_state(AppState::InGame)));
         app.add_systems(Update, super::blaster::systems::handle_blaster_change_input.run_if(in_state(AppState::InGame)));
         app.add_systems(Update, super::blaster::systems::change_blaster_on_event.run_if(in_state(AppState::InGame)));
+        app.add_systems(Update, constant_damage.run_if(in_state(GamePhase::Planet8)));
 
      //   app.add_system(super::blaster::systems::switch_blaster.system());
       //  app.add_system(super::blaster::systems::handle_blaster_switch.system());

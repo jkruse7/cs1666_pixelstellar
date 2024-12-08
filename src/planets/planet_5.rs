@@ -1,5 +1,6 @@
 use bevy::prelude::*;
 use rand::Rng;
+use std::collections::HashMap;
 use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
@@ -85,6 +86,15 @@ impl Default for WorldGenSettings {
 
 
 // Map placement type functions  --------------------------------------------------------------------------------
+fn select_particle_layers(y: f32, layer_noises: &[(ParticleType, f32)]) -> ParticleType {
+    for (particle_type, noise_height) in layer_noises.iter() {
+        if y >= *noise_height {
+            return *particle_type;
+        }
+    }
+    layer_noises.last().unwrap().0
+}
+
 fn generate_world(
     mut map: ResMut<ParticleMap>,
     mut commands: Commands,

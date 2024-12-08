@@ -1,6 +1,6 @@
 use std::mem::take;
 
-use bevy::{prelude::*, scene::ron::de};
+use bevy::{asset::io::embedded, prelude::*, scene::ron::de};
 use crate::{
     common::{
         death::Death, gravity::{Gravity, GravityResource}, hitbox::Hitbox, state::{AppState, GamePhase}
@@ -53,7 +53,7 @@ pub fn initialize(
             AnimationTimer(Timer::from_seconds(W1_ANIM_TIME, TimerMode::Repeating)),
             AnimationFrameCount(enemy_layout_len),
             Velocity::new(),
-            EnemyHealth::new(),
+            EnemyHealth::new(2.),
             Gravity::new(),
             Hitbox::new(40 as f32, 40 as f32, Vec2::new(0., -210.)),
             DamageBox::new(50.0, 50.0, Vec2::new(0., -210.)),
@@ -65,7 +65,7 @@ pub fn initialize(
     } else if *game_state == GamePhase::Planet3 {
         let enemy_sheet_handle = asset_server.load("planet_3/ghost.png");
         //             used to be tilesize. removed TILE_SIZE and now at 100, but change as needed  \/
-        let enemy_layout = TextureAtlasLayout::from_grid(UVec2::new(W2_SPRITE_WIDTH, W2_SPRITE_HEIGHT), 1, 1, None, None);
+        let enemy_layout = TextureAtlasLayout::from_grid(UVec2::new(W3_SPRITE_WIDTH, W3_SPRITE_HEIGHT), 1, 1, None, None);
         let enemy_layout_len = enemy_layout.textures.len();
         let enemy_layout_handle = texture_atlases.add(enemy_layout);
         commands.spawn((
@@ -89,10 +89,10 @@ pub fn initialize(
             AnimationTimer(Timer::from_seconds(W1_ANIM_TIME, TimerMode::Repeating)),
             AnimationFrameCount(enemy_layout_len),
             Velocity::new(),
-            EnemyHealth::new(),
+            EnemyHealth::new(4.),
             Gravity::new(),
-            Hitbox::new(W2_SPRITE_WIDTH as f32, W2_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
-            DamageBox::new(W2_SPRITE_WIDTH as f32, W2_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
+            Hitbox::new(W3_SPRITE_WIDTH as f32, W3_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
+            DamageBox::new(W3_SPRITE_WIDTH as f32, W3_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
             Jump::new(),  
             Enemy,
         ));
@@ -137,8 +137,41 @@ pub fn initialize(
 
     } else if *game_state == GamePhase::Planet7 {
 
+    } else if *game_state == GamePhase::Planet8 {
+        let enemy_sheet_handle = asset_server.load("planet_8/sun.png");
+        //             used to be tilesize. removed TILE_SIZE and now at 100, but change as needed  \/
+        let enemy_layout = TextureAtlasLayout::from_grid(UVec2::new(W8_SPRITE_WIDTH, W8_SPRITE_HEIGHT), 1, 1, None, None);
+        let enemy_layout_len = enemy_layout.textures.len();
+        let enemy_layout_handle = texture_atlases.add(enemy_layout);
+        commands.spawn((
+            SpriteBundle {
+                texture: enemy_sheet_handle,
+                transform: Transform {
+                    // Julianne 10/8: For now, enemy is being spawned at WIN_W. This will need to be changed eventually.
+                    translation: Vec3::new(WIN_W / 3., 300.0, 900.),
+                    ..default()
+                },
+                sprite: Sprite {
+                    flip_x: false,
+                    ..default()
+                },
+                ..default()
+            },
+            TextureAtlas {
+                layout: enemy_layout_handle,
+                index: 0,
+            },
+            AnimationTimer(Timer::from_seconds(W1_ANIM_TIME, TimerMode::Repeating)),
+            AnimationFrameCount(enemy_layout_len),
+            Velocity::new(),
+            EnemyHealth::new(20.),
+            Gravity::new(),
+            Hitbox::new(W8_SPRITE_WIDTH as f32, W8_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
+            DamageBox::new(W8_SPRITE_WIDTH as f32, W8_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
+            Jump::new(),  
+            Enemy,
+        ));
     }
-    
 }
 
 #[derive(Component, Clone, Debug)]
@@ -266,6 +299,48 @@ pub fn enemy_gravity(
 
     } else if *game_state == GamePhase::Planet7 {
 
+    } else if *game_state == GamePhase::Planet8 {
+        for (mut pt, mut pv, mut pg, mut hb, mut e_jump) in &mut enemy{
+
+            let deltat = time.delta_seconds();
+
+            //update gravity here
+            if e_jump.needs_jump && !e_jump.jumped{
+                pg.reset_g();
+                let acc_y = W1_ACCEL_RATE_Y * deltat;
+                pv.velocity.y = f32::min(250., pv.velocity.y + (1. * acc_y));
+                e_jump.needs_jump = false;
+                e_jump.is_jumping = true;
+            }else {
+                pg.update_g(&pv.velocity.y, &deltat, &grav_res);
+                pv.velocity.y = pg.get_g();
+            }
+            
+
+            let change = pv.velocity * deltat;
+            let new_pos = pt.translation + change.extend(0.);
+            let new_hb = Hitbox::new(W1_SPRITE_WIDTH as f32, W1_SPRITE_HEIGHT as f32, new_pos.xy());
+            //Bound enemy to within level height
+            if new_pos.y >= -(LEVEL_H / 2.) + (W1_SPRITE_HEIGHT as f32) / 2.
+                && new_pos.y <= LEVEL_H - (W1_SPRITE_HEIGHT as f32) / 2.
+                && (!new_hb.all_enemy_collisions(&hitboxes)) && !e_jump.jumped
+            {    
+
+                    pt.translation = new_pos;
+                    *hb = new_hb; 
+                    e_jump.jumped = true;
+            }  
+            let new_hb = Hitbox::new(W1_SPRITE_WIDTH as f32, W1_SPRITE_HEIGHT as f32,Vec2::new(new_pos.x + 1., new_pos.y));
+            // Velocity is zero when enemy hits the ground
+            if pt.translation.y <= -(LEVEL_H / 2.) + (W1_SPRITE_HEIGHT as f32) ||
+                new_hb.all_enemy_collisions(&hitboxes)
+            {
+                pv.velocity.y = 0.;
+                e_jump.is_jumping = false;
+                e_jump.jumped = false;
+                
+            }
+        }
     }
 }
 
@@ -320,6 +395,8 @@ pub fn animate_enemy(
 
     } else if *game_state == GamePhase::Planet7 {
     
+    } else if *game_state == GamePhase::Planet8 {
+
     }
 }
 
@@ -447,12 +524,12 @@ pub fn track_player(
             }
 
             let deltat = time.delta_seconds();
-            let acc_x = W2_ACCEL_RATE_X * deltat;
-            let acc_y = W2_ACCEL_RATE_Y * deltat;
+            let acc_x = W3_ACCEL_RATE_X * deltat;
+            let acc_y = W3_ACCEL_RATE_Y * deltat;
             if deltav_x != 0. || deltav_y != 0. {
                 let new_velocity = Vec2::new(deltav_x, deltav_y) + enemy_velocity.velocity;
-                if new_velocity.length() > W2_ENEMY_SPEED {
-                    enemy_velocity.velocity = new_velocity.normalize() * W2_ENEMY_SPEED;
+                if new_velocity.length() > W3_ENEMY_SPEED {
+                    enemy_velocity.velocity = new_velocity.normalize() * W3_ENEMY_SPEED;
                 } else {
                     enemy_velocity.velocity = new_velocity;
                 }
@@ -463,7 +540,7 @@ pub fn track_player(
                 && new_pos.y >= -(LEVEL_H / 2.) + (W1_SPRITE_HEIGHT as f32) / 2.
                 && new_pos.y <= LEVEL_H - (W1_SPRITE_HEIGHT as f32) / 2. {
                     enemy_transform.translation = new_pos;
-                    *enemy_hb = Hitbox::new(W2_SPRITE_WIDTH as f32, W2_SPRITE_HEIGHT as f32, enemy_transform.translation.xy());
+                    *enemy_hb = Hitbox::new(W3_SPRITE_WIDTH as f32, W3_SPRITE_HEIGHT as f32, enemy_transform.translation.xy());
                 }
                 if player_hb.collides_with(&enemy_hb) {
                     take_damage(&mut player_health, 1.0, &mut death_event, &asset_server, &mut commands, &mut sound_tracker, &time);
@@ -563,23 +640,67 @@ pub fn track_player(
     }
     else if *game_state == GamePhase::Planet7 {
     }
+    else if *game_state == GamePhase::Planet8 {
+    }
 
     
 }
 
 
+pub fn check_enemy_damage(
+    mut query: Query<(Entity, &mut Hitbox, &mut EnemyHealth), With<Enemy>>,
+    map: ResMut<ParticleMap>,
+    state: Res<State<GamePhase>>,
+){
+    let game_state =  state.get();
+    if *game_state == GamePhase::Planet1 {
+        for (entity, ehb, mut eHealth) in query.iter_mut() {
+            if ehb.are_any_grid_tiles_water(&map) {
+                // info!("Enemy hit by water particle");
+                eHealth.hp -= 1.;
+            }
+        }
+    }
+    else if *game_state == GamePhase::Planet2 {
+
+    }
+    else if *game_state == GamePhase::Planet3 {
+        for (entity, ehb, mut eHealth) in query.iter_mut() {
+            if ehb.are_any_grid_tiles_water(&map) {
+                // info!("Enemy hit by water particle");
+                eHealth.hp -= 1.;
+            }
+        }
+    }
+    else if *game_state == GamePhase::Planet4 {
+
+    }
+    else if *game_state == GamePhase::Planet5 {
+
+    }
+    else if *game_state == GamePhase::Planet6 {
+
+    }
+    else if *game_state == GamePhase::Planet7 {
+
+    }
+    else if *game_state == GamePhase::Planet8 {
+        for (entity, ehb, mut eHealth) in query.iter_mut() {
+            if ehb.are_any_grid_tiles_water(&map) {
+                // info!("Enemy hit by water particle");
+                eHealth.hp -= 1.;
+            }
+        }
+    }
+}
 pub fn check_enemy_death(
     mut commands: Commands,
-    query: Query<(Entity, &mut Hitbox), With<Enemy>>,
-    map: ResMut<ParticleMap>,
+    query: Query<(Entity, &mut Hitbox, &mut EnemyHealth), With<Enemy>>,
 ){
-    //TODO: Check if collided with blaster particle 
-    for (entity, ehb) in query.iter() {
-        if ehb.are_any_grid_tiles_water(&map) {
-            info!("Enemy hit by water particle");
+    for (entity, ehb, e_health) in query.iter() {
+        if e_health.hp <= 0. {
             commands.entity(entity).despawn();
         }
-        
     }
 }
 
@@ -595,10 +716,12 @@ impl Plugin for EnemyPlugin {
         .add_systems(OnEnter(GamePhase::Planet5), initialize)
         .add_systems(OnEnter(GamePhase::Planet6), initialize)
         .add_systems(OnEnter(GamePhase::Planet7), initialize)
+        .add_systems(OnEnter(GamePhase::Planet8), initialize)
         //app.add_systems(PreUpdate,  initialize.run_if(state_changed::<GamePhase>))
         .add_systems(Update, enemy_gravity.after(track_player).run_if(in_state(AppState::InGame)))
         .add_systems(Update, track_player.run_if(in_state(AppState::InGame)))
         .add_systems(Update, animate_enemy.after(track_player).run_if(in_state(AppState::InGame)))
-        .add_systems(Update, check_enemy_death.run_if(in_state(AppState::InGame)));
+        .add_systems(Update, check_enemy_damage.run_if(in_state(AppState::InGame)))
+        .add_systems(Update, check_enemy_death.run_if(in_state(AppState::InGame)).after(check_enemy_damage));
     }
 }
