@@ -136,9 +136,10 @@ pub fn move_player(
         ship_event.send(FoundSpaceship);
     }
     
-    if new_pos.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.
-        && new_pos.x <= LEVEL_W - (LEVEL_W / 2. + (SPRITE_WIDTH as f32) / 2.)
-        && !new_hb.all_player_collisions(&hitboxes)
+    if //new_pos.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.
+        //&& new_pos.x <= LEVEL_W - (LEVEL_W / 2. + (SPRITE_WIDTH as f32) / 2.)
+        //&& !new_hb.all_player_collisions(&hitboxes)
+        !new_hb.all_player_collisions(&hitboxes)
     {
         pt.translation = new_pos;
         *hb = new_hb;
