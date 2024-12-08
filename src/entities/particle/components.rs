@@ -34,6 +34,8 @@ pub enum ParticleElement {
     Hellstone,
     Lava,
     Healing_Spring,
+    Sand,
+    QuickSand,
 }
 
 
@@ -491,6 +493,93 @@ impl NewParticle for Healing_SpringParticle {
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
             },
             tag: ParticleTagHealing_Spring,
+        }
+    }
+}
+
+
+// Sand ------------------------------------------------------------------------
+#[derive(Component, Debug)]
+pub struct ParticleTagSand;
+#[derive(Bundle, Debug)]
+pub struct SandParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    tag: ParticleTagSand,
+}
+impl NewParticle for SandParticle {
+    const ELEMENT: ParticleElement = ParticleElement::Sand;
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
+        let mut rng = rand::thread_rng();
+        let red = rng.gen_range(210..=240) as u8;
+        let green = rng.gen_range(190..=210) as u8;
+        let blue = rng.gen_range(80..=110) as u8;
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgb_u8(red, green, blue),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        0.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosVel::new(x, y, vel),
+                data: ParticleElement::Sand,
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
+            },
+            tag: ParticleTagSand,
+        }
+    }
+}
+
+// Quick Sand ------------------------------------------------------------------------
+#[derive(Component, Debug)]
+pub struct ParticleTagQuickSand;
+#[derive(Bundle, Debug)]
+pub struct QuickSandParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    tag: ParticleTagQuickSand,
+}
+impl NewParticle for QuickSandParticle {
+    const ELEMENT: ParticleElement = ParticleElement::QuickSand;
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
+        let mut rng = rand::thread_rng();
+        let red = rng.gen_range(240..=250) as u8;
+        let green = rng.gen_range(180..=200) as u8;
+        let blue = rng.gen_range(80..=110) as u8;
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgb_u8(red, green, blue),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        0.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosVel::new(x, y, vel),
+                data: ParticleElement::QuickSand,
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
+                        },
+            tag: ParticleTagQuickSand,
         }
     }
 }
