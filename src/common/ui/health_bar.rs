@@ -62,6 +62,7 @@ impl Plugin for HealthBarPlugin {
         app.add_systems(OnEnter(GamePhase::Planet5), initialize_health_bar);
         app.add_systems(OnEnter(GamePhase::Planet6), initialize_health_bar);
         app.add_systems(OnEnter(GamePhase::Planet7), initialize_health_bar);
+        app.add_systems(OnEnter(GamePhase::Planet8), initialize_health_bar);
 
         app.add_systems(Update, update_health_bar.run_if(in_state(AppState::InGame)));
     }

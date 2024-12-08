@@ -36,6 +36,7 @@ pub enum GamePhase {
     Planet5,
     Planet6,
     Planet7,
+    Planet8,
     //Add other levels here
 }
 
@@ -52,9 +53,10 @@ pub fn set_next_state(
         GamePhase::Planet4 => next_phase.set(GamePhase::Planet5),
         GamePhase::Planet5 => next_phase.set(GamePhase::Planet6),
         GamePhase::Planet6 => next_phase.set(GamePhase::Planet7),
+        GamePhase::Planet7 => next_phase.set(GamePhase::Planet8),
         // add level transitions here
         //LAST LEVEL CHANGES THE APP STATE
-        GamePhase::Planet7 => next_app_state.set(AppState::WinScreen),
+        GamePhase::Planet8 => next_app_state.set(AppState::WinScreen),
     }
 }
 
@@ -80,6 +82,7 @@ impl Plugin for StatePlugin {
         app.add_systems(OnExit(GamePhase::Planet5),  clear_level);
         app.add_systems(OnExit(GamePhase::Planet6),  clear_level);
         app.add_systems(OnExit(GamePhase::Planet7),  clear_level);
+        app.add_systems(OnExit(GamePhase::Planet8),  clear_level);
         // Add level clearing here
 }
 }
