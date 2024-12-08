@@ -23,7 +23,7 @@ pub const PLAYER_DAMAGE_SOUND_DURATION: f32 = 1.5;
 pub const PLAY_SOUND_BOOL: bool = true;
 
 pub const PLAYER_HEALING_SOUND_FILE: &str = "healing_sound.wav";
-pub const PLAYER_HEALING_SOUND_DURATION: f32 = 1.5;
+pub const PLAYER_HEALING_SOUND_DURATION: f32 = 1.0;
 
 #[derive(Resource)]
 pub struct PlayerRatioWaterParticles { //Ratio of player's hitbox that is in water

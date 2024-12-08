@@ -473,7 +473,7 @@ pub fn constant_damage(
     let (mut health, _transform) = player.single_mut();
 
     // Damage the player every second
-    let damage_amount = 5.0; // Adjust damage amount as needed
+    let damage_amount = 2.5; // Adjust damage amount as needed
 
     take_damage(
         &mut health,
