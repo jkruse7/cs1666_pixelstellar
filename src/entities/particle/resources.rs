@@ -1,5 +1,8 @@
 use bevy::prelude::*;
-use bevy::utils::HashMap;
+use bevy::utils::{
+    HashMap,
+    HashSet,
+};
 use crate::{entities::particle::components::*, LEVEL_W, LEVEL_H};
 
 pub const PARTICLE_SIZE: f32 = 4.;
@@ -66,10 +69,10 @@ impl ParticleMap {
     */
     pub fn insert_at<P: NewParticle + Bundle>(&mut self, commands: &mut Commands, pos: (i32, i32), list: ListType) -> bool {
         // do not spawn particles if they are outside of map. will need to change later with chunks
-        if  (pos.0 < -(LEVEL_W/2.) as i32) || (pos.0 > (LEVEL_W/2.) as i32) ||
-            (pos.1 < -(LEVEL_H/2.) as i32) || (pos.1 > (LEVEL_H/2.) as i32){
-            return false
-        }
+        // if  (pos.0 < -(LEVEL_W/2.) as i32) || (pos.0 > (LEVEL_W/2.) as i32) ||
+        //     (pos.1 < -(LEVEL_H/2.) as i32) || (pos.1 > (LEVEL_H/2.) as i32){
+        //     return false
+        // }
         let element_at_pos = self.get_element_at(pos);
     
         
@@ -104,6 +107,20 @@ impl ParticleMap {
         if let Some(old_entity) = self.particle_map.get(&pos).map(|(entity, _)| *entity) {
             commands.entity(old_entity).despawn();
             self.particle_map.remove(&pos);
+        }
+    }
+
+    pub fn despawn_chunk(&mut self, commands: &mut Commands, chunk: (i32, i32)) {
+        let x_start = chunk.0 * 64;
+        let y_start = chunk.1 * 64;
+
+        let min = IVec2::new(x_start, y_start);
+        let max = IVec2::new(x_start + 64, y_start + 64);
+
+        for x in min.x..max.x {
+            for y in min.y..max.y {
+                self.delete_at(commands, (x, y));
+            }
         }
     }
     
@@ -192,3 +209,69 @@ pub fn grid_coords_within_map(pos: (i32, i32)) -> bool {
     false
 }
 
+// Chunks
+#[derive(Resource)]
+pub struct ChunkList {
+    pub size: f32,
+    pub chunk_list: HashSet<(i32, i32)>,
+}
+
+impl ChunkList {
+    pub fn new() -> Self {
+        Self {
+            size: 64.,
+            chunk_list: HashSet::new(),
+        }
+    }
+
+    // Loading
+    pub fn load(&mut self, pos: (i32, i32)) -> Vec<(i32, i32)> {
+        let x_chunk = (pos.0 as f32 / self.size).floor() as i32;
+        let y_chunk = (pos.1 as f32 / self.size).floor() as i32;
+
+        let min = IVec2::new(x_chunk - 5, y_chunk - 3);
+        let max = IVec2::new(x_chunk + 5, y_chunk + 3);
+
+        let mut added: Vec<(i32, i32)> = Vec::new();
+
+        for x in min.x..=max.x {
+            for y in min.y..=max.y {
+                let chunk = (x, y);
+                if self.chunk_list.contains(&chunk) {
+                    continue;
+                } else {
+                    added.push(chunk);
+                    self.chunk_list.insert(chunk);
+                }
+            }
+        }
+
+        added
+    }
+
+    // Unloading
+    pub fn unload(&mut self, pos: (i32, i32)) -> Vec<(i32, i32)> {
+        let x_chunk = (pos.0 as f32 / self.size).floor() as i32;
+        let y_chunk = (pos.1 as f32 / self.size).floor() as i32;
+
+        let min = IVec2::new(x_chunk - 5, y_chunk - 3);
+        let max = IVec2::new(x_chunk + 5, y_chunk + 3);
+
+        let to_remove: Vec<(i32, i32)> = self.chunk_list
+            .iter()
+            .cloned()
+            .filter(
+                |&chunk| chunk.0 < min.x || chunk.0 > max.x || chunk.1 < min.y || chunk.1 > max.y
+            )
+            .collect();
+
+        let mut removed: Vec<(i32, i32)> = Vec::new();
+
+        for chunk in to_remove {
+            self.chunk_list.remove(&chunk);
+            removed.push(chunk);
+        }
+
+        removed
+    }
+}

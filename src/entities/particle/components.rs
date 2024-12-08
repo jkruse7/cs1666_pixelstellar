@@ -33,6 +33,7 @@ pub enum ParticleElement {
     Obsidian,
     Hellstone,
     Lava,
+    Snow,
     Healing_Spring,
     Sand,
     QuickSand,
