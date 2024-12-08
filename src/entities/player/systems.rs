@@ -128,28 +128,26 @@ pub fn move_player(
     map: ResMut<ParticleMap>,
     mut spaceship: Query<(&Hitbox, &mut FoundFlag), (With<Spaceship>, Without<Player>)>,
     mut ship_event: EventWriter<FoundSpaceship>,
+    state: Res<State<GamePhase>>,
 ) {
     let (mut pt, mut pv, mut ps, mut hb, mut player_health) = player.single_mut();
     let mut deltav_x = 0.;
     let mut bt = blaster_transform.single_mut();
     let (mut spaceship_hb, mut found_flag) = spaceship.single_mut();
+    let game_state = state.get();
 
     if input.pressed(KeyCode::KeyA) {
-        // if pt.translation.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.{
-        //     deltav_x -= 1.;
-        //     ps.flip_x = true;
-        // }
-        deltav_x -= 1.;
-        ps.flip_x = true;
+        if game_state.eq(&GamePhase::Planet4) || pt.translation.x >= -(LEVEL_W / 2.) + (SPRITE_WIDTH as f32) / 2.{
+            deltav_x -= 1.;
+            ps.flip_x = true;
+        }
     }
 
     if input.pressed(KeyCode::KeyD) {
-        // if pt.translation.x <= LEVEL_W - (LEVEL_W / 2. + (SPRITE_WIDTH as f32) / 2.){
-        //     deltav_x += 1.;
-        //     ps.flip_x = false;
-        // }
-        deltav_x += 1.;
-        ps.flip_x = false;
+        if game_state.eq(&GamePhase::Planet4) || pt.translation.x <= LEVEL_W - (LEVEL_W / 2. + (SPRITE_WIDTH as f32) / 2.){
+            deltav_x += 1.;
+            ps.flip_x = false;
+        }
     }
     let deltat = time.delta_seconds();
     let acc_x = ACCEL_RATE_X * deltat;

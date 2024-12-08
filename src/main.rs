@@ -52,7 +52,6 @@ fn main() {
         .add_plugins(planets::planet_5::Planet5Plugin)
         .add_plugins(planets::planet_6::Planet6Plugin)
         .add_plugins(planets::planet_7::Planet7Plugin)
-        .add_plugins(planets::planet_8::Planet8Plugin)
 
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {

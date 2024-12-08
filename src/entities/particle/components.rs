@@ -585,3 +585,43 @@ impl NewParticle for QuickSandParticle {
     }
 }
 
+// Snow --------------------------------------------------------------------------------------------------------
+#[derive(Component, Debug)]
+pub struct ParticleTagSnow;
+#[derive(Bundle, Debug)]
+pub struct SnowParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    tag: ParticleTagSnow,
+}
+impl NewParticle for SnowParticle {
+    const ELEMENT: ParticleElement = ParticleElement::Snow;
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
+        let mut rng = rand::thread_rng();
+        let w = rng.gen_range(235..=255) as u8;
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgb_u8(w, w, w),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        0.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosVel::new(x, y, vel),
+                data: ParticleElement::Snow,
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
+                        },
+            tag: ParticleTagSnow,
+        }
+    }
+}

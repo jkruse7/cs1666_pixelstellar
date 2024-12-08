@@ -7,6 +7,7 @@ use crate::entities::{
     player::components::Player,
 };
 use crate::common::perlin_noise::*;
+use crate::LEVEL_W;
 
 // Define structs --------------------------------------------------------------------------------
 #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
@@ -120,26 +121,6 @@ impl Default for WorldGenSettings {
         Self {
             layers: vec![
                 LayerSettings {
-                    particle_type: ParticleType::Stone,
-                    noise_settings: NoiseSettings {
-                        start_frequency: 0.015,
-                        octaves: 2,
-                        noise_range_min: 30.,
-                        noise_range_max: 40.,
-                        ..Default::default()
-                    },
-                },
-                LayerSettings {
-                    particle_type: ParticleType::Dirt,
-                    noise_settings: NoiseSettings {
-                        start_frequency: 0.012,
-                        octaves: 1,
-                        noise_range_min: 0.,
-                        noise_range_max: 20.,
-                        ..Default::default()
-                    },
-                },
-                LayerSettings {
                     particle_type: ParticleType::BedRock,
                     noise_settings: NoiseSettings {
                         start_frequency: 0.03,
@@ -192,12 +173,10 @@ fn generate_world(
     //let perm = generate_permutation_array();
 
     let x_start = chunk.0 * 64;
-    let x_end = x_start + 63;
-
+    let x_end = x_start + 64;
     let y_start = chunk.1 * 64;
-    let mut y_end = y_start + 63;
 
-    for x in x_start..=x_end {
+    for x in x_start..x_end {
         let mut layer_noises = Vec::new();
 
         for layer in &config.layers {
@@ -221,16 +200,18 @@ fn generate_world(
             .map(|(_, noise)| *noise)
             .fold(f32::MIN, f32::max);
 
-        let y_terrain = -90 + max_noise as i32;
-        if y_start > y_terrain {
+        if y_start > (-90 + max_noise as i32) {
             continue;
         }
-        if y_end > y_terrain {
-            y_end = y_terrain;
-        }
+
+        let y_end = if y_start + 64 > (-90 + max_noise as i32) {
+            -90 + max_noise as i32
+        } else {
+            y_start + 64
+        };
 
         if let Some(cave_settings) = &config.caves {
-            for y in y_start..=y_end {
+            for y in y_start..y_end {
                 let noise_cave = get_2d_octaves(
                     x as f32,
                     y as f32,
@@ -252,7 +233,7 @@ fn generate_world(
 
                 match current_particle {
                     ParticleType::BedRock => {
-                        map.insert_at::<GrassParticle>(commands, (x, y), ListType::All);
+                        map.insert_at::<BedRockParticle>(commands, (x, y), ListType::All);
                     }
                     ParticleType::Dirt => {
                         map.insert_at::<DirtParticle>(commands, (x, y), ListType::All);
@@ -268,30 +249,6 @@ fn generate_world(
     }
 }
 
-fn update_grass(
-    mut map: ResMut<ParticleMap>,
-    time: Res<Time>, 
-    mut commands: Commands,
-    mut particles: Query<&mut ParticlePosVel, With<ParticleTagDirt>>,
-) {
-    for mut position in &mut particles {
-        let (x, y) = (position.grid_x, position.grid_y);
-        if map.get_element_at((x, y+1)) == ParticleElement::Air{
-            map.delete_at(&mut commands, (x, y));
-            map.insert_at::<GrassParticle>(&mut commands, (x, y), ListType::OnlyAir);
-        }
-        if ((map.get_element_at((x + 1, y)) == ParticleElement::Air &&
-             map.get_element_at((x+1, y-1)) == ParticleElement::Air)||
-            (map.get_element_at((x + 1, y)) == ParticleElement::Air &&
-             map.get_element_at((x+1, y-1)) == ParticleElement::Air))&&
-           (map.get_element_at((x, y-1)) == ParticleElement::Dirt ||
-            map.get_element_at((x, y-1)) == ParticleElement::Grass ){
-            map.delete_at(&mut commands, (x, y));
-            map.insert_at::<GrassParticle>(&mut commands, (x, y), ListType::OnlyAir);
-        }
-    }
-}
-
 fn handle_chunks(
     config: Res<WorldGenSettings>,
     mut chunks: ResMut<ChunkList>,
@@ -300,8 +257,8 @@ fn handle_chunks(
     player_transform: Query<&Transform, With<Player>>,
 ) {
     let pt = player_transform.single().translation;
-    let position = ((pt.x / PARTICLE_SIZE).floor() as i32, (pt.y / PARTICLE_SIZE).floor() as i32);
 
+    let position = ((pt.x / PARTICLE_SIZE).floor() as i32, (pt.y / PARTICLE_SIZE).floor() as i32);
     let new_chunks = chunks.load(position);
     for chunk in new_chunks {
         generate_world(&mut particles, &mut commands, &config, chunk);
@@ -310,6 +267,64 @@ fn handle_chunks(
     let old_chunks = chunks.unload(position);
     for chunk in old_chunks {
         particles.despawn_chunk(&mut commands, chunk);
+    }
+}
+
+fn update_snow(
+    mut map: ResMut<ParticleMap>,
+    mut commands: Commands,
+    mut particles: Query<&mut ParticlePosVel, With<ParticleTagSnow>>,
+) {
+    for mut position in &mut particles {
+        let mut rng = rand::thread_rng();
+        let move_r = 2;
+        let decay_rate = 200;
+        // This decay logic just says if the positions 10 away in each cardinal direction is air theres a small chance to despawn.
+        // just means that 
+        //               1 to disable or just comment out
+        if rng.gen_range(0..decay_rate) == 0 {
+            map.delete_at(&mut commands, (position.grid_x, position.grid_y));
+        } else if rng.gen_range(0..=1) == 0 {
+            let radius: i32 = rng.gen_range(1..=6);
+            let center_x = position.grid_x;
+            let center_y = position.grid_y;
+            
+            let angle = rng.gen_range(5.0*std::f32::consts::FRAC_PI_4..=7.0*std::f32::consts::FRAC_PI_4);
+
+            let dx = (radius as f32 * angle.cos()).round() as i32;
+            let dy = (radius as f32 * angle.sin()).round() as i32;
+            let new_pos = (center_x + dx, center_y + dy);
+            
+            if let Some(position_of_part) = map.ray(&mut commands, (center_x, center_y), new_pos, ListType::Whitelist(vec!(ParticleElement::Snow, ParticleElement::Air))) {
+                if map.get_element_at(position_of_part) == ParticleElement::Air {
+                    map.delete_at(&mut commands, (center_x, center_y));
+                    // Check that the new coordinates are within bounds before spawning
+                    if grid_coords_within_map(position_of_part) {
+                        map.insert_at::<SnowParticle>(&mut commands, position_of_part, ListType::OnlyAir);
+                    }
+                }
+            }
+        }
+    }
+}
+
+fn draw_snow(
+    mut map: ResMut<ParticleMap>,
+    mut commands: Commands,
+    player_transform: Query<&Transform, With<Player>>,
+) {
+    let pt = player_transform.single().translation;
+
+    let position = (pt.x / PARTICLE_SIZE).floor() as i32;
+
+    for _ in 0..2 {
+        let mut rng = rand::thread_rng();
+        let x = rng.gen_range((position - 64 * 5)..=(position + 64 * 5)) as i32;
+        let y = rng.gen_range(100..200);
+        if map.get_element_at((x, y)) == ParticleElement::Air {
+            map.insert_at::<SnowParticle>(&mut commands, (x, y), ListType::OnlyAir);
+            //map.give_velocity(&mut commands, (x,y), RAIN_VEL);
+        }
     }
 }
 
@@ -323,5 +338,8 @@ impl Plugin for Planet4Plugin {
         //app.add_systems(OnEnter(GamePhase::Planet4), update_grass.after(generate_world));
         app.insert_resource(ChunkList::new());
         app.add_systems(Update, handle_chunks.run_if(in_state(GamePhase::Planet4)));
+
+        app.add_systems(Update, draw_snow.run_if(in_state(GamePhase::Planet4)));
+        app.add_systems(Update, update_snow.after(draw_snow).run_if(in_state(GamePhase::Planet4)));
     }
 }
