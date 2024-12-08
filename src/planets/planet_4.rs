@@ -2,7 +2,10 @@ use bevy::prelude::*;
 use rand::Rng;
 use std::collections::HashMap;
 use crate::common::state::GamePhase;
-use crate::entities::particle::{resources::*, components::*};
+use crate::entities::{
+    particle::{resources::*, components::*},
+    player::components::Player,
+};
 use crate::common::perlin_noise::*;
 
 // Define structs --------------------------------------------------------------------------------
@@ -95,6 +98,7 @@ pub struct LayerSettings {
 pub struct WorldGenSettings {
     pub layers: Vec<LayerSettings>,
     pub caves: Option<CaveSettings>,  // Optional cave settings
+    pub perm: [usize; 512],
 }
 
 // Parameter adjustment --------------------------------------------------------------------------------
@@ -149,6 +153,7 @@ impl Default for WorldGenSettings {
 
             ],
             caves: Some(CaveSettings::default()),  // "caves: None" to disable caves
+            perm: generate_permutation_array(),
         }
     }
 }
@@ -179,13 +184,20 @@ fn select_particle_layers(y: f32, layer_noises: &[(ParticleType, f32)]) -> Parti
 }
 
 fn generate_world(
-    mut map: ResMut<ParticleMap>,
-    mut commands: Commands,
-    config: Res<WorldGenSettings>,
+    map: &mut ResMut<ParticleMap>,
+    commands: &mut Commands,
+    config: &Res<WorldGenSettings>,
+    chunk: (i32, i32),
 ) {
-    let perm = generate_permutation_array();
+    //let perm = generate_permutation_array();
 
-    for x in MIN_X..=MAX_X {
+    let x_start = chunk.0 * 64;
+    let x_end = x_start + 63;
+
+    let y_start = chunk.1 * 64;
+    let mut y_end = y_start + 63;
+
+    for x in x_start..=x_end {
         let mut layer_noises = Vec::new();
 
         for layer in &config.layers {
@@ -197,7 +209,7 @@ fn generate_world(
                 layer.noise_settings.frequency_modifier,
                 layer.noise_settings.noise_range_min,
                 layer.noise_settings.noise_range_max,
-                &perm,
+                &config.perm,
             )
             .floor();
 
@@ -209,8 +221,16 @@ fn generate_world(
             .map(|(_, noise)| *noise)
             .fold(f32::MIN, f32::max);
 
+        let y_terrain = -90 + max_noise as i32;
+        if y_start > y_terrain {
+            continue;
+        }
+        if y_end > y_terrain {
+            y_end = y_terrain;
+        }
+
         if let Some(cave_settings) = &config.caves {
-            for y in MIN_Y..=(-90 + max_noise as i32) {
+            for y in y_start..=y_end {
                 let noise_cave = get_2d_octaves(
                     x as f32,
                     y as f32,
@@ -220,7 +240,7 @@ fn generate_world(
                     cave_settings.frequency_modifier,
                     0.,
                     1.,
-                    &perm,
+                    &config.perm,
                 );
 
                 if (y as f32) >= cave_settings.min_y as f32 && (y as f32) <= cave_settings.max_y as f32 &&
@@ -232,13 +252,13 @@ fn generate_world(
 
                 match current_particle {
                     ParticleType::BedRock => {
-                        map.insert_at::<BedRockParticle>(&mut commands, (x, y), ListType::All);
+                        map.insert_at::<GrassParticle>(commands, (x, y), ListType::All);
                     }
                     ParticleType::Dirt => {
-                        map.insert_at::<DirtParticle>(&mut commands, (x, y), ListType::All);
+                        map.insert_at::<DirtParticle>(commands, (x, y), ListType::All);
                     }
                     ParticleType::Stone => {
-                        map.insert_at::<StoneParticle>(&mut commands, (x, y), ListType::All);
+                        map.insert_at::<StoneParticle>(commands, (x, y), ListType::All);
                     }
                     // Handle other particle types if necessary
 
@@ -272,6 +292,26 @@ fn update_grass(
     }
 }
 
+fn handle_chunks(
+    config: Res<WorldGenSettings>,
+    mut chunks: ResMut<ChunkList>,
+    mut particles: ResMut<ParticleMap>,
+    mut commands: Commands,
+    player_transform: Query<&Transform, With<Player>>,
+) {
+    let pt = player_transform.single().translation;
+    let position = ((pt.x / PARTICLE_SIZE).floor() as i32, (pt.y / PARTICLE_SIZE).floor() as i32);
+
+    let new_chunks = chunks.load(position);
+    for chunk in new_chunks {
+        generate_world(&mut particles, &mut commands, &config, chunk);
+    }
+
+    let old_chunks = chunks.unload(position);
+    for chunk in old_chunks {
+        particles.despawn_chunk(&mut commands, chunk);
+    }
+}
 
 pub struct Planet4Plugin;
 impl Plugin for Planet4Plugin {
@@ -279,7 +319,9 @@ impl Plugin for Planet4Plugin {
         // Startup placements
         app.add_systems(OnEnter(GamePhase::Planet4), crate::common::ui::background::initialize_background);
         app.insert_resource(WorldGenSettings::default());
-        app.add_systems(OnEnter(GamePhase::Planet4), generate_world);
-        app.add_systems(OnEnter(GamePhase::Planet4), update_grass.after(generate_world));
+        //app.add_systems(OnEnter(GamePhase::Planet4), generate_world);
+        //app.add_systems(OnEnter(GamePhase::Planet4), update_grass.after(generate_world));
+        app.insert_resource(ChunkList::new());
+        app.add_systems(Update, handle_chunks.run_if(in_state(GamePhase::Planet4)));
     }
 }
