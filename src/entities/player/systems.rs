@@ -9,7 +9,7 @@ use crate::{
     },
     entities::{
         enemy::components::Enemy, 
-        particle::{components::{ParticleElement, WaterParticle},
+        particle::{components::{ParticleElement, WaterParticle, ParticleTagQuickSand},
         resources::*},
         spaceship::components::{FoundFlag, FoundSpaceship, Spaceship}
     },
@@ -181,6 +181,12 @@ pub fn move_player(
         pv.velocity.x = pv.velocity.x * (1. - 0.7 * ratio_of_healing_spring_particles.powf(0.5));
     }
 
+    let ratio_of_quicksand_particles = hb.ratio_of_quicksand_grid_tiles(&map);
+    if ratio_of_quicksand_particles > 0.0 {
+        pv.velocity.x = pv.velocity.x * (1. - 0.9 * ratio_of_quicksand_particles.powf(0.5));
+        pv.velocity.y = pv.velocity.y * (1. - 0.95 * ratio_of_quicksand_particles.powf(0.5));
+    }
+
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
     let new_hb = Hitbox::new(SPRITE_WIDTH as f32 * pt.scale.x, SPRITE_HEIGHT as f32 * pt.scale.x, new_pos.xy());
@@ -253,6 +259,12 @@ pub fn flight(
     if ratio_of_healing_spring_particles > 0.0 {
         pv.velocity.y = pv.velocity.y * (1. - 0.8 * ratio_of_healing_spring_particles.powf(0.5));
         take_healing(&mut health , 0.5, &mut death_event, &asset_server, &mut commands, &mut sound_tracker, &time);
+    }
+
+    //hb.player_quicksand_interaction(quicksand_hb);
+    let ratio_of_quicksand_particles = hb.ratio_of_quicksand_grid_tiles(&map);
+    if ratio_of_quicksand_particles > 0.0 {
+        pv.velocity.y = pv.velocity.y * (1. - 0.95 * ratio_of_quicksand_particles.powf(0.5));
     }
 
     let change = pv.velocity * deltat;
