@@ -40,6 +40,7 @@ pub enum ParticleElement {
     Sand,
     QuickSand,
     Ice,
+    Slime,
 }
 
 
@@ -733,6 +734,58 @@ impl NewParticle for AcidicDirtParticle {
         }
     }
 }
+
+// Slime ------------------------------------------------------------------------
+#[derive(Component, Debug)]
+pub struct ParticleTagSlime;
+
+#[derive(Bundle, Debug)]
+pub struct SlimeParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    tag: ParticleTagSlime,
+}
+
+impl NewParticle for SlimeParticle {
+    const ELEMENT: ParticleElement = ParticleElement::Slime;
+
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
+        let mut rng = rand::thread_rng();
+        let red = rng.gen_range(30..=60) as u8;
+        let green = rng.gen_range(180..=240) as u8;
+        let blue = rng.gen_range(30..=60) as u8;
+
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgb_u8(red, green, blue),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        0.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosVel::new(x, y, vel),
+                data: ParticleElement::Slime,
+                hitbox: Hitbox::new(
+                    PARTICLE_SIZE, 
+                    PARTICLE_SIZE, 
+                    Vec2::new(LEVEL_H + 10., LEVEL_H + 10.)
+                ),
+            },
+            tag: ParticleTagSlime,
+        }
+    }
+}
+
 
 // ToxicGas ------------------------------------------------------------------------
 #[derive(Component)]
