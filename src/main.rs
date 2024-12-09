@@ -20,7 +20,7 @@ const LEVEL_H: f32 = WIN_H * 2.0;
 fn main() {
     App::new()
         // Resources which will be accessible throughout the game
-        .insert_resource(ClearColor(Color::srgb_u8(0, 0, 0)))
+        .insert_resource(ClearColor(Color::srgb_u8(135, 206, 235)))
         .add_plugins(common::state::StatePlugin)
         .add_plugins(common::death::DeathPlugin)
         // UI Plugins
@@ -52,6 +52,7 @@ fn main() {
         .add_plugins(planets::planet_5::Planet5Plugin)
         .add_plugins(planets::planet_6::Planet6Plugin)
         .add_plugins(planets::planet_7::Planet7Plugin)
+        .add_plugins(planets::planet_8::Planet8Plugin)
 
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             primary_window: Some(Window {

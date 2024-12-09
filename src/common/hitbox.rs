@@ -6,6 +6,7 @@ use crate::entities::particle::systems::*;
 
 use crate::{
     entities::particle::resources::ParticleMap,
+    entities::particle::components::ParticleTagQuickSand,
     entities::player::components::Player,
     entities::enemy::components::Enemy,
     entities::spaceship::components::Spaceship,
@@ -140,6 +141,45 @@ impl Hitbox {
         }
         count as f32 / (count + no_count) as f32
     }
+  
+    pub fn ratio_of_quicksand_grid_tiles(&self, map: &ResMut<ParticleMap>) -> f32 {
+        let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
+        let mut count = 0;
+        let mut no_count = 0;
+        for x in top_left_x..=bottom_right_x {
+            for y in bottom_right_y..=top_left_y {
+                if map.get_element_at((x, y)) == ParticleElement::QuickSand {
+                    count+=1;
+                }
+                else {
+                    no_count+=1;
+                }
+            }   
+        }
+        count as f32 / (count + no_count) as f32
+    }
+    
+
+    pub fn ratio_of_healing_spring_grid_tiles(&self, map: &ResMut<ParticleMap>) -> f32 {
+        let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
+        let mut count = 0;
+        let mut no_count = 0;
+        for x in top_left_x..=bottom_right_x {
+            for y in bottom_right_y..=top_left_y {
+                if map.get_element_at((x, y)) == ParticleElement::Healing_Spring {
+                    count+=1;
+                }
+                else {
+                    no_count+=1;
+                }
+            }   
+        }
+        count as f32 / (count + no_count) as f32
+    }
+      
+      
+      
+      
     pub fn ratio_of_toxic_gas_tiles(&self, map: &ResMut<ParticleMap>) -> f32 {
         let (top_left_x, top_left_y, bottom_right_x, bottom_right_y) = self.get_grid_tiles_to_check();
         let mut count = 0;

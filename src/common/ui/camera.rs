@@ -3,7 +3,7 @@ use crate::{
     entities::player::components::*,
     LEVEL_H, LEVEL_W,
     WIN_H, WIN_W,
-    common::state::AppState,
+    common::state::*,
 };
 
 const THRESHOLD_X: f32 = 160.;
@@ -20,6 +20,7 @@ pub fn initialize_camera(mut commands: Commands){
 pub fn move_camera(
     player: Query<&Transform, With<Player>>,
     mut camera: Query<&mut Transform, (Without<Player>, With<Camera>)>,
+    state: Res<State<GamePhase>>,
 ) {
     let pt = player.single();
 
@@ -29,8 +30,16 @@ pub fn move_camera(
     let mut ct = camera.single_mut();
     let x_diff = pt.translation - ct.translation;
 
-    if x_diff.x > THRESHOLD_X{ ct.translation.x = pt.translation.x.clamp(-x_bound - THRESHOLD_X, x_bound + THRESHOLD_X) - THRESHOLD_X; }
-    if x_diff.x < -THRESHOLD_X { ct.translation.x = pt.translation.x.clamp(-x_bound - THRESHOLD_X, x_bound + THRESHOLD_X) + THRESHOLD_X; }
+    let game_state = state.get();
+
+    if game_state.eq(&GamePhase::Planet4) {
+        if x_diff.x > THRESHOLD_X{ ct.translation.x = pt.translation.x - THRESHOLD_X; }
+        if x_diff.x < -THRESHOLD_X { ct.translation.x = pt.translation.x + THRESHOLD_X; }
+    } else {
+        if x_diff.x > THRESHOLD_X{ ct.translation.x = pt.translation.x.clamp(-x_bound - THRESHOLD_X, x_bound + THRESHOLD_X) - THRESHOLD_X; }
+        if x_diff.x < -THRESHOLD_X { ct.translation.x = pt.translation.x.clamp(-x_bound - THRESHOLD_X, x_bound + THRESHOLD_X) + THRESHOLD_X; }
+    }
+
     if x_diff.y > THRESHOLD_Y{ ct.translation.y = pt.translation.y.clamp(-y_bound - THRESHOLD_Y, y_bound + THRESHOLD_Y) - THRESHOLD_Y; }
     if x_diff.y < -THRESHOLD_Y { ct.translation.y = pt.translation.y.clamp(-y_bound - THRESHOLD_Y, y_bound + THRESHOLD_Y) + THRESHOLD_Y; }
 

@@ -47,7 +47,6 @@ pub fn update_health_bar(
         style.width = Val::Px(200.0 * percentage);
         // Optionally change the color based on health (e.g., green -> red)
         *background_color = Color::srgba(1.0 - percentage, percentage, 0.0, 1.0).into();
-
     }
 }
 
@@ -62,6 +61,7 @@ impl Plugin for HealthBarPlugin {
         app.add_systems(OnEnter(GamePhase::Planet5), initialize_health_bar);
         app.add_systems(OnEnter(GamePhase::Planet6), initialize_health_bar);
         app.add_systems(OnEnter(GamePhase::Planet7), initialize_health_bar);
+        app.add_systems(OnEnter(GamePhase::Planet8), initialize_health_bar);
 
         app.add_systems(Update, update_health_bar.run_if(in_state(AppState::InGame)));
     }

@@ -35,6 +35,11 @@ pub enum ParticleElement {
     Lava,
     AcidicDirt,
     ToxicGas,
+    Snow,
+    Healing_Spring,
+    Sand,
+    QuickSand,
+    Ice,
 }
 
 
@@ -424,7 +429,7 @@ impl NewParticle for LavaParticle {
     const ELEMENT: ParticleElement = ParticleElement::Lava;
     fn new(x: i32, y: i32, vel: Vec2) -> Self {
         let mut rng = rand::thread_rng();
-        let (r,g,b) = (rng.gen_range(200..=255) as u8, rng.gen_range(80..=120) as u8, rng.gen_range(10..=40) as u8);
+        let (r,g,b) = (rng.gen_range(200..=255) as u8, rng.gen_range(80..=120) as u8, rng.gen_range(43..=73) as u8);
         Self {
             sprite: SpriteBundle {
                 sprite: Sprite {
@@ -456,7 +461,236 @@ impl NewParticle for LavaParticle {
 }
 
 
+// Healing_Spring ------------------------------------------------------------------------
+#[derive(Component)]
+pub struct ParticleTagHealing_Spring;
+#[derive(Bundle)]
+pub struct Healing_SpringParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    tag: ParticleTagHealing_Spring,
+}
+impl NewParticle for Healing_SpringParticle {
+    const ELEMENT: ParticleElement = ParticleElement::Healing_Spring;
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
+        let mut rng = rand::thread_rng();
+        let (r,g,b) = (rng.gen_range(118..=133) as u8, rng.gen_range(220..=230) as u8, rng.gen_range(10..=40) as u8);
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgba_u8(r, g, b, 220),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        904.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosVel::new(x, y, vel),
+                data: ParticleElement::Healing_Spring,
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
+            },
+            tag: ParticleTagHealing_Spring,
+        }
+    }
+}
 
+
+// Sand ------------------------------------------------------------------------
+#[derive(Component, Debug)]
+pub struct ParticleTagSand;
+#[derive(Bundle, Debug)]
+pub struct SandParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    tag: ParticleTagSand,
+}
+impl NewParticle for SandParticle {
+    const ELEMENT: ParticleElement = ParticleElement::Sand;
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
+        let mut rng = rand::thread_rng();
+        let red = rng.gen_range(210..=240) as u8;
+        let green = rng.gen_range(190..=210) as u8;
+        let blue = rng.gen_range(80..=110) as u8;
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgb_u8(red, green, blue),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        0.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosVel::new(x, y, vel),
+                data: ParticleElement::Sand,
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
+            },
+            tag: ParticleTagSand,
+        }
+    }
+}
+
+// Quick Sand ------------------------------------------------------------------------
+#[derive(Component, Debug)]
+pub struct ParticleTagQuickSand;
+#[derive(Bundle, Debug)]
+pub struct QuickSandParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    tag: ParticleTagQuickSand,
+}
+impl NewParticle for QuickSandParticle {
+    const ELEMENT: ParticleElement = ParticleElement::QuickSand;
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
+        let mut rng = rand::thread_rng();
+        let red = rng.gen_range(240..=250) as u8;
+        let green = rng.gen_range(180..=200) as u8;
+        let blue = rng.gen_range(80..=110) as u8;
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgb_u8(red, green, blue),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        0.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosVel::new(x, y, vel),
+                data: ParticleElement::QuickSand,
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
+                        },
+            tag: ParticleTagQuickSand,
+        }
+    }
+}
+
+// Snow --------------------------------------------------------------------------------------------------------
+#[derive(Component, Debug)]
+pub struct ParticleTagSnow;
+#[derive(Bundle, Debug)]
+pub struct SnowParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    tag: ParticleTagSnow,
+}
+impl NewParticle for SnowParticle {
+    const ELEMENT: ParticleElement = ParticleElement::Snow;
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
+        let mut rng = rand::thread_rng();
+        let w = rng.gen_range(235..=255) as u8;
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgb_u8(w, w, w),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        0.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosVel::new(x, y, vel);
+                data: ParticleElement::Snow,
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
+                        },
+            tag: ParticleTagSnow,
+        }
+    }
+}
+
+
+// Ice -----------------------------------------------------------------------------------------------------------
+#[derive(Component, Debug)]
+pub struct ParticleTagIce;
+#[derive(Bundle, Debug)]
+pub struct IceParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    tag: ParticleTagIce,
+}
+impl NewParticle for IceParticle {
+    const ELEMENT: ParticleElement = ParticleElement::Ice;
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
+        let mut rng = rand::thread_rng();
+        let r0 = 115;
+        let g0 = 155;
+        let b0 = 208;
+        let bound = 10;
+
+        let mut r = rng.gen_range((r0 - bound)..=(r0 + bound));
+        let mut g = rng.gen_range((g0 - bound)..=(g0 + bound));
+        let mut b = rng.gen_range((b0 - bound)..=(b0 + bound));
+        if rng.gen_range(0..=100) <= 25 {
+            r += 30;
+            g += 30;
+            b += 30;
+        }
+        let w = rng.gen_range(235..=255) as u8;
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgb_u8(r, g, b),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        0.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosVel::new(x, y, vel),
+                data: ParticleElement::Ice,
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
+                        },
+            tag: ParticleTagIce,
+        }
+    }
+}
+              
+              
+              
+              
+              
+              
+              
 // AcidicDirt ------------------------------------------------------------------------
 #[derive(Component, Debug)]
 pub struct ParticleTagAcidicDirt;
@@ -540,6 +774,11 @@ impl NewParticle for ToxicGasParticle {
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
             },
             tag: ParticleTagToxicGas,
+            }
         }
     }
 }
+          
+          
+          
+

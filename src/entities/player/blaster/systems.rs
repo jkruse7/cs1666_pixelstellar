@@ -17,7 +17,7 @@ pub fn initialize(
     player: Query<&Transform, With<Player>>,
 ){ 
     let blaster_sheet_handle = asset_server.load("blasters.png");
-    let blaster_layout = TextureAtlasLayout::from_grid(UVec2::new(19, 11), 4, 1, None, None);
+    let blaster_layout = TextureAtlasLayout::from_grid(UVec2::new(19, 11), 5, 1, None, None);
     let blaster_layout_handle = texture_atlases.add(blaster_layout);
     let pt = player.single();
 
@@ -183,6 +183,29 @@ pub fn shoot_blaster(
                     }
                 }
             }
+            BlasterType::Healing_Spring => {
+                if let Some(world_position) = 
+                window.cursor_position()
+                    .and_then(|cursor| camera.viewport_to_world(camera_transform, cursor))
+                    .map(|ray| ray.origin.truncate())
+                {
+                    let size = 1.;
+                    let mut y: f32 = -size * PARTICLE_SIZE;
+
+                    if time_since_last_fired > RECHARGE_RATE{
+                        blaster_last_fired_time.last_fired = time.elapsed_seconds_f64();
+                        if let Some(cursor_position) = window.cursor_position() {
+                            if let Some(world_position) = camera.viewport_to_world(camera_transform, cursor_position) {
+                                let mut direction = (world_position.origin.truncate() - blaster_transform.translation.truncate()).normalize() * BLASTER_POWER;
+                                
+                                let position = (convert_to_grid_position(blaster_transform.translation.x + blaster_vector.vector.normalize().x*BLASTER_DISPLACEMENT, blaster_transform.translation.y + blaster_vector.vector.normalize().y*BLASTER_DISPLACEMENT)); //shoot slightly in the direction of the cursor
+                                map.insert_at::<Healing_SpringParticle>(&mut commands, position, ListType::OnlyAir);
+                                map.give_velocity(&mut commands, position, direction);  
+                            }
+                        }
+                    }
+                }
+            }
         }
        
     }
@@ -224,6 +247,7 @@ fn change_blaster_sprite(
         BlasterType::Deleter => 1,
         BlasterType::Gas => 2,
         BlasterType::Lava => 3,
+        BlasterType::Healing_Spring => 4,
     };    
 }
 
@@ -240,6 +264,8 @@ pub fn handle_blaster_change_input(
         event_writer.send(ChangeBlasterEvent { new_blaster_type: BlasterType::Gas });
     } else if keyboard_input.just_pressed(KeyCode::Digit4) {
         event_writer.send(ChangeBlasterEvent { new_blaster_type: BlasterType::Lava });
+    } else if keyboard_input.just_pressed(KeyCode::Digit5) {
+        event_writer.send(ChangeBlasterEvent { new_blaster_type: BlasterType::Healing_Spring });
     }
 }
 
