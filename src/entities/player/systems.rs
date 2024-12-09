@@ -128,7 +128,7 @@ pub fn move_player(
     map: ResMut<ParticleMap>,
     mut spaceship: Query<(&Hitbox, &mut FoundFlag), (With<Spaceship>, Without<Player>)>,
     mut ship_event: EventWriter<FoundSpaceship>,
-    state: Res<State<GamePhase>>,
+    state: Res<State<GamePhase>>
 ) {
     let (mut pt, mut pv, mut ps, mut hb, mut player_health) = player.single_mut();
     let mut deltav_x = 0.;
@@ -181,6 +181,7 @@ pub fn move_player(
     if ratio_of_toxic_gas_particles > 0.0 {
         pv.velocity.x = pv.velocity.x * (1. - 0.9 * ratio_of_toxic_gas_particles.powf(0.5));
         player_health.take_damage(0.1 * ratio_of_toxic_gas_particles);
+    }
     // Account for player in healing spring
     let ratio_of_healing_spring_particles = hb.ratio_of_healing_spring_grid_tiles(&map);
     if ratio_of_healing_spring_particles > 0.0 {
@@ -213,7 +214,6 @@ pub fn move_player(
         bt.translation.y = pt.translation.y + BLASTER_OFFSET_Y;
     }
     //info!("{}", pt.translation);
-
 }
 
 pub fn flight(

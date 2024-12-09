@@ -40,16 +40,3 @@ pub const W8_ANIM_TIME: f32 = 0.2;
 pub const W8_SPRITE_HEIGHT: u32 = 224;
 pub const W8_SPRITE_WIDTH: u32 = 224;
 
-
-#[derive(Component, Resource)]
-pub struct EnemyHealth {
-    pub hp: f32,
-}
-
-impl EnemyHealth {
-    pub fn new(hp: f32) -> Self {
-        Self {
-            hp: hp,
-        }
-    }
-}

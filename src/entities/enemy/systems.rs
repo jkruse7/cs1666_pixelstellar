@@ -196,7 +196,7 @@ pub fn initialize(
                 AnimationTimer(Timer::from_seconds(W1_ANIM_TIME, TimerMode::Repeating)),
                 AnimationFrameCount(p6_enemy_layout_len),
                 Velocity::new(),
-                EnemyHealth::new(),
+                EnemyHealth::new(100.),
                 Gravity::new(),
                 Hitbox::new(W6_SPRITE_WIDTH as f32, W6_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
                 DamageBox::new(W6_SPRITE_WIDTH as f32, W6_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),

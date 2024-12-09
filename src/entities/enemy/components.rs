@@ -51,9 +51,9 @@ pub struct EnemyHealth {
 } 
 
 impl EnemyHealth {
-    pub fn new() -> Self {
+    pub fn new(health: f32) -> Self {
         Self {
-            hp: 100.,
+            hp: health,
         }
     }
 

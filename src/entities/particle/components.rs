@@ -621,10 +621,10 @@ impl NewParticle for SnowParticle {
                 ..default()
             },
             particle: Particle {
-                position: ParticlePosVel::new(x, y, vel);
+                position: ParticlePosVel::new(x, y, vel),
                 data: ParticleElement::Snow,
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
-                        },
+            },
             tag: ParticleTagSnow,
         }
     }
@@ -774,10 +774,10 @@ impl NewParticle for ToxicGasParticle {
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
             },
             tag: ParticleTagToxicGas,
-            }
         }
     }
 }
+
           
           
           
