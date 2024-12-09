@@ -130,18 +130,18 @@ impl Default for WorldGenSettings {
                     noise_settings: NoiseSettings {
                         start_frequency: 0.012,
                         octaves: 1,
-                        noise_range_min: 0.,
-                        noise_range_max: 20.,
+                        noise_range_min: 40.,
+                        noise_range_max: 70.,
                         ..Default::default()
                     },
                 },
                 LayerSettings {
                     particle_type: ParticleType::BedRock,
                     noise_settings: NoiseSettings {
-                        start_frequency: 0.03,
-                        octaves: 5,
+                        start_frequency: 0.01,
+                        octaves: 2,
                         noise_range_min: 0.,
-                        noise_range_max: 180.,
+                        noise_range_max: 200.,
                         ..Default::default()
                     },
                 },

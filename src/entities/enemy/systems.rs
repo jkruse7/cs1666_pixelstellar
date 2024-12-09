@@ -61,6 +61,39 @@ pub fn initialize(
             Enemy,
         ));
     } else if *game_state == GamePhase::Planet2 {
+        let enemy_sheet_handle = asset_server.load("planet_2/ice_cream.png");
+        //             used to be tilesize. removed TILE_SIZE and now at 100, but change as needed  \/
+        let enemy_layout = TextureAtlasLayout::from_grid(UVec2::new(W3_SPRITE_WIDTH, W3_SPRITE_HEIGHT), 1, 1, None, None);
+        let enemy_layout_len = enemy_layout.textures.len();
+        let enemy_layout_handle = texture_atlases.add(enemy_layout);
+        commands.spawn((
+            SpriteBundle {
+                texture: enemy_sheet_handle,
+                transform: Transform {
+                    // Julianne 10/8: For now, enemy is being spawned at WIN_W. This will need to be changed eventually.
+                    translation: Vec3::new(WIN_W / 2., 100.0, 900.),
+                    ..default()
+                },
+                sprite: Sprite {
+                    flip_x: false,
+                    ..default()
+                },
+                ..default()
+            },
+            TextureAtlas {
+                layout: enemy_layout_handle,
+                index: 0,
+            },
+            AnimationTimer(Timer::from_seconds(W1_ANIM_TIME, TimerMode::Repeating)),
+            AnimationFrameCount(enemy_layout_len),
+            Velocity::new(),
+            EnemyHealth::new(4.),
+            Gravity::new(),
+            Hitbox::new(W3_SPRITE_WIDTH as f32, W3_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
+            DamageBox::new(W3_SPRITE_WIDTH as f32, W3_SPRITE_HEIGHT as f32, Vec2::new(0., -210.)),
+            Jump::new(),  
+            Enemy,
+        ));
 
     } else if *game_state == GamePhase::Planet3 {
         let enemy_sheet_handle = asset_server.load("planet_3/ghost.png");
@@ -206,6 +239,7 @@ pub fn initialize(
         }
 
     } else if *game_state == GamePhase::Planet7 {
+        
 
     } else if *game_state == GamePhase::Planet8 {
         let enemy_sheet_handle = asset_server.load("planet_8/sun.png");
@@ -656,6 +690,62 @@ pub fn track_player(
        
     }
     else if *game_state == GamePhase::Planet2 {
+        for (mut enemy_transform, mut enemy_velocity, mut enemy_sprite, mut enemy_hb, mut timer, mut enemy_jump) in &mut enemy{
+            let (player_transform, mut player_health) = player.single_mut();
+            let player_hb = player_hitbox.single_mut();
+            let cam_transform = camera.single_mut();
+            let mut deltav_x = 0.;
+            let mut deltav_y = 0.;
+
+            // Is enemy within the camera frame?
+            if enemy_transform.translation.x > cam_transform.translation.x + (WIN_W/2.){
+                return}
+            else{
+                timer.tick(time.delta());
+            }
+
+            //face player and fly towards player
+            if player_transform.translation.x >= enemy_transform.translation.x {
+                deltav_x += 1.;
+                enemy_sprite.flip_x=false;
+            } else {
+                deltav_x -= 1.;
+                enemy_sprite.flip_x = true;
+            }
+            if player_transform.translation.y >= enemy_transform.translation.y {
+                deltav_y += 1.;
+            } else {
+                deltav_y -= 1.;
+            }
+
+            let deltat = time.delta_seconds();
+            let acc_x = W3_ACCEL_RATE_X * deltat;
+            let acc_y = W3_ACCEL_RATE_Y * deltat;
+            if deltav_x != 0. || deltav_y != 0. {
+                let new_velocity = Vec2::new(deltav_x, deltav_y) + enemy_velocity.velocity;
+                if new_velocity.length() > W3_ENEMY_SPEED {
+                    enemy_velocity.velocity = new_velocity.normalize() * W3_ENEMY_SPEED;
+                } else {
+                    enemy_velocity.velocity = new_velocity;
+                }
+                
+                let new_pos = enemy_transform.translation + enemy_velocity.velocity.extend(0.);
+                if new_pos.x >= -(WIN_W / 2.) + (W1_SPRITE_WIDTH as f32) / 2.
+                && new_pos.x <= LEVEL_W - (WIN_W / 2. + (W1_SPRITE_WIDTH as f32) / 2.)
+                && new_pos.y >= -(LEVEL_H / 2.) + (W1_SPRITE_HEIGHT as f32) / 2.
+                && new_pos.y <= LEVEL_H - (W1_SPRITE_HEIGHT as f32) / 2. {
+                    enemy_transform.translation = new_pos;
+                    *enemy_hb = Hitbox::new(W3_SPRITE_WIDTH as f32, W3_SPRITE_HEIGHT as f32, enemy_transform.translation.xy());
+                }
+                if player_hb.collides_with(&enemy_hb) {
+                    take_damage(&mut player_health, 1.0, &mut death_event, &asset_server, &mut commands, &mut sound_tracker, &time);
+                    //info!("Player hit! Current health: {:?}", player_health.current); // 记录伤害
+                    if player_health.current == 0.{
+                        death_event.send(Death);
+                    }
+                }
+            }
+        }
     }
     else if *game_state == GamePhase::Planet3 {
         for (mut enemy_transform, mut enemy_velocity, mut enemy_sprite, mut enemy_hb, mut timer, mut enemy_jump) in &mut enemy{
@@ -946,6 +1036,7 @@ pub fn track_player(
 
     }
     else if *game_state == GamePhase::Planet7 {
+       
     }
     else if *game_state == GamePhase::Planet8 {
     }
@@ -969,6 +1060,12 @@ pub fn check_enemy_damage(
         }
     }
     else if *game_state == GamePhase::Planet2 {
+        for (entity, ehb, mut eHealth) in query.iter_mut() {
+            if ehb.are_any_grid_tiles_water(&map) {
+                // info!("Enemy hit by water particle");
+                eHealth.hp -= 1.;
+            }
+        }
 
     }
     else if *game_state == GamePhase::Planet3 {
@@ -996,6 +1093,7 @@ pub fn check_enemy_damage(
     }
     else if *game_state == GamePhase::Planet7 {
 
+        
     }
     else if *game_state == GamePhase::Planet8 {
         for (entity, ehb, mut eHealth) in query.iter_mut() {
