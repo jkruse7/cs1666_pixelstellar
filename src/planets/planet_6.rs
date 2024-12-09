@@ -5,11 +5,17 @@ use crate::common::state::GamePhase;
 use crate::entities::particle::{resources::*, components::*};
 use crate::common::perlin_noise::*;
 
+use crate::LEVEL_W;
+
+const GEYSER_INTENSITY: i32 = 4;
+
 // Define structs --------------------------------------------------------------------------------
 #[derive(Hash, Eq, PartialEq, Debug, Clone, Copy)]
 pub enum ParticleType {
+    AcidicDirt,
     Stone,
-    Dirt,
+    AcidicWater,
+    ToxicGas,
     BedRock,
     // Add more particle types as needed. The order doesn't matter.
 
@@ -101,12 +107,12 @@ pub struct WorldGenSettings {
 impl Default for NoiseSettings {
     fn default() -> Self {
         Self {
-            start_frequency: 0.05,
-            octaves: 3,
-            persistence: 0.5,
-            frequency_modifier: 1.2,
+            start_frequency: 0.005,
+            octaves: 2,
+            persistence: 0.25,
+            frequency_modifier: 1.05,
             noise_range_min: 0.,
-            noise_range_max: 180.,
+            noise_range_max: 140.,
         }
     }
 }
@@ -116,7 +122,7 @@ impl Default for WorldGenSettings {
         Self {
             layers: vec![
                 LayerSettings {
-                    particle_type: ParticleType::Stone,
+                    particle_type: ParticleType::AcidicDirt,
                     noise_settings: NoiseSettings {
                         start_frequency: 0.015,
                         octaves: 2,
@@ -126,11 +132,11 @@ impl Default for WorldGenSettings {
                     },
                 },
                 LayerSettings {
-                    particle_type: ParticleType::Dirt,
+                    particle_type: ParticleType::Stone,
                     noise_settings: NoiseSettings {
                         start_frequency: 0.012,
                         octaves: 1,
-                        noise_range_min: 0.,
+                        noise_range_min: -100.,
                         noise_range_max: 20.,
                         ..Default::default()
                     },
@@ -156,12 +162,12 @@ impl Default for WorldGenSettings {
 impl Default for CaveSettings {
     fn default() -> Self {
         Self {
-            start_frequency: 0.03,
-            octaves: 3,
+            start_frequency: 0.009,
+            octaves: 5,
             persistence: 0.5,
             frequency_modifier: 1.2,
-            min_y: -50,
-            max_y: 90,
+            min_y: -170,
+            max_y: 40,
             noise_threshold_min: 0.45,
             noise_threshold_max: 0.55,
         }
@@ -234,12 +240,14 @@ fn generate_world(
                     ParticleType::BedRock => {
                         map.insert_at::<BedRockParticle>(&mut commands, (x, y), ListType::All);
                     }
-                    ParticleType::Dirt => {
-                        map.insert_at::<DirtParticle>(&mut commands, (x, y), ListType::All);
+                    ParticleType::AcidicDirt => {
+                        map.insert_at::<AcidicDirtParticle>(&mut commands, (x, y), ListType::All);
                     }
                     ParticleType::Stone => {
                         map.insert_at::<StoneParticle>(&mut commands, (x, y), ListType::All);
                     }
+                    ParticleType::AcidicWater => { }
+                    ParticleType::ToxicGas => { }
                     // Handle other particle types if necessary
 
                 }
@@ -248,29 +256,23 @@ fn generate_world(
     }
 }
 
-fn update_grass(
+
+
+
+fn draw_toxic_gas(
     mut map: ResMut<ParticleMap>,
-    time: Res<Time>, 
     mut commands: Commands,
-    mut particles: Query<&mut ParticlePosVel, With<ParticleTagDirt>>,
 ) {
-    for mut position in &mut particles {
-        let (x, y) = (position.grid_x, position.grid_y);
-        if map.get_element_at((x, y+1)) == ParticleElement::Air{
-            map.delete_at(&mut commands, (x, y));
-            map.insert_at::<GrassParticle>(&mut commands, (x, y), ListType::OnlyAir);
-        }
-        if ((map.get_element_at((x + 1, y)) == ParticleElement::Air &&
-             map.get_element_at((x+1, y-1)) == ParticleElement::Air)||
-            (map.get_element_at((x + 1, y)) == ParticleElement::Air &&
-             map.get_element_at((x+1, y-1)) == ParticleElement::Air))&&
-           (map.get_element_at((x, y-1)) == ParticleElement::Dirt ||
-            map.get_element_at((x, y-1)) == ParticleElement::Grass ){
-            map.delete_at(&mut commands, (x, y));
-            map.insert_at::<GrassParticle>(&mut commands, (x, y), ListType::OnlyAir);
+    for _ in 0..8{
+        let mut rng = rand::thread_rng();
+        let x = rng.gen_range(-(LEVEL_W/2.)..=(LEVEL_W/2.)) as i32;
+        let y = rng.gen_range(-175..-80);
+        if map.get_element_at((x, y)) == ParticleElement::Air {
+            map.insert_at::<ToxicGasParticle>(&mut commands, (x, y), ListType::OnlyAir);
         }
     }
 }
+
 
 
 pub struct Planet6Plugin;
@@ -280,6 +282,6 @@ impl Plugin for Planet6Plugin {
         app.add_systems(OnEnter(GamePhase::Planet6), crate::common::ui::background::initialize_background);
         app.insert_resource(WorldGenSettings::default());
         app.add_systems(OnEnter(GamePhase::Planet6), generate_world);
-        app.add_systems(OnEnter(GamePhase::Planet6), update_grass.after(generate_world));
+        app.add_systems(Update, draw_toxic_gas.run_if(in_state(GamePhase::Planet6)));
     }
 }

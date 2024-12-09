@@ -75,7 +75,6 @@ impl ParticleMap {
         // }
         let element_at_pos = self.get_element_at(pos);
     
-        
         let should_replace = match list {
             ListType::All => true,
             ListType::OnlyAir => element_at_pos == ParticleElement::Air,
