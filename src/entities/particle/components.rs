@@ -37,6 +37,7 @@ pub enum ParticleElement {
     Healing_Spring,
     Sand,
     QuickSand,
+    Ice,
 }
 
 
@@ -622,6 +623,62 @@ impl NewParticle for SnowParticle {
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(LEVEL_H+10., LEVEL_H+10.))
                         },
             tag: ParticleTagSnow,
+        }
+    }
+}
+
+
+
+// Ice -----------------------------------------------------------------------------------------------------------
+#[derive(Component, Debug)]
+pub struct ParticleTagIce;
+#[derive(Bundle, Debug)]
+pub struct IceParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    tag: ParticleTagIce,
+}
+impl NewParticle for IceParticle {
+    const ELEMENT: ParticleElement = ParticleElement::Ice;
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
+        let mut rng = rand::thread_rng();
+        let r0 = 115;
+        let g0 = 155;
+        let b0 = 208;
+        let bound = 10;
+
+        let mut r = rng.gen_range((r0 - bound)..=(r0 + bound));
+        let mut g = rng.gen_range((g0 - bound)..=(g0 + bound));
+        let mut b = rng.gen_range((b0 - bound)..=(b0 + bound));
+        if rng.gen_range(0..=100) <= 25 {
+            r += 30;
+            g += 30;
+            b += 30;
+        }
+        let w = rng.gen_range(235..=255) as u8;
+        Self {
+            sprite: SpriteBundle {
+                sprite: Sprite {
+                    color: Color::srgb_u8(r, g, b),
+                    custom_size: Some(Vec2::splat(PARTICLE_SIZE)),
+                    ..default()
+                },
+                transform: Transform {
+                    translation: Vec3::new(
+                        x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.,
+                        0.0,
+                    ),
+                    ..default()
+                },
+                ..default()
+            },
+            particle: Particle {
+                position: ParticlePosVel::new(x, y, vel),
+                data: ParticleElement::Ice,
+                hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
+                        },
+            tag: ParticleTagIce,
         }
     }
 }

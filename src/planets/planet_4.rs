@@ -233,7 +233,7 @@ fn generate_world(
 
                 match current_particle {
                     ParticleType::BedRock => {
-                        map.insert_at::<BedRockParticle>(commands, (x, y), ListType::All);
+                        map.insert_at::<IceParticle>(commands, (x, y), ListType::All);
                     }
                     ParticleType::Dirt => {
                         map.insert_at::<DirtParticle>(commands, (x, y), ListType::All);
@@ -275,13 +275,9 @@ fn update_snow(
     mut commands: Commands,
     mut particles: Query<&mut ParticlePosVel, With<ParticleTagSnow>>,
 ) {
-    for mut position in &mut particles {
+    for position in &mut particles {
         let mut rng = rand::thread_rng();
-        let move_r = 2;
         let decay_rate = 200;
-        // This decay logic just says if the positions 10 away in each cardinal direction is air theres a small chance to despawn.
-        // just means that 
-        //               1 to disable or just comment out
         if rng.gen_range(0..decay_rate) == 0 {
             map.delete_at(&mut commands, (position.grid_x, position.grid_y));
         } else if rng.gen_range(0..=1) == 0 {
@@ -299,9 +295,7 @@ fn update_snow(
                 if map.get_element_at(position_of_part) == ParticleElement::Air {
                     map.delete_at(&mut commands, (center_x, center_y));
                     // Check that the new coordinates are within bounds before spawning
-                    if grid_coords_within_map(position_of_part) {
-                        map.insert_at::<SnowParticle>(&mut commands, position_of_part, ListType::OnlyAir);
-                    }
+                    map.insert_at::<SnowParticle>(&mut commands, position_of_part, ListType::OnlyAir);
                 }
             }
         }
@@ -323,7 +317,6 @@ fn draw_snow(
         let y = rng.gen_range(100..200);
         if map.get_element_at((x, y)) == ParticleElement::Air {
             map.insert_at::<SnowParticle>(&mut commands, (x, y), ListType::OnlyAir);
-            //map.give_velocity(&mut commands, (x,y), RAIN_VEL);
         }
     }
 }
