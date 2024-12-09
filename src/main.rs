@@ -20,7 +20,7 @@ const LEVEL_H: f32 = WIN_H * 2.0;
 fn main() {
     App::new()
         // Resources which will be accessible throughout the game
-        .insert_resource(ClearColor(Color::srgb_u8(0, 0, 0)))
+        .insert_resource(ClearColor(Color::srgb_u8(135, 206, 235)))
         .add_plugins(common::state::StatePlugin)
         .add_plugins(common::death::DeathPlugin)
         // UI Plugins

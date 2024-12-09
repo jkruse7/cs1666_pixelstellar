@@ -116,7 +116,7 @@ impl Plugin for SpaceshipPlugin {
         .add_systems(OnEnter(GamePhase::Planet8), initialize)
 
         //app.add_systems(PreUpdate,  initialize.run_if(state_changed::<GamePhase>))
-        .add_systems(Update, spaceship_gravity.run_if(in_state(AppState::InGame)))
+        //.add_systems(Update, spaceship_gravity.run_if(in_state(AppState::InGame)))
         .add_systems(Update, found_spaceship_event_listener.run_if(in_state(AppState::InGame)))
         .add_event::<FoundSpaceship>();
         

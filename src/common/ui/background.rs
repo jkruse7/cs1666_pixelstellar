@@ -23,6 +23,9 @@ pub fn initialize_background (
         GamePhase::Planet8 => 8,
         _ => 0,
     };
+    if planet == 4 {
+        return;
+    }
     let bg_sheet_handle = asset_server.load(format!("planet_{planet}/background.png"));
     let bg_layout = TextureAtlasLayout::from_grid(UVec2::splat(BG_TILE_SIZE), 1, 1, None, None);
     let bg_layout_handle = texture_atlases.add(bg_layout);
