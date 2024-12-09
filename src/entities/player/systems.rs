@@ -9,7 +9,7 @@ use crate::{
     },
     entities::{
         enemy::components::Enemy, 
-        particle::{components::{ParticleElement, WaterParticle, ParticleTagQuickSand},
+        particle::{components::{ParticleElement, WaterParticle, ParticleTagQuickSand,ParticleTagSlime},
         resources::*},
         spaceship::components::{FoundFlag, FoundSpaceship, Spaceship}
     },
@@ -190,6 +190,11 @@ pub fn move_player(
         pv.velocity.x = pv.velocity.x * (1. - 0.9 * ratio_of_quicksand_particles.powf(0.5));
         pv.velocity.y = pv.velocity.y * (1. - 0.95 * ratio_of_quicksand_particles.powf(0.5));
     }
+    let ratio_of_slime_particles = hb.ratio_of_slime_grid_tiles(&map);
+    if ratio_of_slime_particles > 0.0 {
+        pv.velocity.x = pv.velocity.x * (1. - 0.3 * ratio_of_slime_particles.powf(0.5));
+        pv.velocity.y = pv.velocity.y * (1. - 0.3 * ratio_of_slime_particles.powf(0.5));
+    }
 
     let change = pv.velocity * deltat;
     let new_pos = pt.translation + change.extend(0.);
@@ -270,6 +275,10 @@ pub fn flight(
     let ratio_of_quicksand_particles = hb.ratio_of_quicksand_grid_tiles(&map);
     if ratio_of_quicksand_particles > 0.0 {
         pv.velocity.y = pv.velocity.y * (1. - 0.95 * ratio_of_quicksand_particles.powf(0.5));
+    }
+    let ratio_of_slime_particles = hb.ratio_of_slime_grid_tiles(&map);
+    if ratio_of_slime_particles > 0.0 {
+        pv.velocity.y = pv.velocity.y * (1. - 0.3 * ratio_of_slime_particles.powf(0.5));
     }
 
     let change = pv.velocity * deltat;
