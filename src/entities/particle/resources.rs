@@ -10,6 +10,7 @@ pub const WATER_VISCOSITY: f32 = 0.75; //range 0-1, 1 is low viscosity, 0 doesnt
 pub const LAVA_VISCOSITY: f32 = 0.35;
 pub const HEALING_SPRING_VISCOSITY: f32 = 0.55;
 pub const QUICKSAND_VISCOSITY: f32 = 0.20;
+pub const SLIME_VISCOSITY: f32 = 0.40;
 pub enum ListType {
     All,
     OnlyAir,

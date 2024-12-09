@@ -39,7 +39,11 @@ pub enum ParticleElement {
     Healing_Spring,
     Sand,
     QuickSand,
+<<<<<<< HEAD
     Ice,
+=======
+    Slime,
+>>>>>>> 514c8f097b63156f8f8a96daeff44dc29f5f0c12
 }
 
 
@@ -589,6 +593,7 @@ impl NewParticle for QuickSandParticle {
     }
 }
 
+<<<<<<< HEAD
 // Snow --------------------------------------------------------------------------------------------------------
 #[derive(Component, Debug)]
 pub struct ParticleTagSnow;
@@ -707,6 +712,28 @@ impl NewParticle for AcidicDirtParticle {
         let red = rng.gen_range(10..=30) as u8;
         let green = rng.gen_range(20..=30) as u8;
         let blue = rng.gen_range(5..=15) as u8;
+=======
+// Slime ------------------------------------------------------------------------
+#[derive(Component, Debug)]
+pub struct ParticleTagSlime;
+
+#[derive(Bundle, Debug)]
+pub struct SlimeParticle {
+    sprite: SpriteBundle,
+    particle: Particle,
+    tag: ParticleTagSlime,
+}
+
+impl NewParticle for SlimeParticle {
+    const ELEMENT: ParticleElement = ParticleElement::Slime;
+
+    fn new(x: i32, y: i32, vel: Vec2) -> Self {
+        let mut rng = rand::thread_rng();
+        let red = rng.gen_range(30..=60) as u8;
+        let green = rng.gen_range(180..=240) as u8;
+        let blue = rng.gen_range(30..=60) as u8;
+
+>>>>>>> 514c8f097b63156f8f8a96daeff44dc29f5f0c12
         Self {
             sprite: SpriteBundle {
                 sprite: Sprite {
@@ -726,14 +753,26 @@ impl NewParticle for AcidicDirtParticle {
             },
             particle: Particle {
                 position: ParticlePosVel::new(x, y, vel),
+<<<<<<< HEAD
                 data: ParticleElement::AcidicDirt,
                 hitbox: Hitbox::new(PARTICLE_SIZE, PARTICLE_SIZE,Vec2::new(x as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2., y as f32 * PARTICLE_SIZE + PARTICLE_SIZE / 2.))
             },
             tag: ParticleTagAcidicDirt,
+=======
+                data: ParticleElement::Slime,
+                hitbox: Hitbox::new(
+                    PARTICLE_SIZE, 
+                    PARTICLE_SIZE, 
+                    Vec2::new(LEVEL_H + 10., LEVEL_H + 10.)
+                ),
+            },
+            tag: ParticleTagSlime,
+>>>>>>> 514c8f097b63156f8f8a96daeff44dc29f5f0c12
         }
     }
 }
 
+<<<<<<< HEAD
 // ToxicGas ------------------------------------------------------------------------
 #[derive(Component)]
 pub struct ParticleTagToxicGas;
@@ -781,4 +820,6 @@ impl NewParticle for ToxicGasParticle {
           
           
           
+=======
+>>>>>>> 514c8f097b63156f8f8a96daeff44dc29f5f0c12
 

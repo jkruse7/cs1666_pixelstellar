@@ -278,6 +278,7 @@ pub fn initialize(
     }
 }
 
+
 #[derive(Component, Clone, Debug)]
 pub struct DamageBox {
     pub width: f32,
@@ -494,7 +495,47 @@ pub fn enemy_gravity(
         }
 
     } else if *game_state == GamePhase::Planet7 {
+        for (mut pt, mut pv, mut pg, mut hb, mut e_jump) in &mut enemy{
 
+            let deltat = time.delta_seconds();
+
+            //update gravity here
+            if e_jump.needs_jump && !e_jump.jumped{
+                pg.reset_g();
+                let acc_y = W1_ACCEL_RATE_Y * deltat;
+                pv.velocity.y = f32::min(150., pv.velocity.y + (1. * acc_y));
+                e_jump.needs_jump = false;
+                e_jump.is_jumping = true;
+            }else {
+                pg.update_g(&pv.velocity.y, &deltat, &grav_res);
+                pv.velocity.y = pg.get_g();
+            }
+            
+
+            let change = pv.velocity * deltat;
+            let new_pos = pt.translation + change.extend(0.);
+            let new_hb = Hitbox::new(W1_SPRITE_WIDTH as f32, W1_SPRITE_HEIGHT as f32, new_pos.xy());
+            //Bound enemy to within level height
+            if new_pos.y >= -(LEVEL_H / 2.) + (W1_SPRITE_HEIGHT as f32) / 2.
+                && new_pos.y <= LEVEL_H - (W1_SPRITE_HEIGHT as f32) / 2.
+                && (!new_hb.all_enemy_collisions(&hitboxes)) && !e_jump.jumped
+            {    
+
+                    pt.translation = new_pos;
+                    *hb = new_hb; 
+                    e_jump.jumped = true;
+            }  
+            let new_hb = Hitbox::new(W1_SPRITE_WIDTH as f32, W1_SPRITE_HEIGHT as f32,Vec2::new(new_pos.x + 1., new_pos.y));
+            // Velocity is zero when enemy hits the ground
+            if pt.translation.y <= -(LEVEL_H / 2.) + (W1_SPRITE_HEIGHT as f32) ||
+                new_hb.all_enemy_collisions(&hitboxes)
+            {
+                pv.velocity.y = 0.;
+                e_jump.is_jumping = false;
+                e_jump.jumped = false;
+                
+            }
+        }
     } else if *game_state == GamePhase::Planet8 {
         for (mut pt, mut pv, mut pg, mut hb, mut e_jump) in &mut enemy{
 
@@ -539,6 +580,8 @@ pub fn enemy_gravity(
         }
     }
 }
+
+
 
 pub fn animate_enemy(
     time: Res<Time>,
@@ -595,6 +638,11 @@ pub fn animate_enemy(
 
     }
 }
+use bevy::prelude::*;
+
+
+
+
 
 /*Julianne 10/8: This finds if the player is on the left or right side
  and simply makes enemy walk towards the player, changing x translation only
@@ -611,6 +659,7 @@ pub fn track_player(
     mut commands: Commands,
     mut sound_tracker: ResMut<PlayerSoundTracker>,
     map: ResMut<ParticleMap>,
+    
     state: Res<State<GamePhase>>,
 ){
     let game_state =  state.get();
@@ -631,6 +680,7 @@ pub fn track_player(
                 timer.tick(time.delta());
             }
             //face player and walk towards player
+            
             if pt.translation.x >= et.translation.x {
                 deltav_x += 1.;
                 es.flip_x=false;
@@ -1104,6 +1154,17 @@ pub fn check_enemy_damage(
         }
     }
 }
+// pub fn check_enemy_death(
+//     mut commands: Commands,
+//     query: Query<(Entity, &mut Hitbox, &mut EnemyHealth), With<Enemy>>,
+// ){
+//     for (entity, ehb, e_health) in query.iter() {
+//         if e_health.hp <= 0. {
+//             commands.entity(entity).despawn();
+//         }
+//     }
+
+
 pub fn check_enemy_death(
     mut commands: Commands,
     mut query: Query<(Entity, &mut Hitbox, &mut EnemyHealth), With<Enemy>>,
@@ -1122,6 +1183,7 @@ pub fn check_enemy_death(
         }
     }
 }
+
 
 
 pub struct EnemyPlugin;
